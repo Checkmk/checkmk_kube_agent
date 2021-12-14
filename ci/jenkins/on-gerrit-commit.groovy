@@ -52,6 +52,9 @@ def do_it() {
     stage("python unit and doc test") {
         run_target(IMAGES, "test-unit", "--entrypoint=");
     }
+    stage("lint dockerfile: hadolint") {
+        run_target(IMAGES, "lint-dockerfile/hadolint", "--entrypoint=");
+    }
 }
 
 def run_target(images, target, docker_args) {
