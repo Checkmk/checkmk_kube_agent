@@ -102,6 +102,13 @@ release-image: dist ## create the node and cluster collector Docker images
 test-unit: ## run unit tests and doctests quickly with the default Python
 	pytest --doctest-modules --doctest-continue-on-failure --pyargs checkmk_kube_agent tests/unit
 
+.PHONY: typing-python
+typing-python: typing-python/mypy ## check Python typing
+
+.PHONY: typing-python/mypy
+typing-python/mypy: ## check typing with mypy
+	mypy src tests
+
 .PHONY: gerrit-tests
 gerrit-tests: release-image dev-image ## run all tests as Jenkins runs them on Gerrit commit
 # NOTE: The make targets that are run by Jenkins are listed in the associated

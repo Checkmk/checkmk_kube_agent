@@ -46,6 +46,9 @@ def do_it() {
     stage("lint python: pylint") {
         run_target(IMAGES, "lint-python/pylint", "--entrypoint=");
     }
+    stage("typing python: mypy") {
+        run_target(IMAGES, "typing-python/mypy", "--entrypoint=");
+    }
     stage("python unit and doc test") {
         run_target(IMAGES, "test-unit", "--entrypoint=");
     }
