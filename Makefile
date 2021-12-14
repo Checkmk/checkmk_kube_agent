@@ -78,11 +78,16 @@ print-version: ## print project version
 	@echo $(PROJECT_VERSION)
 
 .PHONY: lint-python
-lint-python: lint-python/bandit ## check Python style
+lint-python: lint-python/bandit lint-python/format ## check Python style
 
 .PHONY: lint-python/bandit
 lint-python/bandit: ## check for security issues with bandit
 	bandit --configfile bandit.yaml --ini .bandit
+
+.PHONY: lint-python/format
+lint-python/format: ## check formatting with black and isort
+	black --check src tests
+	isort --check-only --diff src tests
 
 .PHONY: release-image
 release-image: dist ## create the node and cluster collector Docker images

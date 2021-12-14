@@ -40,6 +40,9 @@ def do_it() {
     stage("lint python: bandit") {
         run_target(IMAGES, "lint-python/bandit", "--entrypoint=");
     }
+    stage("lint python: format") {
+        run_target(IMAGES, "lint-python/format", "--entrypoint=");
+    }
     stage("python unit and doc test") {
         run_target(IMAGES, "test-unit", "--entrypoint=");
     }
