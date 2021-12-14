@@ -77,6 +77,13 @@ dist: clean ## builds source and wheel package
 print-version: ## print project version
 	@echo $(PROJECT_VERSION)
 
+.PHONY: lint-python
+lint-python: lint-python/bandit ## check Python style
+
+.PHONY: lint-python/bandit
+lint-python/bandit: ## check for security issues with bandit
+	bandit --configfile bandit.yaml --ini .bandit
+
 .PHONY: release-image
 release-image: dist ## create the node and cluster collector Docker images
 	docker build --rm --no-cache --build-arg PACKAGE_VERSION="${PROJECT_VERSION}" -t $(CLUSTER_COLLECTOR_IMAGE) -f docker/cluster_collector/Dockerfile .

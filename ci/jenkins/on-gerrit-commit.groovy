@@ -37,6 +37,9 @@ def do_it() {
         NODE_COLLECTOR_IMAGE = docker.build("checkmk-node-collector-dev", "--target=dev --build-arg PACKAGE_VERSION=${PROJECT_VERSION} -f docker/node_collector/Dockerfile .");
         IMAGES = [CLUSTER_COLLECTOR_IMAGE, NODE_COLLECTOR_IMAGE];
     }
+    stage("lint python: bandit") {
+        run_target(IMAGES, "lint-python/bandit", "--entrypoint=");
+    }
     stage("python unit and doc test") {
         run_target(IMAGES, "test-unit", "--entrypoint=");
     }
