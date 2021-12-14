@@ -76,3 +76,21 @@ dist: clean ## builds source and wheel package
 release-image: dist ## create the node and cluster collector Docker images
 	docker build --rm --no-cache --build-arg PACKAGE_VERSION="${PROJECT_VERSION}" -t $(CLUSTER_COLLECTOR_IMAGE) -f docker/cluster_collector/Dockerfile .
 	docker build --rm --no-cache --build-arg PACKAGE_VERSION="${PROJECT_VERSION}" -t $(NODE_COLLECTOR_IMAGE) -f docker/node_collector/Dockerfile .
+
+.PHONY: test-unit
+test-unit: ## run unit tests and doctests quickly with the default Python
+	pytest --doctest-modules --doctest-continue-on-failure --pyargs checkmk_kube_agent tests/unit
+
+.PHONY: gerrit-tests
+gerrit-tests: release-image dev-image ## run all tests as Jenkins runs them on Gerrit commit
+# NOTE: The make targets that are run by Jenkins are listed in the associated
+# Jenkins script (full path below). They are retrieved with grep and run in
+# sequence in the container which is also used by Jenkins. This is as close as we
+# can get in terms of running this pipeline locally.
+	for target in $(shell grep "run_target" ci/jenkins/on-gerrit-commit.groovy | grep -v def | cut -d, -f2); do \
+		for image in $(CLUSTER_COLLECTOR_IMAGE_NAME) $(NODE_COLLECTOR_IMAGE_NAME); do \
+			scripts/run-in-docker.sh \
+        		-i $$image-dev:latest \
+        		-c "$(MAKE) $$target"; \
+		done; \
+	done
