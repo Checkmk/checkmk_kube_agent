@@ -58,6 +58,9 @@ def do_it() {
     stage("lint dockerfile: hadolint") {
         run_target(IMAGES, "lint-dockerfile/hadolint", "--entrypoint=");
     }
+    stage("lint docker image: trivy") {
+        run_target(IMAGES, "lint-docker-image/trivy", "-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=");
+    }
 }
 
 def run_target(images, target, docker_args) {

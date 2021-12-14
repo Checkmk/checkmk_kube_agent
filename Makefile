@@ -83,7 +83,7 @@ print-version: ## print project version
 	@echo $(PROJECT_VERSION)
 
 .PHONY: lint-docker
-lint-docker: lint-dockerfile ## check Dockerfiles and images
+lint-docker: lint-dockerfile lint-docker-image ## check Dockerfiles and images
 
 .PHONY: lint-dockerfile
 lint-dockerfile: lint-dockerfile/hadolint-containerised ## check Dockerfile style
@@ -97,6 +97,23 @@ lint-dockerfile/hadolint-containerised: ## check Dockerfile style with Hadolint
 	./scripts/run-in-docker.sh \
 		-i hadolint/hadolint:2.8.0-alpine \
 		-c "hadolint --failure-threshold warning --verbose docker/*/Dockerfile"
+
+.PHONY: lint-docker-image
+lint-docker-image: lint-docker-image/trivy-containerised ## check vulnerability issues of Docker images with trivy
+
+.PHONY: lint-docker-image/trivy
+lint-docker-image/trivy: ## check vulnerability issues of Docker images with trivy
+	trivy --cache-dir .cache image $(CLUSTER_COLLECTOR_IMAGE)
+	trivy --cache-dir .cache image $(NODE_COLLECTOR_IMAGE)
+
+.PHONY: lint-docker-image/trivy-containerised
+lint-docker-image/trivy-containerised: release-image ## check vulnerability issues of Docker images with trivy
+	./scripts/run-in-docker.sh \
+		-i aquasec/trivy:0.21.2 \
+		-o "-v /var/run/docker.sock:/var/run/docker.sock" \
+		-o "--group-add=$$(getent group docker | cut -d: -f3)" \
+		-c "trivy --cache-dir .cache image $(CLUSTER_COLLECTOR_IMAGE); \
+			trivy --cache-dir .cache image $(NODE_COLLECTOR_IMAGE)"
 
 .PHONY: lint-python
 lint-python: lint-python/bandit lint-python/format lint-python/pylint ## check Python style

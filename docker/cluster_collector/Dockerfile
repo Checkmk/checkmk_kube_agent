@@ -13,6 +13,11 @@ RUN apk add --no-cache make=4.3-r0 && \
     "https://github.com/hadolint/hadolint/releases/download/v2.8.0/hadolint-Linux-x86_64" && \
     mv hadolint-Linux-x86_64 /usr/local/bin/hadolint &&\
     chmod +x /usr/local/bin/hadolint && \
+    wget -q \
+    "https://github.com/aquasecurity/trivy/releases/download/v0.18.3/trivy_0.18.3_Linux-64bit.tar.gz" && \
+    tar -xvzf trivy_0.18.3_Linux-64bit.tar.gz trivy && \
+    mv trivy /usr/local/bin && \
+    rm trivy_0.18.3_Linux-64bit.tar.gz && \
     pip install --no-cache-dir -r /tmp/requirements_dev.txt && \
     rm -rf /tmp/* && \
     rm -rf /var/cache/apk/*
