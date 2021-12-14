@@ -1,0 +1,9 @@
+[run]
+branch = True
+omit = *__init__.py
+
+[report]
+omit = *__init__.py
+exclude_lines =
+    def main(.*):
+    if __name__ == .__main__.:

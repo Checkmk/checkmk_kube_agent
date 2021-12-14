@@ -62,6 +62,11 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr .mypy_cache
 	rm -fr .cache
 
+coverage: test-unit ## check code coverage quickly with the default Python
+	coverage report -m
+	coverage html
+	$(BROWSER) htmlcov/index.html
+
 .PHONY: dev-image
 dev-image: dist ## build image to be used to run tests in a Docker container
 	docker build --rm --target=dev --build-arg PACKAGE_VERSION="${PROJECT_VERSION}" -t $(CLUSTER_COLLECTOR_IMAGE_NAME)-dev -f docker/cluster_collector/Dockerfile .
@@ -116,7 +121,7 @@ release-image: dist ## create the node and cluster collector Docker images
 
 .PHONY: test-unit
 test-unit: ## run unit tests and doctests quickly with the default Python
-	pytest --doctest-modules --doctest-continue-on-failure --pyargs checkmk_kube_agent tests/unit
+	coverage run -m pytest --doctest-modules --doctest-continue-on-failure --pyargs checkmk_kube_agent tests/unit
 
 .PHONY: typing-python
 typing-python: typing-python/mypy ## check Python typing
