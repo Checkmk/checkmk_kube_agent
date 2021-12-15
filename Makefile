@@ -20,9 +20,10 @@ for line in sys.stdin:
 endef
 export PRINT_HELP_PYSCRIPT
 
-BROWSER := python -c "$$BROWSER_PYSCRIPT"
+PYTHON := python3
+BROWSER := $(PYTHON) -c "$$BROWSER_PYSCRIPT"
 PROJECT_NAME := checkmk_kube_agent
-PROJECT_VERSION := $(shell python3 -c "import src.${PROJECT_NAME};print(src.${PROJECT_NAME}.__version__)")
+PROJECT_VERSION := $(shell $(PYTHON) -c "import src.${PROJECT_NAME};print(src.${PROJECT_NAME}.__version__)")
 DOCKER_IMAGE_TAG := $(PROJECT_VERSION)
 DOCKERHUB_PUBLISHER := checkmk
 CLUSTER_COLLECTOR_IMAGE_NAME := checkmk-cluster-collector
@@ -32,7 +33,7 @@ NODE_COLLECTOR_IMAGE := $(DOCKERHUB_PUBLISHER)/${NODE_COLLECTOR_IMAGE_NAME}:${DO
 
 .PHONY: help
 help:
-	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
+	@$(PYTHON) -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
 .PHONY: clean
 clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
@@ -68,8 +69,8 @@ dev-image: dist ## build image to be used to run tests in a Docker container
 
 
 dist: clean ## builds source and wheel package
-	python setup.py sdist
-	python setup.py bdist_wheel
+	$(PYTHON) setup.py sdist
+	$(PYTHON) setup.py bdist_wheel
 	ls -l dist
 
 .PHONY: release-image
