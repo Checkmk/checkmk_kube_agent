@@ -73,6 +73,10 @@ dist: clean ## builds source and wheel package
 	$(PYTHON) setup.py bdist_wheel
 	ls -l dist
 
+.PHONY: print-version
+print-version: ## print project version
+	@echo $(PROJECT_VERSION)
+
 .PHONY: release-image
 release-image: dist ## create the node and cluster collector Docker images
 	docker build --rm --no-cache --build-arg PACKAGE_VERSION="${PROJECT_VERSION}" -t $(CLUSTER_COLLECTOR_IMAGE) -f docker/cluster_collector/Dockerfile .
