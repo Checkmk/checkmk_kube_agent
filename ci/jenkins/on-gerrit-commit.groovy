@@ -42,6 +42,7 @@ def do_it() {
     }
     stage("lint python: format") {
         run_target(IMAGES, "lint-python/format", "--entrypoint=");
+    }
     stage("lint python: pylint") {
         run_target(IMAGES, "lint-python/pylint", "--entrypoint=");
     }
