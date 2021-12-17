@@ -136,10 +136,13 @@ gerrit-tests: release-image dev-image ## run all tests as Jenkins runs them on G
 # Jenkins script (full path below). They are retrieved with grep and run in
 # sequence in the container which is also used by Jenkins. This is as close as we
 # can get in terms of running this pipeline locally.
-	for target in $(shell grep "run_target" ci/jenkins/on-gerrit-commit.groovy | grep -v def | cut -d, -f2); do \
+	for run_target_args in $(shell $(PYTHON) scripts/parse_jenkins_args.py); do \
+		target=$$(echo $$run_target_args | cut -d, -f1); \
+		docker_opts=$$(echo $$run_target_args | cut -d, -f2); \
 		for image in $(CLUSTER_COLLECTOR_IMAGE_NAME) $(NODE_COLLECTOR_IMAGE_NAME); do \
 			scripts/run-in-docker.sh \
         		-i $$image-dev:latest \
+        		-o "$$docker_opts" \
         		-c "$(MAKE) $$target"; \
 		done; \
 	done
