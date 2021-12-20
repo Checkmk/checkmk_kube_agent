@@ -77,22 +77,6 @@ dist: clean ## builds source and wheel package
 print-version: ## print project version
 	@echo $(PROJECT_VERSION)
 
-.PHONY: lint-docker
-lint-docker: lint-dockerfile ## check Dockerfiles and images
-
-.PHONY: lint-dockerfile
-lint-dockerfile: lint-dockerfile/hadolint-containerised ## check Dockerfile style
-
-.PHONY: lint-dockerfile/hadolint
-lint-dockerfile/hadolint: ## check Dockerfile style with Hadolint
-	hadolint --failure-threshold warning --verbose docker/*/Dockerfile
-
-.PHONY: lint-dockerfile/hadolint-containerised
-lint-dockerfile/hadolint-containerised: ## check Dockerfile style with Hadolint
-	./scripts/run-in-docker.sh \
-		-i hadolint/hadolint:2.8.0-alpine \
-		-c "hadolint --failure-threshold warning --verbose docker/*/Dockerfile"
-
 .PHONY: lint-python
 lint-python: lint-python/bandit lint-python/format lint-python/pylint ## check Python style
 
