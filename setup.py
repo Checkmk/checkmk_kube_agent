@@ -7,7 +7,13 @@ from setuptools import setup, find_packages
 with open("README.rst") as readme_file:
     readme = readme_file.read()
 
-requirements = []
+requirements = [
+    "fastapi==0.70.1",
+    "pydantic==1.8.2",
+    "requests==2.26.0",
+    "urllib3==1.26.7",
+    "uvicorn==0.16.0",
+]
 
 setup(
     author="tribe29 GmbH",
@@ -23,7 +29,7 @@ setup(
     description="Checkmk node and cluster collectors to monitor Kubernetes clusters.",
     entry_points={
         "console_scripts": [
-            "checkmk-cluster-collector=checkmk_kube_agent.checkmk_kube_agent:main",
+            "checkmk-cluster-collector=checkmk_kube_agent.api:main",
             "checkmk-node-collector=checkmk_kube_agent.checkmk_kube_agent:main",
         ],
     },
