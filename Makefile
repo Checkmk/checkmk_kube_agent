@@ -62,7 +62,8 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr .mypy_cache
 	rm -fr .cache
 
-coverage: test-unit ## check code coverage quickly with the default Python
+coverage: ## check code coverage quickly with the default Python
+	coverage run -m pytest --pyargs checkmk_kube_agent tests/unit
 	coverage report -m
 	coverage html
 	$(BROWSER) htmlcov/index.html
@@ -139,6 +140,7 @@ release-image: dist ## create the node and cluster collector Docker images
 .PHONY: test-unit
 test-unit: ## run unit tests and doctests quickly with the default Python
 	coverage run -m pytest --doctest-modules --doctest-continue-on-failure --pyargs checkmk_kube_agent tests/unit
+	coverage report -m --fail-under=100
 
 .PHONY: typing-python
 typing-python: typing-python/mypy ## check Python typing

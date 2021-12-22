@@ -1,5 +1,6 @@
 [run]
 branch = True
+source = checkmk_kube_agent
 omit = *__init__.py
 
 [report]
