@@ -30,7 +30,7 @@ setup(
     entry_points={
         "console_scripts": [
             "checkmk-cluster-collector=checkmk_kube_agent.api:main",
-            "checkmk-node-collector=checkmk_kube_agent.checkmk_kube_agent:main",
+            "checkmk-node-collector=checkmk_kube_agent.send_metrics:main",
         ],
     },
     install_requires=requirements,

@@ -11,6 +11,7 @@ from typing import NewType, Sequence
 
 from pydantic import BaseModel
 
+LabelName = NewType("LabelName", str)
 LabelValue = NewType("LabelValue", str)
 ContainerName = NewType("ContainerName", LabelValue)
 MetricName = NewType("MetricName", str)
