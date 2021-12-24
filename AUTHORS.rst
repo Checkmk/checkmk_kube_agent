@@ -5,7 +5,7 @@ Credits
 Development Lead
 ----------------
 
-* tribe29 GmbH <feedback@tribe29.com>
+* tribe29 GmbH <feedback@checkmk.com>
 
 Contributors
 ------------
