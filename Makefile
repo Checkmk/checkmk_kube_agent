@@ -73,7 +73,6 @@ dev-image: dist ## build image to be used to run tests in a Docker container
 	docker build --rm --target=dev --build-arg PACKAGE_VERSION="${PROJECT_VERSION}" -t $(CLUSTER_COLLECTOR_IMAGE_NAME)-dev -f docker/cluster_collector/Dockerfile .
 	docker build --rm --target=dev --build-arg PACKAGE_VERSION="${PROJECT_VERSION}" -t $(NODE_COLLECTOR_IMAGE_NAME)-dev -f docker/node_collector/Dockerfile .
 
-
 dist: clean ## builds source and wheel package
 	$(PYTHON) setup.py sdist
 	$(PYTHON) setup.py bdist_wheel
