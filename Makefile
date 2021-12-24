@@ -78,6 +78,15 @@ dist: clean ## builds source and wheel package
 	$(PYTHON) setup.py bdist_wheel
 	ls -l dist
 
+.PHONY: docs
+docs: ## generate Sphinx HTML documentation, including API docs
+	rm -f docs/checkmk_kube_agent.rst
+	rm -f docs/modules.rst
+	sphinx-apidoc -o docs/ src/checkmk_kube_agent
+	$(MAKE) -C docs clean
+	$(MAKE) -C docs html
+	$(BROWSER) docs/_build/html/index.html
+
 .PHONY: print-version
 print-version: ## print project version
 	@echo $(PROJECT_VERSION)
@@ -152,6 +161,10 @@ lint-yaml/yamllint: ## check yaml formatting with yamllint
 release-image: dist ## create the node and cluster collector Docker images
 	docker build --rm --no-cache --build-arg PACKAGE_VERSION="${PROJECT_VERSION}" -t $(CLUSTER_COLLECTOR_IMAGE) -f docker/cluster_collector/Dockerfile .
 	docker build --rm --no-cache --build-arg PACKAGE_VERSION="${PROJECT_VERSION}" -t $(NODE_COLLECTOR_IMAGE) -f docker/node_collector/Dockerfile .
+
+.PHONY: servedocs
+servedocs: docs ## compile the docs watching for changes
+	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
 
 .PHONY: test-unit
 test-unit: ## run unit tests and doctests quickly with the default Python
