@@ -130,7 +130,7 @@ lint-python/format: ## check formatting with black and isort
 
 .PHONY: lint-python/pylint
 lint-python/pylint: ## check style with Pylint
-	pylint src tests
+	pylint --rcfile=.pylintrc src tests
 
 .PHONY: release-image
 release-image: dist ## create the node and cluster collector Docker images
