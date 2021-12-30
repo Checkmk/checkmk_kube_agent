@@ -25,14 +25,18 @@ from checkmk_kube_agent.type_defs import ContainerMetric, MetricCollection
 # pylint: disable=redefined-outer-name
 
 
-# Note: this queue is used only within the testing context. During operation, a
-# queue is created with the respective user configuration at start-up. See API
-# `main` function.
-container_metric_queue = DedupQueue[ContainerMetricKey, ContainerMetric](
-    container_metric_key,
-)
-app.state.container_metric_queue = container_metric_queue
-CLUSTER_COLLECTOR_CLIENT = TestClient(app)
+@pytest.fixture(scope="module")
+def cluster_collector_client():
+    """Cluster collector API test client"""
+    # Note: this queue is used only within the testing context. During
+    # operation, a queue is created with the respective user configuration at
+    # start-up. See API `main` function.
+    container_metric_queue = DedupQueue[ContainerMetricKey, ContainerMetric](
+        container_metric_key,
+    )
+    app.state.container_metric_queue = container_metric_queue
+
+    return TestClient(app)
 
 
 @pytest.fixture
@@ -112,26 +116,27 @@ def test_parse_arguments(argv: Sequence[str]) -> None:
     assert args.queue_maxsize == 3
 
 
-def test_root() -> None:
+def test_root(cluster_collector_client) -> None:
     """Root endpoint redirects to API documentation"""
-    response = CLUSTER_COLLECTOR_CLIENT.get("/")
+    response = cluster_collector_client.get("/")
     assert response.status_code == 200
     assert "<title>FastAPI - Swagger UI</title>" in response.content.decode("utf-8")
 
 
-def test_health() -> None:
+def test_health(cluster_collector_client) -> None:
     """API health endpoint returns status"""
-    response = CLUSTER_COLLECTOR_CLIENT.get("/health")
+    response = cluster_collector_client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "available"}
 
 
 def test_udpate_container_metrics(
     metric_collection: MetricCollection,
+    cluster_collector_client,
 ) -> None:
     """`update_container_metrics` endpoint writes container metric data to
     queue"""
-    response = CLUSTER_COLLECTOR_CLIENT.post(
+    response = cluster_collector_client.post(
         "/update_container_metrics",
         data=metric_collection.json(),
     )
@@ -144,21 +149,22 @@ def test_udpate_container_metrics(
 
 def test_send_container_metrics(
     metric_collection: MetricCollection,
+    cluster_collector_client,
 ) -> None:
     """`container_metrics` endpoint returns all data from queue"""
-    response = CLUSTER_COLLECTOR_CLIENT.get("/container_metrics")
+    response = cluster_collector_client.get("/container_metrics")
     assert response.status_code == 200
     assert response.json() == metric_collection.container_metrics
 
 
-def test_concurrent_update_container_metrics() -> None:
+def test_concurrent_update_container_metrics(cluster_collector_client) -> None:
     """`update_container_metrics` endpoint is able to serve concurrent post
     requests"""
     threads = []
     errored_status_codes = []
 
     def update_metrics():
-        response = CLUSTER_COLLECTOR_CLIENT.post(
+        response = cluster_collector_client.post(
             "/update_container_metrics",
             data=MetricCollection(
                 container_metrics=[],
@@ -180,14 +186,14 @@ def test_concurrent_update_container_metrics() -> None:
     assert not errored_status_codes
 
 
-def test_concurrent_get_container_metrics() -> None:
+def test_concurrent_get_container_metrics(cluster_collector_client) -> None:
     """`container_metrics` endpoint is able to handle concurrent get
     requests"""
     threads = []
     errored_status_codes = []
 
     def get_metrics():
-        response = CLUSTER_COLLECTOR_CLIENT.get("/container_metrics")
+        response = cluster_collector_client.get("/container_metrics")
         if response.status_code != 200:
             errored_status_codes.append(response.status_code)
 
