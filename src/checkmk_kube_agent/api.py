@@ -116,7 +116,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
 
     if args.secure_protocol:
         uvicorn.run(
-            "api:app",
+            app,
             host=args.host,
             port=args.port,
             ssl_keyfile=args.ssl_keyfile,
@@ -125,7 +125,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         )
     else:
         uvicorn.run(
-            "api:app",
+            app,
             host=args.host,
             port=args.port,
         )
