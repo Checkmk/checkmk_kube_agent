@@ -7,15 +7,23 @@
 
 """Tests for cluster collector API endpoints."""
 
+import json
 from threading import Thread
 from typing import Sequence
 
 import pytest
+import requests
+from fastapi import HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials
 from fastapi.testclient import TestClient
 
+import checkmk_kube_agent.api
 from checkmk_kube_agent.api import (
     ContainerMetricKey,
     app,
+    authenticate,
+    authenticate_get,
+    authenticate_post,
     container_metric_key,
     parse_arguments,
 )
@@ -36,7 +44,26 @@ def cluster_collector_client():
     )
     app.state.container_metric_queue = container_metric_queue
 
+    def authenticate() -> str:
+        return ""
+
+    app.dependency_overrides[authenticate_post] = authenticate
+    app.dependency_overrides[authenticate_get] = authenticate
+
+    app.state.writer_whitelist = {"checkmk-monitoring:node-collector"}
+    app.state.reader_whitelist = {"checkmk-monitoring:checkmk-server"}
+
     return TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def mock_read_api_token(monkeypatch: pytest.MonkeyPatch):
+    """Patch Kubernetes token file read"""
+
+    def mock_read_token():
+        return ""
+
+    monkeypatch.setattr(checkmk_kube_agent.api, "read_api_token", mock_read_token)
 
 
 @pytest.fixture
@@ -118,7 +145,13 @@ def test_parse_arguments(argv: Sequence[str]) -> None:
 
 def test_root(cluster_collector_client) -> None:
     """Root endpoint redirects to API documentation"""
-    response = cluster_collector_client.get("/")
+    response = cluster_collector_client.get(
+        "/",
+        headers={
+            "Authorization": "Bearer superdupertoken",
+            "Content-Type": "application/json",
+        },
+    )
     assert response.status_code == 200
     assert "<title>FastAPI - Swagger UI</title>" in response.content.decode("utf-8")
 
@@ -138,6 +171,10 @@ def test_udpate_container_metrics(
     queue"""
     response = cluster_collector_client.post(
         "/update_container_metrics",
+        headers={
+            "Authorization": "Bearer superduperwritertoken",
+            "Content-Type": "application/json",
+        },
         data=metric_collection.json(),
     )
     assert response.status_code == 200
@@ -152,7 +189,13 @@ def test_send_container_metrics(
     cluster_collector_client,
 ) -> None:
     """`container_metrics` endpoint returns all data from queue"""
-    response = cluster_collector_client.get("/container_metrics")
+    response = cluster_collector_client.get(
+        "/container_metrics",
+        headers={
+            "Authorization": "Bearer superdupertoken",
+            "Content-Type": "application/json",
+        },
+    )
     assert response.status_code == 200
     assert response.json() == metric_collection.container_metrics
 
@@ -166,6 +209,10 @@ def test_concurrent_update_container_metrics(cluster_collector_client) -> None:
     def update_metrics():
         response = cluster_collector_client.post(
             "/update_container_metrics",
+            headers={
+                "Authorization": "Bearer superduperwritertoken",
+                "Content-Type": "application/json",
+            },
             data=MetricCollection(
                 container_metrics=[],
                 node_metrics=[],
@@ -193,7 +240,13 @@ def test_concurrent_get_container_metrics(cluster_collector_client) -> None:
     errored_status_codes = []
 
     def get_metrics():
-        response = cluster_collector_client.get("/container_metrics")
+        response = cluster_collector_client.get(
+            "/container_metrics",
+            headers={
+                "Authorization": "Bearer superdupertoken",
+                "Content-Type": "application/json",
+            },
+        )
         if response.status_code != 200:
             errored_status_codes.append(response.status_code)
 
@@ -207,3 +260,327 @@ def test_concurrent_get_container_metrics(cluster_collector_client) -> None:
         thread.join()
 
     assert not errored_status_codes
+
+
+@pytest.mark.anyio
+async def test_authenticate_get_success(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Service Account with valid token and access to GET endpoints is
+    authenticated successfully."""
+
+    def mock_token_review(
+        url, headers, data, verify
+    ):  # pylint: disable=unused-argument,disallowed-name
+        class Response:  # pylint: disable=missing-class-docstring,too-few-public-methods
+            def __init__(self):
+                self.status_code = 201
+                self.content = json.dumps(
+                    {
+                        "kind": "TokenReview",
+                        "apiVersion": "authentication.k8s.io/v1",
+                        "metadata": {},
+                        "status": {
+                            "authenticated": True,
+                            "user": {
+                                "username": (
+                                    "system:serviceaccount:"
+                                    "checkmk-monitoring:checkmk-server"
+                                ),
+                                "uid": "7dbfc985-5b72-41cc-a010-fcfd603af4e5",
+                            },
+                        },
+                    }
+                )
+
+        return Response()
+
+    monkeypatch.setattr(requests, "post", mock_token_review)
+
+    assert await authenticate_get(
+        HTTPAuthorizationCredentials(
+            scheme="Bearer",
+            credentials="superdupertoken",
+        ),
+        kubernetes_service_host="127.0.0.1",
+        kubernetes_service_port_https="6443",
+    ) == HTTPAuthorizationCredentials(
+        scheme="Bearer",
+        credentials="superdupertoken",
+    )
+
+
+@pytest.mark.anyio
+async def test_authenticate_get_denied(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Service Account with valid token and no access to GET endpoints is denied
+    access."""
+
+    def mock_token_review(
+        url, headers, data, verify
+    ):  # pylint: disable=unused-argument,disallowed-name
+        class Response:  # pylint: disable=missing-class-docstring,too-few-public-methods
+            def __init__(self):
+                self.status_code = 201
+                self.content = json.dumps(
+                    {
+                        "kind": "TokenReview",
+                        "apiVersion": "authentication.k8s.io/v1",
+                        "metadata": {},
+                        "status": {
+                            "authenticated": True,
+                            "user": {
+                                "username": (
+                                    "system:serviceaccount:"
+                                    "checkmk-monitoring:node-collector"
+                                ),
+                                "uid": "7dbfc985-5b72-41cc-a010-fcfd603af4e5",
+                            },
+                        },
+                    }
+                )
+
+        return Response()
+
+    monkeypatch.setattr(requests, "post", mock_token_review)
+
+    with pytest.raises(HTTPException) as exception:
+        await authenticate_get(
+            HTTPAuthorizationCredentials(
+                scheme="Bearer",
+                credentials="superdupertoken",
+            ),
+            kubernetes_service_host="127.0.0.1",
+            kubernetes_service_port_https="6443",
+        )
+
+    assert exception.type is HTTPException
+    assert exception.value.status_code == status.HTTP_401_UNAUTHORIZED
+    assert (
+        exception.value.detail
+        == "Access denied for Service Account node-collector in Namespace checkmk-monitoring."
+    )
+
+
+@pytest.mark.anyio
+async def test_authenticate_post_success(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Service Account with valid token and access to POST endpoints is
+    authenticated successfully."""
+
+    def mock_token_review(
+        url, headers, data, verify
+    ):  # pylint: disable=unused-argument,disallowed-name
+        class Response:  # pylint: disable=missing-class-docstring,too-few-public-methods
+            def __init__(self):
+                self.status_code = 201
+                self.content = json.dumps(
+                    {
+                        "kind": "TokenReview",
+                        "apiVersion": "authentication.k8s.io/v1",
+                        "metadata": {},
+                        "status": {
+                            "authenticated": True,
+                            "user": {
+                                "username": (
+                                    "system:serviceaccount:"
+                                    "checkmk-monitoring:node-collector"
+                                ),
+                                "uid": "7dbfc985-5b72-41cc-a010-fcfd603af4e5",
+                            },
+                        },
+                    }
+                )
+
+        return Response()
+
+    monkeypatch.setattr(requests, "post", mock_token_review)
+
+    assert await authenticate_post(
+        HTTPAuthorizationCredentials(
+            scheme="Bearer",
+            credentials="superdupertoken",
+        ),
+        kubernetes_service_host="127.0.0.1",
+        kubernetes_service_port_https="6443",
+    ) == HTTPAuthorizationCredentials(
+        scheme="Bearer",
+        credentials="superdupertoken",
+    )
+
+
+@pytest.mark.anyio
+async def test_authenticate_post_denied(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Service Account with valid token and no access to POST endpoints is denied
+    access."""
+
+    def mock_token_review(
+        url, headers, data, verify
+    ):  # pylint: disable=unused-argument,disallowed-name
+        class Response:  # pylint: disable=missing-class-docstring,too-few-public-methods
+            def __init__(self):
+                self.status_code = 201
+                self.content = json.dumps(
+                    {
+                        "kind": "TokenReview",
+                        "apiVersion": "authentication.k8s.io/v1",
+                        "metadata": {},
+                        "status": {
+                            "authenticated": True,
+                            "user": {
+                                "username": (
+                                    "system:serviceaccount:"
+                                    "checkmk-monitoring:checkmk-server"
+                                ),
+                                "uid": "7dbfc985-5b72-41cc-a010-fcfd603af4e5",
+                            },
+                        },
+                    }
+                )
+
+        return Response()
+
+    monkeypatch.setattr(requests, "post", mock_token_review)
+
+    with pytest.raises(HTTPException) as exception:
+        await authenticate_post(
+            HTTPAuthorizationCredentials(
+                scheme="Bearer",
+                credentials="superdupertoken",
+            ),
+            kubernetes_service_host="127.0.0.1",
+            kubernetes_service_port_https="6443",
+        )
+
+    assert exception.type is HTTPException
+    assert exception.value.status_code == status.HTTP_401_UNAUTHORIZED
+    assert (
+        exception.value.detail
+        == "Access denied for Service Account checkmk-server in Namespace checkmk-monitoring."
+    )
+
+
+def test_kubernetes_api_host_missing() -> None:
+    """Missing Kubernetes API host returns `service unavailable`"""
+    with pytest.raises(HTTPException) as exception:
+        authenticate(
+            HTTPAuthorizationCredentials(
+                scheme="Bearer",
+                credentials="superdupertoken",
+            ),
+            kubernetes_service_host=None,
+            kubernetes_service_port_https="6443",
+            serviceaccount_whitelist=frozenset({}),
+        )
+
+    assert exception.type is HTTPException
+    assert exception.value.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+    assert exception.value.detail == (
+        "Unable to verify authentication credentials: cannot read Kubernetes "
+        "API hostname and port."
+    )
+
+
+def test_kubernetes_api_port_missing() -> None:
+    """Missing Kubernetes API port returns `service unavailable`"""
+    with pytest.raises(HTTPException) as exception:
+        authenticate(
+            HTTPAuthorizationCredentials(
+                scheme="Bearer",
+                credentials="superdupertoken",
+            ),
+            kubernetes_service_host="127.0.0.1",
+            kubernetes_service_port_https=None,
+            serviceaccount_whitelist=frozenset({}),
+        )
+
+    assert exception.type is HTTPException
+    assert exception.value.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+    assert exception.value.detail == (
+        "Unable to verify authentication credentials: cannot read Kubernetes "
+        "API hostname and port."
+    )
+
+
+def test_authenticate_token_invalid(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Invalid Kubernetes `token` is denied access."""
+
+    def mock_token_review(
+        url, headers, data, verify
+    ):  # pylint: disable=unused-argument,disallowed-name
+        class Response:  # pylint: disable=missing-class-docstring,too-few-public-methods
+            def __init__(self):
+                self.status_code = 201
+                self.content = json.dumps(
+                    {
+                        "kind": "TokenReview",
+                        "apiVersion": "authentication.k8s.io/v1",
+                        "metadata": {},
+                        "status": {
+                            "user": {},
+                            "error": ["invalid bearer token, Token has expired."],
+                        },
+                    }
+                )
+
+        return Response()
+
+    monkeypatch.setattr(requests, "post", mock_token_review)
+
+    with pytest.raises(HTTPException) as exception:
+        authenticate(
+            HTTPAuthorizationCredentials(
+                scheme="Bearer",
+                credentials="superdupertoken",
+            ),
+            kubernetes_service_host="127.0.0.1",
+            kubernetes_service_port_https="6443",
+            serviceaccount_whitelist=frozenset({}),
+        )
+
+    assert exception.type is HTTPException
+    assert exception.value.status_code == status.HTTP_401_UNAUTHORIZED
+    assert exception.value.detail == "Invalid authentication credentials"
+
+
+def test_authenticate_(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Bad requests to the Kubernetes Review API are propagated."""
+    resp_content = {
+        "kind": "Status",
+        "apiVersion": "v1",
+        "metadata": {},
+        "status": "Failure",
+        "message": (
+            'TokenReview in version "v1" cannot be handled as a '
+            "TokenReview: v1.TokenReview.Spec: "
+            "v1.TokenReviewSpec.Audiences: []string: decode slice: "
+            'expect [ or n, but found ", error found in #10 byte of '
+            '...|iences": "checkmk-mo|..., bigger context ...|xxx", '
+            '"audiences": "checkmk-monitoring"}}|...'
+        ),
+        "reason": "BadRequest",
+        "code": 400,
+    }
+
+    def mock_token_review(
+        url, headers, data, verify
+    ):  # pylint: disable=unused-argument,disallowed-name
+        class Response:  # pylint: disable=missing-class-docstring,too-few-public-methods
+            def __init__(self):
+                self.status_code = 400
+                self.content = json.dumps(resp_content)
+
+        return Response()
+
+    monkeypatch.setattr(requests, "post", mock_token_review)
+
+    with pytest.raises(HTTPException) as exception:
+        authenticate(
+            HTTPAuthorizationCredentials(
+                scheme="Bearer",
+                credentials="superdupertoken",
+            ),
+            kubernetes_service_host="127.0.0.1",
+            kubernetes_service_port_https="6443",
+            serviceaccount_whitelist=frozenset({}),
+        )
+
+    assert exception.type is HTTPException
+    assert exception.value.status_code == status.HTTP_400_BAD_REQUEST
+    assert exception.value.detail == resp_content

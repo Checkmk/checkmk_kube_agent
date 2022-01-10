@@ -216,6 +216,16 @@ def parse_raw_response(raw_response: str) -> MetricCollection:
     )
 
 
+def read_node_collector_token() -> str:  # pragma: no cover
+    """Read token from token file managed by Kubernetes."""
+    with open(
+        "/var/run/secrets/kubernetes.io/serviceaccount/token",
+        "r",
+        encoding="utf-8",
+    ) as token:
+        return token.read()
+
+
 def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
     """Parse arguments used to configure the node collector and cluster
     collector API endpoint"""
@@ -286,6 +296,10 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
 
         cluster_collector_response = session.post(
             f"{protocol}://{args.host}:{args.port}/update_container_metrics",
+            headers={
+                "Authorization": f"Bearer {read_node_collector_token()}",
+                "Content-Type": "application/json",
+            },
             data=parse_raw_response(cadvisor_response.content.decode("utf-8")).json(),
             verify=False,
         )
