@@ -249,8 +249,8 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
         help="Maximum number of retries on connection error",
     )
     parser.set_defaults(
-        host=os.environ.get("CHECKMK_INTERNAL_SERVICE_HOST", "127.0.0.1"),
-        port=os.environ.get("CHECKMK_INTERNAL_SERVICE_PORT_API", "10050"),
+        host=os.environ.get("CLUSTER_COLLECTOR_SERVICE_HOST", "127.0.0.1"),
+        port=os.environ.get("CLUSTER_COLLECTOR_SERVICE_PORT_API", "10050"),
         polling_interval=30,
         max_retires=10,
     )
