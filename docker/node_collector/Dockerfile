@@ -1,6 +1,7 @@
 FROM gcr.io/cadvisor/cadvisor:v0.43.0 as release
 ARG PACKAGE_VERSION
 COPY dist/checkmk_kube_agent-"$PACKAGE_VERSION".tar.gz /tmp/
+COPY docker/node_collector/runscript.sh /usr/bin/checkmk-node-collector-runscript.sh
 RUN sed -i -e 's/v3\.12/v3\.14/g' /etc/apk/repositories && \
     apk --no-cache upgrade --purge && \
     sed -i -e 's/v3\.14/v3\.15/g' /etc/apk/repositories && \
