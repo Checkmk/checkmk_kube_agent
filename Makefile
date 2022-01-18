@@ -132,6 +132,23 @@ lint-python/format: ## check formatting with black and isort
 lint-python/pylint: ## check style with Pylint
 	pylint --rcfile=.pylintrc src tests
 
+.PHONY: lint-yaml
+lint-yaml: lint-yaml/yamllint lint-yaml/kubeval-containerised ## check yaml style
+
+.PHONY: lint-yaml/kubeval
+lint-yaml/kubeval: ## check Kubernetes yaml with kubeval
+	kubeval deploy/kubernetes/*
+
+.PHONY: lint-yaml/kubeval-containerised
+lint-yaml/kubeval-containerised: ## check Kubernetes yaml with kubeval
+	./scripts/run-in-docker.sh \
+		-i garethr/kubeval:0.15.0 \
+		-c "kubeval deploy/kubernetes/*"
+
+.PHONY: lint-yaml/yamllint
+lint-yaml/yamllint: ## check yaml formatting with yamllint
+	yamllint deploy/kubernetes
+
 .PHONY: release-image
 release-image: dist ## create the node and cluster collector Docker images
 	docker build --rm --no-cache --build-arg PACKAGE_VERSION="${PROJECT_VERSION}" -t $(CLUSTER_COLLECTOR_IMAGE) -f docker/cluster_collector/Dockerfile .

@@ -58,6 +58,12 @@ def do_it() {
     stage("lint docker image: trivy") {
         run_target(IMAGES, "lint-docker-image/trivy", "-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=");
     }
+    stage("lint yaml: yamllint") {
+        run_target(IMAGES, "lint-yaml/yamllint", "--entrypoint=");
+    }
+    stage("lint yaml: kubeval") {
+        run_target(IMAGES, "lint-yaml/kubeval", "--entrypoint=");
+    }
 }
 
 def run_target(images, target, docker_args) {

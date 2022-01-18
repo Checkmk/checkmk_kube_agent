@@ -21,6 +21,11 @@ RUN apk add --no-cache make=4.3-r0 && \
     tar -xvzf trivy_0.18.3_Linux-64bit.tar.gz trivy && \
     mv trivy /usr/local/bin && \
     rm trivy_0.18.3_Linux-64bit.tar.gz && \
+    wget -q \
+    "https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz" && \
+    tar -xvzf kubeval-linux-amd64.tar.gz kubeval && \
+    mv kubeval /usr/local/bin && \
+    rm kubeval-linux-amd64.tar.gz && \
     pip install --no-cache-dir -r /tmp/requirements_dev.txt && \
     rm -rf /tmp/* && \
     rm -rf /var/cache/apk/*
