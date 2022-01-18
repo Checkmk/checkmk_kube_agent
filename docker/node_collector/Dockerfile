@@ -3,7 +3,9 @@ ARG PACKAGE_VERSION
 COPY dist/checkmk_kube_agent-"$PACKAGE_VERSION".tar.gz /tmp/
 RUN sed -i -e 's/v3\.12/v3\.14/g' /etc/apk/repositories && \
     apk --no-cache upgrade --purge && \
-    apk add --no-cache python3=3.9.5-r2 && \
+    sed -i -e 's/v3\.14/v3\.15/g' /etc/apk/repositories && \
+    apk --no-cache upgrade --purge && \
+    apk add --no-cache python3=3.9.7-r4 && \
     python3 -m ensurepip && \
     pip3 install --no-cache-dir pip==21.3.1 setuptools==60.0.0 wheel==0.37.0 && \
     pip3 install --no-cache-dir /tmp/checkmk_kube_agent-"$PACKAGE_VERSION".tar.gz && \
