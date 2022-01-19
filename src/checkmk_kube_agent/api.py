@@ -11,7 +11,7 @@ import argparse
 import json
 import os
 import sys
-from typing import FrozenSet, NewType, Optional, Sequence
+from typing import Dict, FrozenSet, NewType, Optional, Sequence, Tuple
 
 import requests
 import uvicorn  # type: ignore[import]
@@ -20,7 +20,11 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from checkmk_kube_agent.dedup_ttl_cache import DedupTTLCache
-from checkmk_kube_agent.type_defs import ContainerMetric, MetricCollection
+from checkmk_kube_agent.type_defs import (
+    ContainerMetric,
+    MachineSections,
+    MetricCollection,
+)
 
 app = FastAPI()
 
@@ -174,6 +178,25 @@ def health() -> JSONResponse:
     return JSONResponse({"status": "available"})
 
 
+@app.post("/update_machine_sections")
+def update_machine_sections(
+    machine_sections: MachineSections,
+    token: str = Depends(authenticate_post),  # pylint: disable=unused-argument
+) -> None:
+    """Update sections for the kubernetes machines"""
+    app.state.machine_sections_queue.put(
+        (machine_sections.node_name, machine_sections.sections)
+    )
+
+
+@app.get("/machine_sections")
+def send_machine_sections(
+    token: str = Depends(authenticate_get),  # pylint: disable=unused-argument
+) -> Dict[str, str]:
+    """Get all available host metrics"""
+    return dict(app.state.machine_sections_queue.get_all())
+
+
 @app.post("/update_container_metrics")
 def update_container_metrics(
     metrics: MetricCollection,
@@ -267,17 +290,40 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def _init_app_state(
+    app_,
+    *,
+    cache_maxsize: int,
+    cache_ttl: int,
+    reader_whitelist: Sequence[str],
+    writer_whitelist: Sequence[str],
+) -> None:
+    container_metric_queue = DedupTTLCache[ContainerMetricKey, ContainerMetric](
+        key=container_metric_key,
+        maxsize=cache_maxsize,
+        ttl=cache_ttl,
+    )
+    app_.state.container_metric_queue = container_metric_queue
+    app_.state.machine_sections_queue = DedupTTLCache[str, Tuple[str, str]](
+        key=lambda x: x[0],
+        maxsize=cache_maxsize,
+        ttl=cache_ttl,
+    )
+    app_.state.reader_whitelist = frozenset(reader_whitelist)
+    app_.state.writer_whitelist = frozenset(writer_whitelist)
+
+
 def main(argv: Optional[Sequence[str]] = None) -> None:
     """Cluster collector API main function: start API"""
     args = parse_arguments(argv or sys.argv[1:])
-    container_metric_queue = DedupTTLCache[ContainerMetricKey, ContainerMetric](
-        key=container_metric_key,
-        maxsize=args.cache_maxsize,
-        ttl=args.cache_ttl,
+
+    _init_app_state(
+        app,
+        cache_maxsize=args.cache_maxsize,
+        cache_ttl=args.cache_ttl,
+        reader_whitelist=args.reader_whitelist.split(","),
+        writer_whitelist=args.writer_whitelist.split(","),
     )
-    app.state.container_metric_queue = container_metric_queue
-    app.state.reader_whitelist = frozenset(args.reader_whitelist.split(","))
-    app.state.writer_whitelist = frozenset(args.writer_whitelist.split(","))
 
     if args.secure_protocol:
         uvicorn.run(

@@ -1,11 +1,20 @@
+ARG CHECKMK_AGENT_VERSION
+FROM checkmk/check-mk-raw:"$CHECKMK_AGENT_VERSION" as checkmk
+
 FROM python:3.9.9-alpine3.15 as release
 ARG PACKAGE_VERSION
+ARG CHECKMK_AGENT_VERSION
 COPY dist/checkmk_kube_agent-"$PACKAGE_VERSION".tar.gz /tmp/
+COPY --from=checkmk "/opt/omd/versions/${CHECKMK_AGENT_VERSION}.cre/share/check_mk/agents/check_mk_agent.openwrt" /usr/local/bin/check_mk_agent.openwrt
+COPY docker/kubernetes-collector/wrapper.sh /usr/local/bin/check_mk_agent
 RUN apk add --no-cache expat=2.4.3-r0 && \
     pip3 install --no-cache-dir pip==21.3.1 setuptools==60.0.0 wheel==0.37.0 && \
     pip3 install --no-cache-dir /tmp/checkmk_kube_agent-"$PACKAGE_VERSION".tar.gz && \
     addgroup appgroup -g 10001 && \
     adduser -HD appuser -G appgroup -u 10001 && \
+    sed -i "s/VERSION_CMK/$CHECKMK_AGENT_VERSION/" /usr/local/bin/check_mk_agent && \
+    sed -i "s/VERSION_AGENT/$PACKAGE_VERSION/" /usr/local/bin/check_mk_agent && \
+    chmod +x /usr/local/bin/check_mk_agent && \
     rm -rf /tmp/* && \
     rm -rf /var/cache/apk/*
 

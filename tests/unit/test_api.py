@@ -20,16 +20,18 @@ from fastapi.testclient import TestClient
 
 import checkmk_kube_agent.api
 from checkmk_kube_agent.api import (
-    ContainerMetricKey,
+    _init_app_state,
     app,
     authenticate,
     authenticate_get,
     authenticate_post,
-    container_metric_key,
     parse_arguments,
 )
-from checkmk_kube_agent.dedup_ttl_cache import DedupTTLCache
-from checkmk_kube_agent.type_defs import ContainerMetric, MetricCollection
+from checkmk_kube_agent.type_defs import (
+    ContainerMetric,
+    MachineSections,
+    MetricCollection,
+)
 
 # pylint: disable=redefined-outer-name
 
@@ -37,24 +39,19 @@ from checkmk_kube_agent.type_defs import ContainerMetric, MetricCollection
 @pytest.fixture(scope="module")
 def cluster_collector_client():
     """Cluster collector API test client"""
-    # Note: this queue is used only within the testing context. During
-    # operation, a queue is created with the respective user configuration at
-    # start-up. See API `main` function.
-    container_metric_queue = DedupTTLCache[ContainerMetricKey, ContainerMetric](
-        key=container_metric_key,
-        maxsize=10000,
-        ttl=120,
+    _init_app_state(
+        app,
+        cache_maxsize=100,
+        cache_ttl=120,
+        reader_whitelist=["checkmk-monitoring:checkmk-server"],
+        writer_whitelist=["checkmk-monitoring:node-collector"],
     )
-    app.state.container_metric_queue = container_metric_queue
 
     def authenticate() -> str:
         return ""
 
     app.dependency_overrides[authenticate_post] = authenticate
     app.dependency_overrides[authenticate_get] = authenticate
-
-    app.state.writer_whitelist = {"checkmk-monitoring:node-collector"}
-    app.state.reader_whitelist = {"checkmk-monitoring:checkmk-server"}
 
     return TestClient(app)
 
@@ -593,6 +590,38 @@ def test_authenticate_(monkeypatch: pytest.MonkeyPatch) -> None:
     assert exception.type is HTTPException
     assert exception.value.status_code == status.HTTP_400_BAD_REQUEST
     assert exception.value.detail == resp_content
+
+
+def test_machine_sections(
+    cluster_collector_client,
+) -> None:
+    """Write data into machine sections queue, then read it again."""
+
+    response = cluster_collector_client.post(
+        "/update_machine_sections",
+        headers={
+            "Authorization": "Bearer superdupertoken",
+            "Content-Type": "application/json",
+        },
+        data=MachineSections(
+            node_name="unittest_node_name",
+            sections="<<<section_name>>>\nsection_data 1",
+        ).json(),
+    )
+    assert response.status_code == 200
+    assert response.json() is None
+
+    response = cluster_collector_client.get(
+        "/machine_sections/",
+        headers={
+            "Authorization": "Bearer superdupertoken",
+            "Content-Type": "application/json",
+        },
+    )
+    assert response.status_code == 200
+    assert response.json() == {
+        "unittest_node_name": "<<<section_name>>>\nsection_data 1",
+    }
 
 
 def test_endpoints_request_authentication() -> None:

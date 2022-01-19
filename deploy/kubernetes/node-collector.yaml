@@ -43,9 +43,28 @@ spec:
       containers:
         - image: lisapichlertribe29/kubernetes-collector:2.1.0i1
           imagePullPolicy: Always
-          name: node-collector
+          name: machine-sections-collector
           command:
-            - "/usr/local/bin/checkmk-node-collector"
+            - "/usr/local/bin/checkmk-machine-sections-collector"
+          args:
+            - "--secure-protocol"
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          resources:
+            limits:
+              cpu: 300m
+              memory: 2000Mi
+            requests:
+              cpu: 150m
+              memory: 200Mi
+        - image: lisapichlertribe29/kubernetes-collector:2.1.0i1
+          imagePullPolicy: Always
+          name: container-metrics-collector
+          command:
+            - "/usr/local/bin/checkmk-container-metrics-collector"
           args:
             - "--secure-protocol"
           resources:

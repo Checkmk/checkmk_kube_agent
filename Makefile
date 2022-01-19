@@ -23,6 +23,7 @@ export PRINT_HELP_PYSCRIPT
 PYTHON := python3
 BROWSER := $(PYTHON) -c "$$BROWSER_PYSCRIPT"
 PROJECT_NAME := checkmk_kube_agent
+CHECKMK_AGENT_VERSION := 2022.02.01
 PROJECT_VERSION := $(shell $(PYTHON) -c "import src.${PROJECT_NAME};print(src.${PROJECT_NAME}.__version__)")
 DOCKER_IMAGE_TAG := $(PROJECT_VERSION)
 DOCKERHUB_PUBLISHER := checkmk
@@ -70,7 +71,7 @@ coverage: ## check code coverage quickly with the default Python
 
 .PHONY: dev-image
 dev-image: dist ## build image to be used to run tests in a Docker container
-	docker build --rm --target=dev --build-arg PACKAGE_VERSION="${PROJECT_VERSION}" -t $(COLLECTOR_IMAGE_NAME)-dev -f docker/kubernetes-collector/Dockerfile .
+	docker build --rm --target=dev --build-arg PACKAGE_VERSION="${PROJECT_VERSION}" --build-arg CHECKMK_AGENT_VERSION="${CHECKMK_AGENT_VERSION}" -t $(COLLECTOR_IMAGE_NAME)-dev -f docker/kubernetes-collector/Dockerfile .
 
 dist: clean ## builds source and wheel package
 	$(PYTHON) setup.py sdist
@@ -89,6 +90,10 @@ docs: ## generate Sphinx HTML documentation, including API docs
 .PHONY: print-version
 print-version: ## print project version
 	@echo $(PROJECT_VERSION)
+
+.PHONY: print-checkmk-agent-version
+print-checkmk-agent-version: ## print checkmk agent version
+	@echo $(CHECKMK_AGENT_VERSION)
 
 .PHONY: lint-docker
 lint-docker: lint-dockerfile lint-docker-image ## check Dockerfiles and images
@@ -158,7 +163,7 @@ lint-yaml/yamllint: ## check yaml formatting with yamllint
 
 .PHONY: release-image
 release-image: dist ## create the node and cluster collector Docker images
-	docker build --rm --no-cache --build-arg PACKAGE_VERSION="${PROJECT_VERSION}" -t $(COLLECTOR_IMAGE) -f docker/kubernetes-collector/Dockerfile .
+	docker build --rm --no-cache --build-arg PACKAGE_VERSION="${PROJECT_VERSION}" --build-arg CHECKMK_AGENT_VERSION="${CHECKMK_AGENT_VERSION}" -t $(COLLECTOR_IMAGE) -f docker/kubernetes-collector/Dockerfile .
 	docker build --rm --no-cache -t $(CADVISOR_IMAGE) -f docker/cadvisor/Dockerfile .
 
 .PHONY: servedocs

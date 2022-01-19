@@ -20,6 +20,7 @@ Namespace = NewType("Namespace", LabelValue)
 PodUid = NewType("PodUid", LabelValue)
 PodName = NewType("PodName", LabelValue)
 Timestamp = NewType("Timestamp", float)
+NodeName = NewType("NodeName", str)
 
 # pylint: disable=missing-class-docstring
 # pylint: disable=too-few-public-methods
@@ -37,3 +38,8 @@ class ContainerMetric(BaseModel):
 
 class MetricCollection(BaseModel):
     container_metrics: Sequence[ContainerMetric]
+
+
+class MachineSections(BaseModel):
+    node_name: NodeName
+    sections: str

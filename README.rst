@@ -19,8 +19,10 @@ Features
 * Runs the following objects on your cluster:
    * **node collector**:
         * runs as a DaemonSet on every node that has kubelet configured
-        * uses cAdvisor to collect container metrics and fowards them to the
-          cluster collector at a set interval
+        * uses cAdvisor to collect **container metrics** and fowards them to the
+          cluster collector
+        * uses a checkmk agent to collect **machine sections** and forwards
+          them to the cluster collector
    * **cluster collector**:
         * runs as a Deployment
         * receives metrics from every node collector instance on the cluster

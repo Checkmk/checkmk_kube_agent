@@ -4,18 +4,20 @@
 # This file is part of Checkmk (https://checkmk.com). It is subject to the
 # terms and conditions defined in the file COPYING, which is part of this
 # source code package.
-
 """Node collector metric collection."""
 
 import argparse
 import json
 import os
 import re
+import subprocess  # nosec
 import sys
 import time
-from typing import Dict, Iterable, Mapping, Optional, Sequence
+from functools import partial
+from typing import Callable, Dict, Iterable, Mapping, Optional, Sequence
 
 import requests
+from requests import Response, Session
 from urllib3.util.retry import Retry  # type: ignore[import]
 
 from checkmk_kube_agent.type_defs import (
@@ -23,6 +25,7 @@ from checkmk_kube_agent.type_defs import (
     ContainerName,
     LabelName,
     LabelValue,
+    MachineSections,
     MetricCollection,
     MetricName,
     MetricValueString,
@@ -262,7 +265,7 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
         "--polling-interval",
         "-i",
         type=int,
-        help="Interval in seconds at which to poll data from cAdvisor",
+        help="Interval in seconds at which to poll data",
     )
     parser.add_argument(
         "--max-retries",
@@ -280,8 +283,68 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv: Optional[Sequence[str]] = None) -> None:
-    """Node collector main function"""
+def check_response(response: Response) -> None:
+    """raise RuntimeError with meaningful description if status_code != 200"""
+    if response.status_code != 200:
+        raise RuntimeError(
+            f"status_code {response.status_code}: {response.content.decode('utf-8')}"
+        )
+
+
+def container_metrics_worker(
+    session: Session, cluster_collector_base_url: str, headers: Mapping[str, str]
+) -> None:  # pragma: no cover
+    """
+    Query cadvisor api, send metrics to cluster collector
+    """
+    cadvisor_response = session.get("http://localhost:8080/metrics")
+    check_response(cadvisor_response)
+
+    cluster_collector_response = session.post(
+        f"{cluster_collector_base_url}/update_container_metrics",
+        headers=headers,
+        data=parse_raw_response(
+            cadvisor_response.content.decode("utf-8"), Timestamp(time.time())
+        ).json(),
+        verify=False,
+    )
+    check_response(cluster_collector_response)
+
+
+def machine_sections_worker(
+    session: Session, cluster_collector_base_url: str, headers: Mapping[str, str]
+) -> None:  # pragma: no cover
+    """
+    Call check_mk_agent, send sections to cluster collector
+    """
+    with subprocess.Popen(  # nosec
+        ["/usr/local/bin/check_mk_agent"],
+        stdout=subprocess.PIPE,
+    ) as process:
+        returncode = process.wait(5)
+        if returncode != 0:
+            # we don't capture stderr so it's printed to stderr of this process
+            # and hopefully contains a helpful error message...
+            raise RuntimeError("Agent execution failed.")
+        if process.stdout is None:
+            raise RuntimeError("Could not read agent output")
+        sections = process.stdout.read()
+    cluster_collector_response = session.post(
+        f"{cluster_collector_base_url}/update_machine_sections",
+        headers=headers,
+        data=MachineSections(
+            sections=sections, node_name=os.environ["NODE_NAME"]
+        ).json(),
+        verify=False,
+    )
+    check_response(cluster_collector_response)
+
+
+def _main(
+    worker: Callable[[Session, str, Mapping[str, str]], None],
+    argv: Optional[Sequence[str]] = None,
+) -> None:  # pragma: no cover
+    """Run in infinite loop and execute worker function"""
     args = parse_arguments(argv or sys.argv[1:])
     protocol = "https" if args.secure_protocol else "http"
 
@@ -294,38 +357,19 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
 
     session.mount("http://", requests.adapters.HTTPAdapter(max_retries=retries))
     session.mount("https://", requests.adapters.HTTPAdapter(max_retries=retries))
+    cluster_collector_base_url = f"{protocol}://{args.host}:{args.port}"
 
     while True:
         start_time = time.time()
 
-        cadvisor_response = session.get("http://localhost:8080/metrics")
-
-        if cadvisor_response.status_code != 200:
-            raise RuntimeError(
-                f"status_code {cadvisor_response.status_code}: "
-                f"{cadvisor_response.content.decode('utf-8')}"
-            )
-
-        cluster_collector_response = session.post(
-            f"{protocol}://{args.host}:{args.port}/update_container_metrics",
-            headers={
-                "Authorization": f"Bearer {read_node_collector_token()}",
-                "Content-Type": "application/json",
-            },
-            data=parse_raw_response(
-                cadvisor_response.content.decode("utf-8"), Timestamp(time.time())
-            ).json(),
-            verify=False,
-        )
-
-        if cluster_collector_response.status_code != 200:
-            raise RuntimeError(
-                f"status_code {cluster_collector_response.status_code}: "
-                f"{cluster_collector_response.content.decode('utf-8')}"
-            )
+        headers = {
+            "Authorization": f"Bearer {read_node_collector_token()}",
+            "Content-Type": "application/json",
+        }
+        worker(session, cluster_collector_base_url, headers)
 
         time.sleep(max(args.polling_interval - int(time.time() - start_time), 0))
 
 
-if __name__ == "__main__":
-    main()
+main_container_metrics = partial(_main, container_metrics_worker)
+main_machine_sections = partial(_main, machine_sections_worker)
