@@ -1,0 +1,17 @@
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: checkmk-cluster-collector
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+    - host: checkmk-cluster-collector
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              serviceName: cluster-collector
+              servicePort: 80

@@ -1,0 +1,82 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app: node-collector
+  name: node-collector-cadvisor
+  namespace: checkmk-monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: checkmk-node-collector-cadvisor
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: checkmk-collectors-podsecurity
+subjects:
+  - kind: ServiceAccount
+    name: node-collector-cadvisor
+    namespace: checkmk-monitoring
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    seccomp.security.alpha.kubernetes.io/pod: runtime/default
+  labels:
+    app: node-collector
+  name: node-collector
+  namespace: checkmk-monitoring
+spec:
+  selector:
+    matchLabels:
+      app: node-collector
+      name: node-collector
+  template:
+    metadata:
+      labels:
+        app: node-collector
+        name: node-collector
+    spec:
+      containers:
+        - image: lisapichlertribe29/checkmk-node-collector:2.1.0i1
+          imagePullPolicy: Always
+          name: node-collector-cadvisor
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          command: ["/usr/bin/checkmk-node-collector-runscript.sh"]
+          args: ["--secure-protocol"]
+          resources:
+            limits:
+              cpu: 300m
+              memory: 2000Mi
+            requests:
+              cpu: 150m
+              memory: 200Mi
+          volumeMounts:
+            - name: var-run
+              mountPath: /var/run
+              readOnly: true
+            - name: sys
+              mountPath: /sys
+              readOnly: true
+            - name: docker
+              mountPath: /var/lib/docker
+              readOnly: true
+      serviceAccountName: node-collector-cadvisor
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: var-run
+          hostPath:
+            path: /var/run
+        - name: sys
+          hostPath:
+            path: /sys
+        - name: docker
+          hostPath:
+            path: /var/lib/docker
