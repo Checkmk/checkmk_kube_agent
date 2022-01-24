@@ -41,16 +41,38 @@ spec:
         name: node-collector
     spec:
       containers:
+        - image: lisapichlertribe29/checkmk-cluster-collector:2.1.0i1
+          imagePullPolicy: Always
+          name: node-collector
+          command:
+            - "/usr/local/bin/checkmk-node-collector"
+          args:
+            - "--secure-protocol"
+          resources:
+            limits:
+              cpu: 300m
+              memory: 2000Mi
+            requests:
+              cpu: 150m
+              memory: 200Mi
         - image: lisapichlertribe29/checkmk-node-collector:2.1.0i1
           imagePullPolicy: Always
-          name: node-collector-cadvisor
-          env:
-            - name: NODE_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: spec.nodeName
-          command: ["/usr/bin/checkmk-node-collector-runscript.sh"]
-          args: ["--secure-protocol"]
+          name: cadvisor
+          command:
+            - "/usr/bin/cadvisor"
+          args:
+            - "--housekeeping_interval=30s"
+            - "--max_housekeeping_interval=35s"
+            - "--event_storage_event_limit=default=0"
+            - "--event_storage_age_limit=default=0"
+            - "--store_container_labels=false"
+            - "--whitelisted_container_labels=io.kubernetes.container.name,io.kubernetes.pod.name,io.kubernetes.pod.namespace,io.kubernetes.pod.uid"
+            - "--global_housekeeping_interval=30s"
+            - "--event_storage_event_limit=default=0"
+            - "--event_storage_age_limit=default=0"
+            - "--disable_metrics=percpu,process,sched,tcp,udp,diskIO,disk,network"
+            - "--allow_dynamic_housekeeping=true"
+            - "--storage_duration=1m0s"
           resources:
             limits:
               cpu: 300m
