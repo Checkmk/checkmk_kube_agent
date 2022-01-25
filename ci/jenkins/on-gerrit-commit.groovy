@@ -19,7 +19,7 @@ timeout(time: 12, unit: 'HOURS') {
 }
 
 def do_it() {
-    def IMAGES;
+    def COLLECTOR_IMAGE;
     def PROJECT_VERSION;
     def DOCKER_GROUP_ID = sh(script: "getent group docker | cut -d: -f3", returnStdout: true);
     stage("check out") {
@@ -33,43 +33,39 @@ def do_it() {
         }
     }
     stage("build dev image") {
-        CLUSTER_COLLECTOR_IMAGE = docker.build("checkmk-cluster-collector-dev", "--target=dev --build-arg PACKAGE_VERSION=${PROJECT_VERSION} -f docker/cluster_collector/Dockerfile .");
-        NODE_COLLECTOR_IMAGE = docker.build("checkmk-node-collector-dev", "--target=dev --build-arg PACKAGE_VERSION=${PROJECT_VERSION} -f docker/node_collector/Dockerfile .");
-        IMAGES = [CLUSTER_COLLECTOR_IMAGE, NODE_COLLECTOR_IMAGE];
+        COLLECTOR_IMAGE = docker.build("kubernetes-collector-dev", "--target=dev --build-arg PACKAGE_VERSION=${PROJECT_VERSION} -f docker/kubernetes-collector/Dockerfile .");
     }
     stage("lint python: bandit") {
-        run_target(IMAGES, "lint-python/bandit", "--entrypoint=");
+        run_target(COLLECTOR_IMAGE, "lint-python/bandit", "--entrypoint=");
     }
     stage("lint python: format") {
-        run_target(IMAGES, "lint-python/format", "--entrypoint=");
+        run_target(COLLECTOR_IMAGE, "lint-python/format", "--entrypoint=");
     }
     stage("lint python: pylint") {
-        run_target(IMAGES, "lint-python/pylint", "--entrypoint=");
+        run_target(COLLECTOR_IMAGE, "lint-python/pylint", "--entrypoint=");
     }
     stage("typing python: mypy") {
-        run_target(IMAGES, "typing-python/mypy", "--entrypoint=");
+        run_target(COLLECTOR_IMAGE, "typing-python/mypy", "--entrypoint=");
     }
     stage("python unit and doc test") {
-        run_target(IMAGES, "test-unit", "--entrypoint=");
+        run_target(COLLECTOR_IMAGE, "test-unit", "--entrypoint=");
     }
     stage("lint dockerfile: hadolint") {
-        run_target(IMAGES, "lint-dockerfile/hadolint", "--entrypoint=");
+        run_target(COLLECTOR_IMAGE, "lint-dockerfile/hadolint", "--entrypoint=");
     }
     stage("lint docker image: trivy") {
-        run_target(IMAGES, "lint-docker-image/trivy", "-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=");
+        run_target(COLLECTOR_IMAGE, "lint-docker-image/trivy", "-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=");
     }
     stage("lint yaml: yamllint") {
-        run_target(IMAGES, "lint-yaml/yamllint", "--entrypoint=");
+        run_target(COLLECTOR_IMAGE, "lint-yaml/yamllint", "--entrypoint=");
     }
     stage("lint yaml: kubeval") {
-        run_target(IMAGES, "lint-yaml/kubeval", "--entrypoint=");
+        run_target(COLLECTOR_IMAGE, "lint-yaml/kubeval", "--entrypoint=");
     }
 }
 
-def run_target(images, target, docker_args) {
-    images.each { image ->
-        image.inside(docker_args) {
-            sh("#!/bin/ash\nmake ${target}");
-        }
+def run_target(image, target, docker_args) {
+    image.inside(docker_args) {
+        sh("#!/bin/ash\nmake ${target}");
     }
 }

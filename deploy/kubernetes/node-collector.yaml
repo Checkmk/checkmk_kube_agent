@@ -41,7 +41,7 @@ spec:
         name: node-collector
     spec:
       containers:
-        - image: lisapichlertribe29/checkmk-cluster-collector:2.1.0i1
+        - image: lisapichlertribe29/kubernetes-collector:2.1.0i1
           imagePullPolicy: Always
           name: node-collector
           command:
@@ -55,7 +55,17 @@ spec:
             requests:
               cpu: 150m
               memory: 200Mi
-        - image: lisapichlertribe29/checkmk-node-collector:2.1.0i1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsGroup: 10001
+            runAsNonRoot: true
+            runAsUser: 10001
+        - image: lisapichlertribe29/cadvisor:2.1.0i1
           imagePullPolicy: Always
           name: cadvisor
           command:

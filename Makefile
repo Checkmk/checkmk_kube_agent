@@ -26,10 +26,10 @@ PROJECT_NAME := checkmk_kube_agent
 PROJECT_VERSION := $(shell $(PYTHON) -c "import src.${PROJECT_NAME};print(src.${PROJECT_NAME}.__version__)")
 DOCKER_IMAGE_TAG := $(PROJECT_VERSION)
 DOCKERHUB_PUBLISHER := checkmk
-CLUSTER_COLLECTOR_IMAGE_NAME := checkmk-cluster-collector
-CLUSTER_COLLECTOR_IMAGE := $(DOCKERHUB_PUBLISHER)/${CLUSTER_COLLECTOR_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
-NODE_COLLECTOR_IMAGE_NAME := checkmk-node-collector
-NODE_COLLECTOR_IMAGE := $(DOCKERHUB_PUBLISHER)/${NODE_COLLECTOR_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
+COLLECTOR_IMAGE_NAME := kubernetes-collector
+COLLECTOR_IMAGE := $(DOCKERHUB_PUBLISHER)/${COLLECTOR_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
+CADVISOR_IMAGE_NAME := cadvisor
+CADVISOR_IMAGE := $(DOCKERHUB_PUBLISHER)/${CADVISOR_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
 
 .PHONY: help
 help:
@@ -70,8 +70,7 @@ coverage: ## check code coverage quickly with the default Python
 
 .PHONY: dev-image
 dev-image: dist ## build image to be used to run tests in a Docker container
-	docker build --rm --target=dev --build-arg PACKAGE_VERSION="${PROJECT_VERSION}" -t $(CLUSTER_COLLECTOR_IMAGE_NAME)-dev -f docker/cluster_collector/Dockerfile .
-	docker build --rm --target=dev --build-arg PACKAGE_VERSION="${PROJECT_VERSION}" -t $(NODE_COLLECTOR_IMAGE_NAME)-dev -f docker/node_collector/Dockerfile .
+	docker build --rm --target=dev --build-arg PACKAGE_VERSION="${PROJECT_VERSION}" -t $(COLLECTOR_IMAGE_NAME)-dev -f docker/kubernetes-collector/Dockerfile .
 
 dist: clean ## builds source and wheel package
 	$(PYTHON) setup.py sdist
@@ -112,8 +111,8 @@ lint-docker-image: lint-docker-image/trivy-containerised ## check vulnerability 
 
 .PHONY: lint-docker-image/trivy
 lint-docker-image/trivy: ## check vulnerability issues of Docker images with trivy
-	trivy --cache-dir .cache image $(CLUSTER_COLLECTOR_IMAGE)
-	trivy --cache-dir .cache image $(NODE_COLLECTOR_IMAGE)
+	trivy --cache-dir .cache image $(COLLECTOR_IMAGE)
+	trivy --cache-dir .cache image $(CADVISOR_IMAGE)
 
 .PHONY: lint-docker-image/trivy-containerised
 lint-docker-image/trivy-containerised: release-image ## check vulnerability issues of Docker images with trivy
@@ -121,8 +120,8 @@ lint-docker-image/trivy-containerised: release-image ## check vulnerability issu
 		-i aquasec/trivy:0.21.2 \
 		-o "-v /var/run/docker.sock:/var/run/docker.sock" \
 		-o "--group-add=$$(getent group docker | cut -d: -f3)" \
-		-c "trivy --cache-dir .cache image $(CLUSTER_COLLECTOR_IMAGE); \
-			trivy --cache-dir .cache image $(NODE_COLLECTOR_IMAGE)"
+		-c "trivy --cache-dir .cache image $(COLLECTOR_IMAGE); \
+			trivy --cache-dir .cache image $(CADVISOR_IMAGE)"
 
 .PHONY: lint-python
 lint-python: lint-python/bandit lint-python/format lint-python/pylint ## check Python style
@@ -159,8 +158,8 @@ lint-yaml/yamllint: ## check yaml formatting with yamllint
 
 .PHONY: release-image
 release-image: dist ## create the node and cluster collector Docker images
-	docker build --rm --no-cache --build-arg PACKAGE_VERSION="${PROJECT_VERSION}" -t $(CLUSTER_COLLECTOR_IMAGE) -f docker/cluster_collector/Dockerfile .
-	docker build --rm --no-cache --build-arg PACKAGE_VERSION="${PROJECT_VERSION}" -t $(NODE_COLLECTOR_IMAGE) -f docker/node_collector/Dockerfile .
+	docker build --rm --no-cache --build-arg PACKAGE_VERSION="${PROJECT_VERSION}" -t $(COLLECTOR_IMAGE) -f docker/kubernetes-collector/Dockerfile .
+	docker build --rm --no-cache -t $(CADVISOR_IMAGE) -f docker/cadvisor/Dockerfile .
 
 .PHONY: servedocs
 servedocs: docs ## compile the docs watching for changes
@@ -187,10 +186,8 @@ gerrit-tests: release-image dev-image ## run all tests as Jenkins runs them on G
 	for run_target_args in $(shell $(PYTHON) scripts/parse_jenkins_args.py); do \
 		target=$$(echo $$run_target_args | cut -d, -f1); \
 		docker_opts=$$(echo $$run_target_args | cut -d, -f2); \
-		for image in $(CLUSTER_COLLECTOR_IMAGE_NAME) $(NODE_COLLECTOR_IMAGE_NAME); do \
-			scripts/run-in-docker.sh \
-        		-i $$image-dev:latest \
-        		-o "$$docker_opts" \
-        		-c "$(MAKE) $$target"; \
-		done; \
+		scripts/run-in-docker.sh \
+		-i $(COLLECTOR_IMAGE_NAME)-dev:latest \
+		-o "$$docker_opts" \
+		-c "$(MAKE) $$target"; \
 	done
