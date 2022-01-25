@@ -145,13 +145,13 @@ lint-yaml: lint-yaml/yamllint lint-yaml/kubeval-containerised ## check yaml styl
 
 .PHONY: lint-yaml/kubeval
 lint-yaml/kubeval: ## check Kubernetes yaml with kubeval
-	kubeval deploy/kubernetes/*
+	kubeval --additional-schema-locations https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master deploy/kubernetes/*
 
 .PHONY: lint-yaml/kubeval-containerised
 lint-yaml/kubeval-containerised: ## check Kubernetes yaml with kubeval
 	./scripts/run-in-docker.sh \
 		-i garethr/kubeval:0.15.0 \
-		-c "kubeval deploy/kubernetes/*"
+		-c "kubeval --additional-schema-locations https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master deploy/kubernetes/*"
 
 .PHONY: lint-yaml/yamllint
 lint-yaml/yamllint: ## check yaml formatting with yamllint
