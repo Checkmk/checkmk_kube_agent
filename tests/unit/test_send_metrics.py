@@ -12,7 +12,7 @@ from typing import Sequence
 import pytest
 
 from checkmk_kube_agent.send_metrics import parse_arguments, parse_raw_response
-from checkmk_kube_agent.type_defs import ContainerMetric, MetricCollection
+from checkmk_kube_agent.type_defs import ContainerMetric, MetricCollection, Timestamp
 
 # pylint: disable=redefined-outer-name
 
@@ -122,7 +122,7 @@ def test_parse_arguments(argv: Sequence[str]) -> None:
 
 def test_parse_raw_response_skip_comments(commentary_text: str) -> None:
     """Commentary text is skipped"""
-    assert parse_raw_response(commentary_text) == MetricCollection(
+    assert parse_raw_response(commentary_text, Timestamp(0.0)) == MetricCollection(
         container_metrics=[],
     )
 
@@ -131,7 +131,9 @@ def test_parse_raw_response_cadvisor_version(
     cadvisor_version_info_text: str,
 ) -> None:
     """cAdvisor version information is not shown in container_metrics"""
-    assert parse_raw_response(cadvisor_version_info_text) == MetricCollection(
+    assert parse_raw_response(
+        cadvisor_version_info_text, Timestamp(0.0)
+    ) == MetricCollection(
         container_metrics=[],
     )
 
@@ -141,14 +143,16 @@ def test_parse_raw_response_empty_labels(
 ) -> None:
     """Empty labels do not lead to an exception and the container metric is
     discarded"""
-    assert parse_raw_response(container_metric_empty_label) == MetricCollection(
+    assert parse_raw_response(
+        container_metric_empty_label, Timestamp(0.0)
+    ) == MetricCollection(
         container_metrics=[],
     )
 
 
 def test_parse_raw_response(container_metrics: str) -> None:
     """Container metrics are parsed properly into the expected schema"""
-    assert parse_raw_response(container_metrics) == MetricCollection(
+    assert parse_raw_response(container_metrics, Timestamp(0.0)) == MetricCollection(
         container_metrics=[
             ContainerMetric(
                 container_name=(
@@ -160,6 +164,7 @@ def test_parse_raw_response(container_metrics: str) -> None:
                 pod_name="checkmk-worker-agent-8x8bt",
                 metric_name="container_cpu_cfs_periods_total",
                 metric_value_string="5994",
+                timestamp=0.0,
             ),
             ContainerMetric(
                 container_name=(
@@ -171,6 +176,7 @@ def test_parse_raw_response(container_metrics: str) -> None:
                 pod_name="kube-proxy-kvkls",
                 metric_name="container_fs_io_time_seconds_total",
                 metric_value_string="0",
+                timestamp=0.0,
             ),
         ]
     )
@@ -180,7 +186,9 @@ def test_parse_raw_response_system_containers(
     system_container_metrics: str,
 ) -> None:
     """System container metrics are parsed properly into the expected schema"""
-    assert parse_raw_response(system_container_metrics) == MetricCollection(
+    assert parse_raw_response(
+        system_container_metrics, Timestamp(0.0)
+    ) == MetricCollection(
         container_metrics=[
             ContainerMetric(
                 container_name="k8s_etcd_etcd-k8_kube-system_f50a3637ec9e7cb947095117b393e4be_0",
@@ -191,8 +199,8 @@ def test_parse_raw_response_system_containers(
                 pod_uid="f50a3637ec9e7cb947095117b393e4be",
                 pod_name="etcd-k8",
                 metric_name="container_cpu_load_average_10s",
-                # Two values being shown instead of one also looks like a bug
-                metric_value_string="0 1638960636719",
+                metric_value_string="0",
+                timestamp=1638960636.719,
             )
         ]
     )

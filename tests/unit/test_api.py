@@ -82,6 +82,7 @@ def metric_collection() -> MetricCollection:
                 pod_name="checkmk-cluster-agent-5c645c445f-tp44q",
                 metric_name="container_cpu_cfs_periods_total",
                 metric_value_string="4783",
+                timestamp=0.0,
             ),
             ContainerMetric(
                 container_name=(
@@ -93,6 +94,7 @@ def metric_collection() -> MetricCollection:
                 pod_name="checkmk-worker-agent-8x8bt",
                 metric_name="container_memory_cache",
                 metric_value_string="0",
+                timestamp=0.0,
             ),
             ContainerMetric(
                 container_name=(
@@ -103,7 +105,8 @@ def metric_collection() -> MetricCollection:
                 pod_uid="b58645c4b948b3629f3b7cc9f5fdde56",
                 pod_name="kube-scheduler-k8",
                 metric_name="container_cpu_load_average_10s",
-                metric_value_string="0 1638960637145",
+                metric_value_string="0",
+                timestamp=1638960637.145,
             ),
         ],
         node_metrics=[],

@@ -19,6 +19,7 @@ MetricValueString = NewType("MetricValueString", str)
 Namespace = NewType("Namespace", LabelValue)
 PodUid = NewType("PodUid", LabelValue)
 PodName = NewType("PodName", LabelValue)
+Timestamp = NewType("Timestamp", float)
 
 # pylint: disable=missing-class-docstring
 # pylint: disable=too-few-public-methods
@@ -31,6 +32,7 @@ class ContainerMetric(BaseModel):
     pod_name: PodName
     metric_name: MetricName
     metric_value_string: MetricValueString
+    timestamp: Timestamp
 
 
 class MetricCollection(BaseModel):

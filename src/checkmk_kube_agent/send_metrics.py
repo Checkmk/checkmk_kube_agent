@@ -29,6 +29,7 @@ from checkmk_kube_agent.type_defs import (
     Namespace,
     PodName,
     PodUid,
+    Timestamp,
 )
 
 
@@ -107,43 +108,50 @@ def _parse_labels(raw_labels: str) -> Mapping[LabelName, LabelValue]:
     return labels
 
 
-def _parse_metrics_with_labels(open_metric: str) -> Optional[ContainerMetric]:
+def _parse_metrics_with_labels(
+    open_metric: str, now: Timestamp
+) -> Optional[ContainerMetric]:
     """Parse an individual container metric and select relevant Kubernetes
     labels.
 
     Containers that for some reason do not have a container name or an
-    associaged pod  are discarded.
+    associated pod are discarded.
+
+    If the metric has a timestamp, it is added; otherwise, the current
+    timestamp is used.
 
     >>> _parse_metrics_with_labels(('container_cpu_cfs_periods_total'
     ... '{container_label_io_kubernetes_pod_namespace="mynamespace",'
     ... 'container_label_io_kubernetes_pod_name="mypod",'
     ... 'container_label_io_kubernetes_pod_uid="123",'
-    ... 'name="k8s_POD_mypod_mynamespace_123_0"} 422'))
+    ... 'name="k8s_POD_mypod_mynamespace_123_0"} 422 1638960636719'), 0.0)
     ... # doctest: +NORMALIZE_WHITESPACE
     ContainerMetric(container_name='k8s_POD_mypod_mynamespace_123_0',
                     namespace='mynamespace',
                     pod_uid='123',
                     pod_name='mypod',
                     metric_name='container_cpu_cfs_periods_total',
-                    metric_value_string='422')
+                    metric_value_string='422',
+                    timestamp=1638960636.719)
 
     >>> _parse_metrics_with_labels(('container_cpu_cfs_periods_total'
     ... '{container_label_io_kubernetes_pod_namespace="mynamespace",'
     ... 'container_label_io_kubernetes_pod_name="mypod",'
     ... 'container_label_io_kubernetes_pod_uid="123",'
-    ... 'name=""} 422')) is None
+    ... 'name=""} 422'), 0.0) is None
     True
 
     >>> _parse_metrics_with_labels(('container_cpu_cfs_periods_total'
     ... '{container_label_io_kubernetes_pod_namespace="mynamespace",'
     ... 'container_label_io_kubernetes_pod_name="mypod",'
     ... 'container_label_io_kubernetes_pod_uid="",'
-    ... 'name="k8s_POD_mypod_mynamespace_123_0"} 422')) is None
+    ... 'name="k8s_POD_mypod_mynamespace_123_0"} 422'), 0.0) is None
     True
     """
 
     metric_name, rest = open_metric.split("{", 1)
-    labels_string, value_string = rest.rsplit("}", 1)
+    labels_string, timestamped_value = rest.rsplit("}", 1)
+    value_string, *optional_timestamp = timestamped_value.strip().split()
     labels = _parse_labels(labels_string)
 
     if (container_name := labels.get(LabelName("name"))) and (
@@ -159,30 +167,33 @@ def _parse_metrics_with_labels(open_metric: str) -> Optional[ContainerMetric]:
                 labels[LabelName("container_label_io_kubernetes_pod_name")]
             ),
             metric_name=MetricName(metric_name),
-            metric_value_string=MetricValueString(value_string.strip()),
+            metric_value_string=MetricValueString(value_string),
+            timestamp=Timestamp(float(optional_timestamp[0]) / 1000.0)
+            if optional_timestamp
+            else now,
         )
 
     return None
 
 
-def parse_raw_response(raw_response: str) -> MetricCollection:
+def parse_raw_response(raw_response: str, now: Timestamp) -> MetricCollection:
     """Parse open metric response from cAdvisor into the schema the cluster
     collector API expects.
 
     Only container metrics are propagated, node metrics are discarded.
 
     >>> parse_raw_response(("# HELP cadvisor_version_info\\n"
-    ... "# TYPE container_cpu_cfs_periods_total counter\\n"))
+    ... "# TYPE container_cpu_cfs_periods_total counter\\n"), 0.0)
     MetricCollection(container_metrics=[])
 
-    >>> parse_raw_response("machine_memory_bytes 1.6595398656e+10\\n")
+    >>> parse_raw_response("machine_memory_bytes 1.6595398656e+10\\n", 0.0)
     MetricCollection(container_metrics=[])
 
     >>> parse_raw_response(('container_cpu_cfs_periods_total'
     ... '{container_label_io_kubernetes_pod_namespace="mynamespace",'
     ... 'container_label_io_kubernetes_pod_name="mypod",'
     ... 'container_label_io_kubernetes_pod_uid="123",'
-    ... 'name="k8s_POD_mypod_mynamespace_123_0"} 422\\n'))
+    ... 'name="k8s_POD_mypod_mynamespace_123_0"} 422\\n'), 0.0)
     ... # doctest: +NORMALIZE_WHITESPACE
     MetricCollection(container_metrics=\
 [ContainerMetric(container_name='k8s_POD_mypod_mynamespace_123_0',
@@ -190,9 +201,10 @@ def parse_raw_response(raw_response: str) -> MetricCollection:
                  pod_uid='123',
                  pod_name='mypod',
                  metric_name='container_cpu_cfs_periods_total',
-                 metric_value_string='422')])
+                 metric_value_string='422',
+                 timestamp=0.0)])
 
-    >>> parse_raw_response("")
+    >>> parse_raw_response("", 0.0)
     MetricCollection(container_metrics=[])
 
     """
@@ -208,7 +220,7 @@ def parse_raw_response(raw_response: str) -> MetricCollection:
             #    include go statistics and machine metrics, which we are not
             #    interested in.
             continue
-        if metric := _parse_metrics_with_labels(open_metric):
+        if metric := _parse_metrics_with_labels(open_metric, now):
             container_metrics.append(metric)
 
     return MetricCollection(
@@ -300,7 +312,9 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
                 "Authorization": f"Bearer {read_node_collector_token()}",
                 "Content-Type": "application/json",
             },
-            data=parse_raw_response(cadvisor_response.content.decode("utf-8")).json(),
+            data=parse_raw_response(
+                cadvisor_response.content.decode("utf-8"), Timestamp(time.time())
+            ).json(),
             verify=False,
         )
 
