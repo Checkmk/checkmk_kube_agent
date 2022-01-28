@@ -321,7 +321,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         if cluster_collector_response.status_code != 200:
             raise RuntimeError(
                 f"status_code {cluster_collector_response.status_code}: "
-                "{cluster_collector_response.content.decode('utf-8')}"
+                f"{cluster_collector_response.content.decode('utf-8')}"
             )
 
         time.sleep(max(args.polling_interval - int(time.time() - start_time), 0))
