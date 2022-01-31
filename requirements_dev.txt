@@ -7,6 +7,7 @@ pylint==2.11.1
 pytest==6.2.5
 sphinx==4.3.2
 trio==0.19.0
+types-cachetools==4.2.9
 types-requests==2.26.2
 wheel==0.37.0
 yamllint==1.26.3

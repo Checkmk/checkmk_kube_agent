@@ -8,6 +8,7 @@ with open("README.rst") as readme_file:
     readme = readme_file.read()
 
 requirements = [
+    "cachetools==5.0.0",
     "fastapi==0.70.1",
     "pydantic==1.8.2",
     "requests==2.26.0",
