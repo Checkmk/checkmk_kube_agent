@@ -17,10 +17,13 @@ ContainerName = NewType("ContainerName", LabelValue)
 MetricName = NewType("MetricName", str)
 MetricValueString = NewType("MetricValueString", str)
 Namespace = NewType("Namespace", LabelValue)
+NodeName = NewType("NodeName", str)
+OsName = NewType("OsName", str)
 PodUid = NewType("PodUid", LabelValue)
 PodName = NewType("PodName", LabelValue)
+PythonCompiler = NewType("PythonCompiler", str)
 Timestamp = NewType("Timestamp", float)
-NodeName = NewType("NodeName", str)
+Version = NewType("Version", str)
 
 # pylint: disable=missing-class-docstring
 # pylint: disable=too-few-public-methods
@@ -43,3 +46,34 @@ class MetricCollection(BaseModel):
 class MachineSections(BaseModel):
     node_name: NodeName
     sections: str
+
+
+class PlatformMetadata(BaseModel):
+    os_name: OsName
+    os_version: Version
+    python_version: Version
+    python_compiler: PythonCompiler
+
+
+class CheckmkKubeAgentMetadata(BaseModel):
+    project_version: Version
+
+
+class CollectorMetadata(BaseModel):
+    node: NodeName
+    container_platform: PlatformMetadata
+    checkmk_kube_agent: CheckmkKubeAgentMetadata
+
+
+class ClusterCollectorMetadata(CollectorMetadata):
+    pass
+
+
+class NodeCollectorMetadata(CollectorMetadata):
+    cadvisor_version: Version
+    checkmk_agent_version: Version
+
+
+class Metadata(BaseModel):
+    cluster_collector_metadata: ClusterCollectorMetadata
+    node_collector_metadata: Sequence[NodeCollectorMetadata]
