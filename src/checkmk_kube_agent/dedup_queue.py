@@ -55,7 +55,7 @@ class DedupQueue(Dict[K, V]):
         {}
     """
 
-    __slots__ = ("key", "maxsize", "lock")
+    __slots__ = ("key", "maxsize", "__lock")
 
     def __init__(
         self,
@@ -69,7 +69,7 @@ class DedupQueue(Dict[K, V]):
         super().__init__()
         self.key = key
         self.maxsize = maxsize
-        self.lock = Lock()
+        self.__lock = Lock()
 
     def put(self, entry: V) -> None:
         """Add entries to the queue.
@@ -77,7 +77,7 @@ class DedupQueue(Dict[K, V]):
         New entries overwrite existing entries based on a key determined by the
         configured key function. If maxsize is configured and reached, the
         oldest entry is discarded before a new entry is added."""
-        with self.lock:
+        with self.__lock:
             if self.maxsize == 0:
                 return
 
@@ -98,7 +98,7 @@ class DedupQueue(Dict[K, V]):
     def get_all(self) -> Sequence[V]:
         """Get all entries from the queue, and clear its conents
         immediately."""
-        with self.lock:
+        with self.__lock:
             values = list(self.values())
             self.clear()
         return values
