@@ -71,7 +71,7 @@ coverage: ## check code coverage quickly with the default Python
 
 .PHONY: dev-image
 dev-image: dist ## build image to be used to run tests in a Docker container
-	docker build --rm --target=dev --build-arg PACKAGE_VERSION="${PROJECT_VERSION}" --build-arg CHECKMK_AGENT_VERSION="${CHECKMK_AGENT_VERSION}" -t $(COLLECTOR_IMAGE_NAME)-dev -f docker/kubernetes-collector/Dockerfile .
+	docker build --rm --target=dev --build-arg PROJECT_VERSION="${PROJECT_VERSION}" --build-arg CHECKMK_AGENT_VERSION="${CHECKMK_AGENT_VERSION}" -t $(COLLECTOR_IMAGE_NAME)-dev -f docker/kubernetes-collector/Dockerfile .
 
 dist: clean ## builds source and wheel package
 	$(PYTHON) setup.py sdist
@@ -87,8 +87,8 @@ docs: ## generate Sphinx HTML documentation, including API docs
 	$(MAKE) -C docs html
 	$(BROWSER) docs/_build/html/index.html
 
-.PHONY: print-version
-print-version: ## print project version
+.PHONY: print-project-version
+print-project-version: ## print project version
 	@echo $(PROJECT_VERSION)
 
 .PHONY: print-checkmk-agent-version
@@ -163,7 +163,7 @@ lint-yaml/yamllint: ## check yaml formatting with yamllint
 
 .PHONY: release-image
 release-image: dist ## create the node and cluster collector Docker images
-	docker build --rm --no-cache --build-arg PACKAGE_VERSION="${PROJECT_VERSION}" --build-arg CHECKMK_AGENT_VERSION="${CHECKMK_AGENT_VERSION}" -t $(COLLECTOR_IMAGE) -f docker/kubernetes-collector/Dockerfile .
+	docker build --rm --no-cache --build-arg PROJECT_VERSION="${PROJECT_VERSION}" --build-arg CHECKMK_AGENT_VERSION="${CHECKMK_AGENT_VERSION}" -t $(COLLECTOR_IMAGE) -f docker/kubernetes-collector/Dockerfile .
 	docker build --rm --no-cache -t $(CADVISOR_IMAGE) -f docker/cadvisor/Dockerfile .
 
 .PHONY: servedocs
@@ -196,3 +196,7 @@ gerrit-tests: release-image dev-image ## run all tests as Jenkins runs them on G
 		-o "$$docker_opts" \
 		-c "$(MAKE) $$target"; \
 	done
+
+.PHONY: setversion
+setversion:
+	sed -ri 's/^(__version__[[:space:]]*:?= *).*/\1'\""$(NEW_VERSION)\"/" src/checkmk_kube_agent/__init__.py;

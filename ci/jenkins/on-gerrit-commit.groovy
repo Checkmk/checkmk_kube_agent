@@ -29,13 +29,13 @@ def do_it() {
     stage("build source and wheel package") {
         docker.build("checkmk-kube-agent-ci", "-f docker/ci/Dockerfile .");
         docker.image("checkmk-kube-agent-ci:latest").inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
-            PROJECT_VERSION = sh(script: "#!/bin/ash\nmake print-version", returnStdout: true).toString().trim();
+            PROJECT_VERSION = sh(script: "#!/bin/ash\nmake print-project-version", returnStdout: true).toString().trim();
             CHECKMK_AGENT_VERSION = sh(script: "#!/bin/ash\nmake print-checkmk-agent-version", returnStdout: true).toString().trim();
             sh("#!/bin/ash\nmake release-image");
         }
     }
     stage("build dev image") {
-        COLLECTOR_IMAGE = docker.build("kubernetes-collector-dev", "--target=dev --build-arg PACKAGE_VERSION=${PROJECT_VERSION} --build-arg CHECKMK_AGENT_VERSION=${CHECKMK_AGENT_VERSION} -f docker/kubernetes-collector/Dockerfile .");
+        COLLECTOR_IMAGE = docker.build("kubernetes-collector-dev", "--target=dev --build-arg PROJECT_VERSION=${PROJECT_VERSION} --build-arg CHECKMK_AGENT_VERSION=${CHECKMK_AGENT_VERSION} -f docker/kubernetes-collector/Dockerfile .");
     }
     stage("lint python: bandit") {
         run_target(COLLECTOR_IMAGE, "lint-python/bandit", "--entrypoint=");
