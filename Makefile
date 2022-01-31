@@ -20,6 +20,16 @@ for line in sys.stdin:
 endef
 export PRINT_HELP_PYSCRIPT
 
+define VERSION_BUMP_PYSCRIPT
+import sys
+from semver import bump_major, bump_minor, bump_patch
+
+version = sys.argv[1]
+method = sys.argv[2]
+print({"major": bump_major, "minor": bump_minor, "patch": bump_patch}[method](version))
+endef
+export VERSION_BUMP_PYSCRIPT
+
 PYTHON := python3
 BROWSER := $(PYTHON) -c "$$BROWSER_PYSCRIPT"
 PROJECT_NAME := checkmk_kube_agent
@@ -196,6 +206,10 @@ gerrit-tests: release-image dev-image ## run all tests as Jenkins runs them on G
 		-o "$$docker_opts" \
 		-c "$(MAKE) $$target"; \
 	done
+
+.PHONY: print-bumped-version
+print-bumped-version:
+	@$(PYTHON) -c "$$VERSION_BUMP_PYSCRIPT" $(PROJECT_VERSION) $(METHOD)
 
 .PHONY: setversion
 setversion:
