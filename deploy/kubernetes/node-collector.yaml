@@ -65,7 +65,7 @@ spec:
             runAsGroup: 10001
             runAsNonRoot: true
             runAsUser: 10001
-        - image: lisapichlertribe29/cadvisor:2.1.0i1
+        - image: lisapichlertribe29/cadvisor-patched:2.1.0i1
           imagePullPolicy: Always
           name: cadvisor
           command:
