@@ -19,7 +19,7 @@ from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from checkmk_kube_agent.dedup_queue import DedupQueue
+from checkmk_kube_agent.dedup_ttl_cache import DedupTTLCache
 from checkmk_kube_agent.type_defs import ContainerMetric, MetricCollection
 
 app = FastAPI()
@@ -242,11 +242,17 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
         "checkmk-monitoring:node-collector.",
     )
     parser.add_argument(
-        "--queue-maxsize",
+        "--cache-maxsize",
         type=int,
-        help="Specify the maximum number of metric entries the cluster agent "
+        help="Specify the maximum number of metric entries the cluster collector "
         "can hold at a time. Once maxsize is reached, the oldest metric entry "
         "will be discarded before a new entry is added",
+    )
+    parser.add_argument(
+        "--cache-ttl",
+        type=int,
+        help="Specify the time-to-live (seconds) entries are persisted in the "
+        "cache. Entries exceeding ttl are removed from the cache.",
     )
 
     parser.set_defaults(
@@ -254,7 +260,8 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
         port=10050,
         reader_whitelist="checkmk-monitoring:checkmk",
         writer_whitelist="checkmk-monitoring:node-collector",
-        queue_maxsize=10000,
+        cache_maxsize=10000,
+        cache_ttl=120,
     )
 
     return parser.parse_args(argv)
@@ -263,9 +270,10 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
 def main(argv: Optional[Sequence[str]] = None) -> None:
     """Cluster collector API main function: start API"""
     args = parse_arguments(argv or sys.argv[1:])
-    container_metric_queue = DedupQueue[ContainerMetricKey, ContainerMetric](
-        container_metric_key,
-        maxsize=args.queue_maxsize,
+    container_metric_queue = DedupTTLCache[ContainerMetricKey, ContainerMetric](
+        key=container_metric_key,
+        maxsize=args.cache_maxsize,
+        ttl=args.cache_ttl,
     )
     app.state.container_metric_queue = container_metric_queue
     app.state.reader_whitelist = frozenset(args.reader_whitelist.split(","))

@@ -27,7 +27,7 @@ from checkmk_kube_agent.api import (
     container_metric_key,
     parse_arguments,
 )
-from checkmk_kube_agent.dedup_queue import DedupQueue
+from checkmk_kube_agent.dedup_ttl_cache import DedupTTLCache
 from checkmk_kube_agent.type_defs import ContainerMetric, MetricCollection
 
 # pylint: disable=redefined-outer-name
@@ -39,8 +39,10 @@ def cluster_collector_client():
     # Note: this queue is used only within the testing context. During
     # operation, a queue is created with the respective user configuration at
     # start-up. See API `main` function.
-    container_metric_queue = DedupQueue[ContainerMetricKey, ContainerMetric](
-        container_metric_key,
+    container_metric_queue = DedupTTLCache[ContainerMetricKey, ContainerMetric](
+        key=container_metric_key,
+        maxsize=10000,
+        ttl=120,
     )
     app.state.container_metric_queue = container_metric_queue
 
@@ -128,8 +130,10 @@ def argv() -> Sequence[str]:
         "123!",
         "--ssl-certfile",
         "my-ssl-certfile",
-        "--queue-maxsize",
+        "--cache-maxsize",
         "3",
+        "--cache-ttl",
+        "400",
     ]
 
 
@@ -143,7 +147,8 @@ def test_parse_arguments(argv: Sequence[str]) -> None:
     assert args.ssl_keyfile == "my-ssl-keyfile"
     assert args.ssl_keyfile_password == "123!"
     assert args.ssl_certfile == "my-ssl-certfile"
-    assert args.queue_maxsize == 3
+    assert args.cache_maxsize == 3
+    assert args.cache_ttl == 400
 
 
 def test_root(cluster_collector_client) -> None:
