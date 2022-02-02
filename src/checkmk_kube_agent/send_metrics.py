@@ -276,7 +276,7 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
     parser.set_defaults(
         host=os.environ.get("CLUSTER_COLLECTOR_SERVICE_HOST", "127.0.0.1"),
         port=os.environ.get("CLUSTER_COLLECTOR_SERVICE_PORT_API", "10050"),
-        polling_interval=30,
+        polling_interval=60,
         max_retires=10,
     )
 
