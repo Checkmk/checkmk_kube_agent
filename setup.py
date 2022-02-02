@@ -19,13 +19,13 @@ requirements = [
 setup(
     author="tribe29 GmbH",
     author_email="feedback@checkmk.com",
-    python_requires=">=3.9",
+    python_requires=">=3.10",
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
         "Natural Language :: English",
-        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
     ],
     description="Checkmk node and cluster collectors to monitor Kubernetes clusters.",
     entry_points={
