@@ -9,7 +9,10 @@ extension-pkg-allow-list=
 # be loaded. Extensions are loading into the active Python interpreter and may
 # run arbitrary code. (This is an alternative name to extension-pkg-allow-list
 # for backward compatibility.)
-extension-pkg-whitelist=
+# pydantic: pylint official recommendation is to add it to this whitelist due
+#           to the fact that its modules cannot be determined, see issue at
+#           https://github.com/PyCQA/pylint/issues/1524#issuecomment-508934142
+extension-pkg-whitelist=pydantic
 
 # Return non-zero exit code if any of these messages/categories are detected,
 # even if score is above --fail-under value. Syntax same as enable. Messages
