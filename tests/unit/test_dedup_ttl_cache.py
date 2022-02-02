@@ -29,7 +29,7 @@ def dedup_ttl_cache() -> DedupTTLCache:
     """Empty TTL cache"""
     cache = DedupTTLCache[str, Entry](key=lambda e: e.key, maxsize=10, ttl=120)
 
-    assert dict(cache) == {}
+    assert dict(cache) == {}  # pylint: disable=use-implicit-booleaness-not-comparison
 
     return cache
 

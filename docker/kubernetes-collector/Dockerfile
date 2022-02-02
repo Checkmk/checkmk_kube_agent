@@ -26,12 +26,12 @@ RUN apk add --no-cache make=4.3-r0 && \
     mv hadolint-Linux-x86_64 /usr/local/bin/hadolint &&\
     chmod +x /usr/local/bin/hadolint && \
     wget -q \
-    "https://github.com/aquasecurity/trivy/releases/download/v0.18.3/trivy_0.18.3_Linux-64bit.tar.gz" && \
-    tar -xvzf trivy_0.18.3_Linux-64bit.tar.gz trivy && \
+    "https://github.com/aquasecurity/trivy/releases/download/v0.23.0/trivy_0.23.0_Linux-64bit.tar.gz" && \
+    tar -xvzf trivy_0.23.0_Linux-64bit.tar.gz trivy && \
     mv trivy /usr/local/bin && \
-    rm trivy_0.18.3_Linux-64bit.tar.gz && \
+    rm trivy_0.23.0_Linux-64bit.tar.gz && \
     wget -q \
-    "https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz" && \
+    "https://github.com/instrumenta/kubeval/releases/download/v0.16.1/kubeval-linux-amd64.tar.gz" && \
     tar -xvzf kubeval-linux-amd64.tar.gz kubeval && \
     mv kubeval /usr/local/bin && \
     rm kubeval-linux-amd64.tar.gz && \
