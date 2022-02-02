@@ -8,6 +8,7 @@
 """Tests for cluster collector API endpoints."""
 
 import json
+from inspect import signature
 from threading import Thread
 from typing import Sequence
 
@@ -592,3 +593,29 @@ def test_authenticate_(monkeypatch: pytest.MonkeyPatch) -> None:
     assert exception.type is HTTPException
     assert exception.value.status_code == status.HTTP_400_BAD_REQUEST
     assert exception.value.detail == resp_content
+
+
+def test_endpoints_request_authentication() -> None:
+    """Hackish test to make sure all endpoints check for authentication token."""
+    no_auth = {
+        "/health",
+        "/",
+        "/openapi.json",
+        "/docs",
+        "/redoc",
+        "/docs/oauth2-redirect",
+    }
+    for route in reversed(app.routes):
+        if route.path in no_auth:  # type: ignore
+            continue
+        parameters = signature(route.endpoint).parameters  # type: ignore
+        if "token" not in parameters:
+            raise Exception(
+                f"Expected a token parameter for path '{route.path}'. "  # type:ignore
+                "Please add auth!"
+            )
+        parameter_token = parameters["token"]
+        assert str(parameter_token.default) in {
+            "Depends(authenticate_get)",
+            "Depends(authenticate_post)",
+        }
