@@ -4,6 +4,7 @@ FROM checkmk/check-mk-raw:"$CHECKMK_AGENT_VERSION" as checkmk
 FROM python:3.10.2-alpine3.15 as release
 ARG PROJECT_PYVERSION
 ARG CHECKMK_AGENT_VERSION
+ENV CHECKMK_AGENT_VERSION="${CHECKMK_AGENT_VERSION}"
 COPY dist/checkmk_kube_agent-"$PROJECT_PYVERSION".tar.gz /tmp/
 COPY --from=checkmk "/opt/omd/versions/${CHECKMK_AGENT_VERSION}.cre/share/check_mk/agents/check_mk_agent.openwrt" /usr/local/bin/check_mk_agent.openwrt
 COPY docker/kubernetes-collector/wrapper.sh /usr/local/bin/check_mk_agent

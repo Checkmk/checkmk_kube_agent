@@ -44,10 +44,6 @@ class ContainerMetric(BaseModel):
     timestamp: Timestamp
 
 
-class MetricCollection(BaseModel):
-    container_metrics: Sequence[ContainerMetric]
-
-
 class MachineSections(BaseModel):
     node_name: NodeName
     sections: str
@@ -127,3 +123,13 @@ class NodeCollectorMetadata(CollectorMetadata):
 class Metadata(BaseModel):
     cluster_collector_metadata: ClusterCollectorMetadata
     node_collector_metadata: Sequence[NodeCollectorMetadata]
+
+
+class MetricCollection(BaseModel):
+    container_metrics: Sequence[ContainerMetric]
+    metadata: NodeCollectorMetadata
+
+
+class MachineSectionsCollection(BaseModel):
+    sections: MachineSections
+    metadata: NodeCollectorMetadata

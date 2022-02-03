@@ -30,10 +30,22 @@ from checkmk_kube_agent.api import (
     parse_arguments,
 )
 from checkmk_kube_agent.type_defs import (
+    CheckmkKubeAgentMetadata,
+    ClusterCollectorMetadata,
+    CollectorType,
+    Components,
     ContainerMetric,
+    HostName,
     MachineSections,
+    MachineSectionsCollection,
+    Metadata,
     MetricCollection,
+    NodeCollectorMetadata,
     NodeName,
+    OsName,
+    PlatformMetadata,
+    PythonCompiler,
+    Version,
 )
 
 # pylint: disable=redefined-outer-name
@@ -54,8 +66,28 @@ class Session(
         return self.response
 
 
+@pytest.fixture
+def cluster_collector_metadata() -> ClusterCollectorMetadata:
+    """Example cluster collector metadata"""
+    return ClusterCollectorMetadata(
+        node=NodeName("nebukadnezar"),
+        host_name=HostName("morpheus"),
+        container_platform=PlatformMetadata(
+            os_name=OsName("alpine"),
+            os_version=Version("3.15"),
+            python_version=Version("3.9.9"),
+            python_compiler=PythonCompiler("GCC"),
+        ),
+        checkmk_kube_agent=CheckmkKubeAgentMetadata(
+            project_version=Version("1.0.0"),
+        ),
+    )
+
+
 @pytest.fixture()
-def cluster_collector_client():
+def cluster_collector_client(
+    cluster_collector_metadata: ClusterCollectorMetadata,
+) -> TestClient:
     """Cluster collector API test client"""
     _init_app_state(
         app,
@@ -64,6 +96,7 @@ def cluster_collector_client():
         reader_whitelist=["checkmk-monitoring:checkmk-server"],
         writer_whitelist=["checkmk-monitoring:node-collector"],
         tcp_timeout=(10, 12),
+        metadata=cluster_collector_metadata,
     )
 
     def authenticate() -> str:
@@ -86,7 +119,9 @@ def mock_read_api_token(monkeypatch: pytest.MonkeyPatch):
 
 
 @pytest.fixture
-def metric_collection() -> MetricCollection:
+def metric_collection(
+    cluster_collector_metadata: ClusterCollectorMetadata,
+) -> MetricCollection:
     """Metrics data sample"""
     return MetricCollection(
         container_metrics=[
@@ -128,7 +163,29 @@ def metric_collection() -> MetricCollection:
                 timestamp=1638960637.145,
             ),
         ],
-        node_metrics=[],
+        metadata=NodeCollectorMetadata(
+            **dict(cluster_collector_metadata),
+            collector_type=CollectorType.CONTAINER_METRICS,
+            components=Components(cadvisor_version=Version("v0.43.0")),
+        ),
+    )
+
+
+@pytest.fixture
+def machine_sections_collection(
+    cluster_collector_metadata: ClusterCollectorMetadata,
+) -> MachineSectionsCollection:
+    """Machine sections example"""
+    return MachineSectionsCollection(
+        sections=MachineSections(
+            node_name=NodeName("unittest_node_name"),
+            sections="<<<section_name>>>\nsection_data 1",
+        ),
+        metadata=NodeCollectorMetadata(
+            **dict(cluster_collector_metadata),
+            collector_type=CollectorType.MACHINE_SECTIONS,
+            components=Components(checkmk_agent_version=Version("2.1.0i1")),
+        ),
     )
 
 
@@ -216,7 +273,9 @@ def test_udpate_container_metrics(
     assert response.json() == metric_collection.container_metrics
 
 
-def test_concurrent_update_container_metrics(cluster_collector_client) -> None:
+def test_concurrent_update_container_metrics(
+    cluster_collector_client, metric_collection: MetricCollection
+) -> None:
     """`update_container_metrics` endpoint is able to serve concurrent post
     requests"""
     threads = []
@@ -229,10 +288,7 @@ def test_concurrent_update_container_metrics(cluster_collector_client) -> None:
                 "Authorization": "Bearer superduperwritertoken",
                 "Content-Type": "application/json",
             },
-            data=MetricCollection(
-                container_metrics=[],
-                node_metrics=[],
-            ).json(),
+            data=metric_collection.json(),
         )
         if response.status_code != 200:
             errored_status_codes.append(response.status_code)
@@ -571,6 +627,7 @@ def test_authenticate_invalid_token_review_request() -> None:
 
 def test_machine_sections(
     cluster_collector_client,
+    machine_sections_collection: MachineSectionsCollection,
 ) -> None:
     """Write data into machine sections queue, then read it again."""
 
@@ -580,10 +637,7 @@ def test_machine_sections(
             "Authorization": "Bearer superdupertoken",
             "Content-Type": "application/json",
         },
-        data=MachineSections(
-            node_name=NodeName("unittest_node_name"),
-            sections="<<<section_name>>>\nsection_data 1",
-        ).json(),
+        data=machine_sections_collection.json(),
     )
     assert response.status_code == 200
     assert response.json() is None
@@ -639,3 +693,46 @@ def test_standalone_application() -> None:
     standalone.load_config()
     assert standalone.load() is app_
     assert standalone.cfg.bind == ["value:8080"]
+
+
+def test_send_metadata(
+    cluster_collector_metadata: ClusterCollectorMetadata,
+    metric_collection: MetricCollection,
+    machine_sections_collection: MachineSectionsCollection,
+    cluster_collector_client: TestClient,
+) -> None:
+    """`metadata` endpoint returns cluster and node collector metadata"""
+
+    response = cluster_collector_client.post(
+        "/update_container_metrics",
+        headers={
+            "Authorization": "Bearer superduperwritertoken",
+        },
+        data=metric_collection.json(),
+    )
+    assert response.status_code == 200
+
+    response = cluster_collector_client.post(
+        "/update_machine_sections",
+        headers={
+            "Authorization": "Bearer superduperwritertoken",
+        },
+        data=machine_sections_collection.json(),
+    )
+    assert response.status_code == 200
+
+    response = cluster_collector_client.get(
+        "/metadata",
+        headers={
+            "Authorization": "Bearer superdupertoken",
+            "Content-Type": "application/json",
+        },
+    )
+    assert response.status_code == 200
+    assert response.json() == Metadata(
+        cluster_collector_metadata=cluster_collector_metadata,
+        node_collector_metadata=[
+            metric_collection.metadata,
+            machine_sections_collection.metadata,
+        ],
+    )

@@ -7,11 +7,17 @@
 """Shared functions between collectors."""
 
 import argparse
+import os
+import platform
 from functools import partial
 from typing import Mapping, Tuple, Union
 
 import requests
 from urllib3.util.retry import Retry  # type: ignore[import]
+
+import checkmk_kube_agent
+from checkmk_kube_agent.container_metadata import parse_metadata
+from checkmk_kube_agent.type_defs import CollectorMetadata
 
 TCPTimeout = Union[None, int, Tuple[int, int]]
 
@@ -89,3 +95,22 @@ def tcp_session(  # pylint: disable=dangerous-default-value
     session.request = partial(session.request, timeout=timeout)  # type: ignore
 
     return session
+
+
+def collector_metadata() -> CollectorMetadata:  # pragma: no cover
+    """Collector metadata in a container context"""
+
+    # os-release file is read because platform, sys and os libraries return
+    # metadata of the underlying machine, but container platform information
+    # should be collected.
+    with open("/etc/os-release", "r", encoding="utf-8") as release_file:
+        release_content = release_file.read()
+
+    return parse_metadata(
+        os_release_content=release_content,
+        node=os.environ["NODE_NAME"],  # env variable set by Kubernetes config
+        host_name=os.environ["HOSTNAME"],  # env variable set by Kubernetes
+        python_version=platform.python_version(),
+        python_compiler=platform.python_compiler(),
+        checkmk_kube_agent_version=checkmk_kube_agent.__version__,
+    )

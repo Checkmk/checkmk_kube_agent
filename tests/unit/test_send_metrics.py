@@ -12,9 +12,10 @@ from typing import Sequence
 import pytest
 
 from checkmk_kube_agent.send_metrics import parse_arguments, parse_raw_response
-from checkmk_kube_agent.type_defs import ContainerMetric, MetricCollection, Timestamp
+from checkmk_kube_agent.type_defs import ContainerMetric, Timestamp
 
 # pylint: disable=redefined-outer-name
+# pylint: disable=use-implicit-booleaness-not-comparison
 
 
 @pytest.fixture
@@ -122,85 +123,65 @@ def test_parse_arguments(argv: Sequence[str]) -> None:
 
 def test_parse_raw_response_skip_comments(commentary_text: str) -> None:
     """Commentary text is skipped"""
-    assert parse_raw_response(commentary_text, Timestamp(0.0)) == MetricCollection(
-        container_metrics=[],
-    )
+    assert parse_raw_response(commentary_text, Timestamp(0.0)) == []
 
 
-def test_parse_raw_response_cadvisor_version(
-    cadvisor_version_info_text: str,
-) -> None:
+def test_parse_raw_response_cadvisor_version(cadvisor_version_info_text: str) -> None:
     """cAdvisor version information is not shown in container_metrics"""
-    assert parse_raw_response(
-        cadvisor_version_info_text, Timestamp(0.0)
-    ) == MetricCollection(
-        container_metrics=[],
-    )
+    assert parse_raw_response(cadvisor_version_info_text, Timestamp(0.0)) == []
 
 
-def test_parse_raw_response_empty_labels(
-    container_metric_empty_label: str,
-) -> None:
+def test_parse_raw_response_empty_labels(container_metric_empty_label: str) -> None:
     """Empty labels do not lead to an exception and the container metric is
     discarded"""
-    assert parse_raw_response(
-        container_metric_empty_label, Timestamp(0.0)
-    ) == MetricCollection(
-        container_metrics=[],
-    )
+    assert parse_raw_response(container_metric_empty_label, Timestamp(0.0)) == []
 
 
 def test_parse_raw_response(container_metrics: str) -> None:
     """Container metrics are parsed properly into the expected schema"""
-    assert parse_raw_response(container_metrics, Timestamp(0.0)) == MetricCollection(
-        container_metrics=[
-            ContainerMetric(
-                container_name=(
-                    "k8s_POD_checkmk-worker-agent-8x8bt_checkmk-"
-                    "monitoring_f560ac4c-2dd6-4d2e-8044-caaf6873ce93_0"
-                ),
-                namespace="checkmk-monitoring",
-                pod_uid="f560ac4c-2dd6-4d2e-8044-caaf6873ce93",
-                pod_name="checkmk-worker-agent-8x8bt",
-                metric_name="container_cpu_cfs_periods_total",
-                metric_value_string="5994",
-                timestamp=0.0,
+    assert parse_raw_response(container_metrics, Timestamp(0.0)) == [
+        ContainerMetric(
+            container_name=(
+                "k8s_POD_checkmk-worker-agent-8x8bt_checkmk-"
+                "monitoring_f560ac4c-2dd6-4d2e-8044-caaf6873ce93_0"
             ),
-            ContainerMetric(
-                container_name=(
-                    "k8s_POD_kube-proxy-kvkls_kube-system_e729f03e-"
-                    "59ae-444c-a835-021a919d7898_1"
-                ),
-                namespace="kube-system",
-                pod_uid="e729f03e-59ae-444c-a835-021a919d7898",
-                pod_name="kube-proxy-kvkls",
-                metric_name="container_fs_io_time_seconds_total",
-                metric_value_string="0",
-                timestamp=0.0,
+            namespace="checkmk-monitoring",
+            pod_uid="f560ac4c-2dd6-4d2e-8044-caaf6873ce93",
+            pod_name="checkmk-worker-agent-8x8bt",
+            metric_name="container_cpu_cfs_periods_total",
+            metric_value_string="5994",
+            timestamp=0.0,
+        ),
+        ContainerMetric(
+            container_name=(
+                "k8s_POD_kube-proxy-kvkls_kube-system_e729f03e-"
+                "59ae-444c-a835-021a919d7898_1"
             ),
-        ]
-    )
+            namespace="kube-system",
+            pod_uid="e729f03e-59ae-444c-a835-021a919d7898",
+            pod_name="kube-proxy-kvkls",
+            metric_name="container_fs_io_time_seconds_total",
+            metric_value_string="0",
+            timestamp=0.0,
+        ),
+    ]
 
 
 def test_parse_raw_response_system_containers(
     system_container_metrics: str,
 ) -> None:
     """System container metrics are parsed properly into the expected schema"""
-    assert parse_raw_response(
-        system_container_metrics, Timestamp(0.0)
-    ) == MetricCollection(
-        container_metrics=[
-            ContainerMetric(
-                container_name="k8s_etcd_etcd-k8_kube-system_f50a3637ec9e7cb947095117b393e4be_0",
-                namespace="kube-system",
-                # Due to a bug in cAdvisor, the pod UID shown here is not the
-                # pod UID, but the kubernetes.io/config.hash in the
-                # metadata.annotations field
-                pod_uid="f50a3637ec9e7cb947095117b393e4be",
-                pod_name="etcd-k8",
-                metric_name="container_cpu_load_average_10s",
-                metric_value_string="0",
-                timestamp=1638960636.719,
-            )
-        ]
-    )
+    assert parse_raw_response(system_container_metrics, Timestamp(0.0)) == [
+        ContainerMetric(
+            container_name="k8s_etcd_etcd-k8_kube-system_f50a3637ec9e7cb947095117b393e4be_0",
+            namespace="kube-system",
+            # Due to a bug in cAdvisor, the pod UID shown here is not the
+            # pod UID, but the kubernetes.io/config.hash in the
+            # metadata.annotations field
+            pod_uid="f50a3637ec9e7cb947095117b393e4be",
+            pod_name="etcd-k8",
+            metric_name="container_cpu_load_average_10s",
+            metric_value_string="0",
+            timestamp=1638960636.719,
+        )
+    ]

@@ -18,12 +18,21 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from requests import Session
 
-from checkmk_kube_agent.common import TCPTimeout, collector_argument_parser, tcp_session
+from checkmk_kube_agent.common import (
+    TCPTimeout,
+    collector_argument_parser,
+    collector_metadata,
+    tcp_session,
+)
 from checkmk_kube_agent.dedup_ttl_cache import DedupTTLCache
 from checkmk_kube_agent.type_defs import (
+    ClusterCollectorMetadata,
     ContainerMetric,
     MachineSections,
+    MachineSectionsCollection,
+    Metadata,
     MetricCollection,
+    NodeCollectorMetadata,
     NodeName,
 )
 
@@ -32,6 +41,7 @@ app = FastAPI()
 http_bearer_scheme = HTTPBearer()
 
 ContainerMetricKey = NewType("ContainerMetricKey", str)
+MetadataKey = NewType("MetadataKey", str)
 
 KUBERNETES_SERVICE_HOST = os.environ.get("KUBERNETES_SERVICE_HOST")
 KUBERNETES_SERVICE_PORT_HTTPS = os.environ.get("KUBERNETES_SERVICE_PORT_HTTPS")
@@ -40,6 +50,11 @@ KUBERNETES_SERVICE_PORT_HTTPS = os.environ.get("KUBERNETES_SERVICE_PORT_HTTPS")
 def container_metric_key(metric: ContainerMetric) -> ContainerMetricKey:
     """Key function to determine unique key for container metrics"""
     return ContainerMetricKey(f"{metric.container_name}:{metric.metric_name}")
+
+
+def metadata_key(metadata: NodeCollectorMetadata) -> MetadataKey:
+    """Key function to determine unique key for metadata"""
+    return MetadataKey(f"{metadata.node}:{metadata.collector_type}")
 
 
 def read_api_token() -> str:  # pragma: no cover
@@ -183,11 +198,12 @@ def health() -> JSONResponse:
 
 @app.post("/update_machine_sections")
 def update_machine_sections(
-    machine_sections: MachineSections,
+    machine_sections: MachineSectionsCollection,
     token: str = Depends(authenticate_post),  # pylint: disable=unused-argument
 ) -> None:
     """Update sections for the kubernetes machines"""
-    app.state.machine_sections_queue.put(machine_sections)
+    app.state.node_collector_metadata_queue.put(machine_sections.metadata)
+    app.state.machine_sections_queue.put(machine_sections.sections)
 
 
 @app.get("/machine_sections")
@@ -204,6 +220,7 @@ def update_container_metrics(
     token: str = Depends(authenticate_post),  # pylint: disable=unused-argument
 ) -> None:
     """Update metrics for containers"""
+    app.state.node_collector_metadata_queue.put(metrics.metadata)
     for metric in metrics.container_metrics:
         app.state.container_metric_queue.put(metric)
 
@@ -214,6 +231,19 @@ def send_container_metrics(
 ) -> Sequence[ContainerMetric]:
     """Get all available container metrics"""
     return app.state.container_metric_queue.get_all()
+
+
+@app.get("/metadata")
+def send_metadata(
+    token: str = Depends(authenticate_get),  # pylint: disable=unused-argument
+) -> Metadata:
+    """Get metadata on cluster and node collectors.
+
+    May be used to verify compatibility."""
+    return Metadata(
+        cluster_collector_metadata=app.state.metadata,
+        node_collector_metadata=app.state.node_collector_metadata_queue.get_all(),
+    )
 
 
 def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
@@ -285,6 +315,7 @@ def _init_app_state(
     reader_whitelist: Sequence[str],
     writer_whitelist: Sequence[str],
     tcp_timeout: TCPTimeout,
+    metadata: ClusterCollectorMetadata,
 ) -> None:
     container_metric_queue = DedupTTLCache[ContainerMetricKey, ContainerMetric](
         key=container_metric_key,
@@ -297,6 +328,14 @@ def _init_app_state(
         maxsize=cache_maxsize,
         ttl=cache_ttl,
     )
+    app_.state.node_collector_metadata_queue = DedupTTLCache[
+        MetadataKey, NodeCollectorMetadata
+    ](
+        key=metadata_key,
+        maxsize=10000,  # Kubernetes clusters can have a max of 5000 nodes.
+        # Each node collector daemonset sends their own metadata to this queue
+    )
+    app_.state.metadata = metadata
     app_.state.reader_whitelist = frozenset(reader_whitelist)
     app_.state.writer_whitelist = frozenset(writer_whitelist)
     app_.state.tcp_session = tcp_session(timeout=tcp_timeout)
@@ -313,6 +352,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         reader_whitelist=args.reader_whitelist.split(","),
         writer_whitelist=args.writer_whitelist.split(","),
         tcp_timeout=(args.connect_timeout, args.read_timeout),
+        metadata=ClusterCollectorMetadata(**dict(collector_metadata())),
     )
 
     options = {

@@ -19,13 +19,21 @@ from typing import Callable, Dict, Iterable, Mapping, Optional, Sequence
 import urllib3
 from requests import Session
 
-from checkmk_kube_agent.common import collector_argument_parser, tcp_session
+from checkmk_kube_agent.common import (
+    collector_argument_parser,
+    collector_metadata,
+    tcp_session,
+)
+from checkmk_kube_agent.container_metadata import parse_node_collector_metadata
 from checkmk_kube_agent.type_defs import (
+    CollectorType,
+    Components,
     ContainerMetric,
     ContainerName,
     LabelName,
     LabelValue,
     MachineSections,
+    MachineSectionsCollection,
     MetricCollection,
     MetricName,
     MetricValueString,
@@ -34,6 +42,7 @@ from checkmk_kube_agent.type_defs import (
     PodName,
     PodUid,
     Timestamp,
+    Version,
 )
 
 # urllib warnings clutter logs
@@ -183,7 +192,7 @@ def _parse_metrics_with_labels(
     return None
 
 
-def parse_raw_response(raw_response: str, now: Timestamp) -> MetricCollection:
+def parse_raw_response(raw_response: str, now: Timestamp) -> Sequence[ContainerMetric]:
     """Parse open metric response from cAdvisor into the schema the cluster
     collector API expects.
 
@@ -191,10 +200,10 @@ def parse_raw_response(raw_response: str, now: Timestamp) -> MetricCollection:
 
     >>> parse_raw_response(("# HELP cadvisor_version_info\\n"
     ... "# TYPE container_cpu_cfs_periods_total counter\\n"), 0.0)
-    MetricCollection(container_metrics=[])
+    []
 
     >>> parse_raw_response("machine_memory_bytes 1.6595398656e+10\\n", 0.0)
-    MetricCollection(container_metrics=[])
+    []
 
     >>> parse_raw_response(('container_cpu_cfs_periods_total'
     ... '{container_label_io_kubernetes_pod_namespace="mynamespace",'
@@ -202,17 +211,16 @@ def parse_raw_response(raw_response: str, now: Timestamp) -> MetricCollection:
     ... 'container_label_io_kubernetes_pod_uid="123",'
     ... 'name="k8s_POD_mypod_mynamespace_123_0"} 422\\n'), 0.0)
     ... # doctest: +NORMALIZE_WHITESPACE
-    MetricCollection(container_metrics=\
-[ContainerMetric(container_name='k8s_POD_mypod_mynamespace_123_0',
+    [ContainerMetric(container_name='k8s_POD_mypod_mynamespace_123_0',
                  namespace='mynamespace',
                  pod_uid='123',
                  pod_name='mypod',
                  metric_name='container_cpu_cfs_periods_total',
                  metric_value_string='422',
-                 timestamp=0.0)])
+                 timestamp=0.0)]
 
     >>> parse_raw_response("", 0.0)
-    MetricCollection(container_metrics=[])
+    []
 
     """
 
@@ -230,9 +238,7 @@ def parse_raw_response(raw_response: str, now: Timestamp) -> MetricCollection:
         if metric := _parse_metrics_with_labels(open_metric, now):
             container_metrics.append(metric)
 
-    return MetricCollection(
-        container_metrics=container_metrics,
-    )
+    return container_metrics
 
 
 def read_node_collector_token() -> str:  # pragma: no cover
@@ -273,17 +279,34 @@ def container_metrics_worker(
     """
     Query cadvisor api, send metrics to cluster collector
     """
-    cadvisor_response = session.get(
+
+    cadvisor_url = (
         f"http://{os.environ['CADVISOR_SERVICE_HOST']}:"
-        f"{os.environ['CADVISOR_SERVICE_PORT']}/metrics"
+        f"{os.environ['CADVISOR_SERVICE_PORT']}"
     )
-    cadvisor_response.raise_for_status()
+
+    cadvisor_version = session.get(f"{cadvisor_url}/api/v2.0/version")
+    cadvisor_version.raise_for_status()
+
+    cadvisor_metrics = session.get(f"{cadvisor_url}/metrics")
+    cadvisor_metrics.raise_for_status()
 
     cluster_collector_response = session.post(
         f"{cluster_collector_base_url}/update_container_metrics",
         headers=headers,
-        data=parse_raw_response(
-            cadvisor_response.content.decode("utf-8"), Timestamp(time.time())
+        data=MetricCollection(
+            container_metrics=parse_raw_response(
+                cadvisor_metrics.content.decode("utf-8"), Timestamp(time.time())
+            ),
+            metadata=parse_node_collector_metadata(
+                collector_metadata=collector_metadata(),
+                collector_type=CollectorType.CONTAINER_METRICS,
+                components=Components(
+                    cadvisor_version=Version(
+                        json.loads(cadvisor_version.content),
+                    ),
+                ),
+            ),
         ).json(),
         verify=False,
     )
@@ -308,11 +331,22 @@ def machine_sections_worker(
         if process.stdout is None:
             raise RuntimeError("Could not read agent output")
         sections = process.stdout.read().decode("utf-8")
+
     cluster_collector_response = session.post(
         f"{cluster_collector_base_url}/update_machine_sections",
         headers=headers,
-        data=MachineSections(
-            sections=sections, node_name=NodeName(os.environ["NODE_NAME"])
+        data=MachineSectionsCollection(
+            sections=MachineSections(
+                sections=sections,
+                node_name=NodeName(os.environ["NODE_NAME"]),
+            ),
+            metadata=parse_node_collector_metadata(
+                collector_metadata=collector_metadata(),
+                collector_type=CollectorType.MACHINE_SECTIONS,
+                components=Components(
+                    checkmk_agent_version=Version(os.environ["CHECKMK_AGENT_VERSION"]),
+                ),
+            ),
         ).json(),
         verify=False,
     )
