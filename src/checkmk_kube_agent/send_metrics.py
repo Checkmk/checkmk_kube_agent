@@ -17,7 +17,7 @@ from functools import partial
 from typing import Callable, Dict, Iterable, Mapping, Optional, Sequence
 
 import requests
-from requests import Response, Session
+from requests import Session
 from urllib3.util.retry import Retry  # type: ignore[import]
 
 from checkmk_kube_agent.type_defs import (
@@ -283,14 +283,6 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def check_response(response: Response) -> None:
-    """raise RuntimeError with meaningful description if status_code != 200"""
-    if response.status_code != 200:
-        raise RuntimeError(
-            f"status_code {response.status_code}: {response.content.decode('utf-8')}"
-        )
-
-
 def container_metrics_worker(
     session: Session, cluster_collector_base_url: str, headers: Mapping[str, str]
 ) -> None:  # pragma: no cover
@@ -298,7 +290,7 @@ def container_metrics_worker(
     Query cadvisor api, send metrics to cluster collector
     """
     cadvisor_response = session.get("http://localhost:8080/metrics")
-    check_response(cadvisor_response)
+    cadvisor_response.raise_for_status()
 
     cluster_collector_response = session.post(
         f"{cluster_collector_base_url}/update_container_metrics",
@@ -308,7 +300,7 @@ def container_metrics_worker(
         ).json(),
         verify=False,
     )
-    check_response(cluster_collector_response)
+    cluster_collector_response.raise_for_status()
 
 
 def machine_sections_worker(
@@ -337,7 +329,7 @@ def machine_sections_worker(
         ).json(),
         verify=False,
     )
-    check_response(cluster_collector_response)
+    cluster_collector_response.raise_for_status()
 
 
 def _main(

@@ -7,17 +7,11 @@
 
 """Tests for Node Collector."""
 
-from io import BytesIO
 from typing import Sequence
 
 import pytest
-from requests import Response
 
-from checkmk_kube_agent.send_metrics import (
-    check_response,
-    parse_arguments,
-    parse_raw_response,
-)
+from checkmk_kube_agent.send_metrics import parse_arguments, parse_raw_response
 from checkmk_kube_agent.type_defs import ContainerMetric, MetricCollection, Timestamp
 
 # pylint: disable=redefined-outer-name
@@ -210,17 +204,3 @@ def test_parse_raw_response_system_containers(
             )
         ]
     )
-
-
-def test_check_response() -> None:
-    """Make sure helper function raises exception"""
-    response = Response()
-    response.status_code = 200
-    check_response(response)  # should not raise here
-
-    response.status_code = 444
-    response.raw = BytesIO(b"oink")
-    with pytest.raises(RuntimeError) as error:
-        check_response(response)
-    assert error.typename == "RuntimeError"
-    assert error.value.args == ("status_code 444: oink",)
