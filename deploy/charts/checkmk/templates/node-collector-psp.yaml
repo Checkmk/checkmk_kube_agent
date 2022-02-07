@@ -78,7 +78,7 @@ metadata:
   name: {{ include "checkmk.fullname" . }}-node-collector
   labels:
     {{- include "checkmk.labels" . | nindent 4 }}
-    app: node-collector
+    app: {{ include "checkmk.fullname" . }}-node-collector
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

@@ -1,11 +1,9 @@
 ---
 {{- if .Values.clusterCollector.ingress.enabled -}}
-{{- $fullName := include "checkmk.fullname" . -}}
-{{- $svcPort := .Values.clusterCollector.service.port -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ $fullName }}-cluster-collector
+  name: {{ include "checkmk.fullname" . }}-cluster-collector
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "checkmk.labels" . | nindent 4 }}
@@ -37,9 +35,9 @@ spec:
             pathType: {{ .pathType }}
             backend:
               service:
-                name: {{ $fullName }}-cluster-collector
+                name: {{ include "checkmk.fullname" . }}-cluster-collector
                 port:
-                  number: {{ $svcPort }}
+                  number: {{ .Values.clusterCollector.service.port }}
           {{- end }}
     {{- end }}
 {{- end }}

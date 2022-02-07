@@ -1,4 +1,4 @@
-{{- if .Values.clusterCollector.networkPolicy.enabled }}
+{{- if .Values.networkPolicy.enabled }}
 ---
 # Deny all incoming/outgoing traffic to/from cluster-collector
 apiVersion: networking.k8s.io/v1
@@ -11,7 +11,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: cluster-collector
+      app: {{ include "checkmk.fullname" . }}-cluster-collector
   policyTypes:
     - Ingress
     - Egress
@@ -29,18 +29,18 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: cluster-collector
+      app: {{ include "checkmk.fullname" . }}-cluster-collector
   policyTypes:
     - Ingress
   ingress:
     - from:
       - namespaceSelector:
           matchLabels:
-            name: {{ .Release.Namespace }} # TODO: who labels this namespace accordingly ?!
+            name: {{ .Release.Namespace }}
         podSelector:
           matchLabels:
-            app: node-collector
-{{- if gt (len .Values.clusterCollector.networkPolicy.allowIngressFromCIDRs) 0 }}
+            app: {{ include "checkmk.fullname" . }}-node-collector
+{{- if gt (len .Values.networkPolicy.allowIngressFromCIDRs) 0 }}
 ---
 # Allow certain incoming traffic as specified in values.yaml, e.g. from Checkmk monitoring server
 apiVersion: networking.k8s.io/v1
@@ -53,12 +53,12 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: cluster-collector
+      app: {{ include "checkmk.fullname" . }}-cluster-collector
   policyTypes:
     - Ingress
   ingress:
     - from:
-      {{- range $v := .Values.clusterCollector.networkPolicy.allowIngressFromCIDRs }}
+      {{- range $v := .Values.networkPolicy.allowIngressFromCIDRs }}
       - ipBlock:
           cidr: '$v'
       {{- end }}

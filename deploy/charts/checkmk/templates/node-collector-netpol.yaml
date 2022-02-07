@@ -1,4 +1,4 @@
-{{- if .Values.nodeCollector.networkPolicy.enabled }}
+{{- if .Values.networkPolicy.enabled }}
 ---
 # Deny all incoming/outgoing traffic to/from node-collector
 apiVersion: networking.k8s.io/v1
@@ -11,7 +11,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: node-collector
+      app: {{ include "checkmk.fullname" . }}-node-collector
   policyTypes:
     - Ingress
     - Egress
@@ -29,15 +29,15 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: node-collector
+      app: {{ include "checkmk.fullname" . }}-node-collector
   policyTypes:
     - Egress
   egress:
     - to:
       - namespaceSelector:
           matchLabels:
-            name: {{ .Release.Namespace }} # TODO: who labels this namespace accordingly ?!
+            name: {{ .Release.Namespace }}
         podSelector:
           matchLabels:
-            app: cluster-collector
+            app: {{ include "checkmk.fullname" . }}-cluster-collector
 {{- end }}

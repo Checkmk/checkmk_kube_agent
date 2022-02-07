@@ -6,7 +6,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "checkmk.labels" . | nindent 4 }}
-    app: cluster-collector
+    app: {{ include "checkmk.fullname" . }}-cluster-collector
   annotations:
     seccomp.security.alpha.kubernetes.io/pod: runtime/default
 spec:
@@ -14,7 +14,7 @@ spec:
   selector:
     matchLabels:
       {{- include "checkmk.selectorLabels" . | nindent 6 }}
-      app: cluster-collector
+      app: {{ include "checkmk.fullname" . }}-cluster-collector
   template:
     metadata:
       {{- with .Values.clusterCollector.podAnnotations }}
@@ -23,7 +23,7 @@ spec:
       {{- end }}
       labels:
         {{- include "checkmk.selectorLabels" . | nindent 8 }}
-        app: cluster-collector
+        app: {{ include "checkmk.fullname" . }}-cluster-collector
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -42,13 +42,13 @@ spec:
             - "/usr/local/bin/checkmk-cluster-collector"
           args:
             - "--host=0.0.0.0"
+            - "--reader-whitelist={{ .Release.Namespace }}:{{ include "checkmk.fullname" . }}-checkmk"
+            - "--writer-whitelist={{ .Release.Namespace }}:{{ include "checkmk.fullname" . }}-node-collector"
           {{- if .Values.tlsCommunication.enabled }}
             - "--ssl-keyfile=/etc/ca-certificates/cluster-collector-key.pam"
             - "--ssl-keyfile-password=$(CLUSTER_COLLECTOR_KEYPASS)"
             - "--ssl-certfile=/etc/ca-certificates/cluster-collector-cert.pam"
             - "--secure-protocol"
-            - "--reader-whitelist=checkmk-monitoring:checkmk"
-            - "--writer-whitelist=checkmk-monitoring:node-collector-cadvisor"
           {{- end }}
           env:
             - name: NODE_NAME

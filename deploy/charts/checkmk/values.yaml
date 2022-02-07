@@ -5,8 +5,6 @@
 nameOverride: ""
 fullnameOverride: ""
 
-imagePullSecrets: []
-
 tlsCommunication:
   enabled: false # TODO: true
   # ## Secret name containing the TLS certificate for checkmk with the fields: cluster-collector-key, cluster-collector-keypass, cluster-collector-cert
@@ -16,6 +14,17 @@ tlsCommunication:
   clusterCollectorKeypass: ""
   clusterCollectorCert: ""
 
+imagePullSecrets: []
+
+## ref: https://kubernetes.io/docs/concepts/services-networking/network-policies/
+networkPolicy:
+  enabled: false
+  # specify ipBlock cidrs here for your ingress to the cluster-collector, especially the checkmk server ip range
+  allowIngressFromCIDRs: []
+  # - 127.0.0.1/32 # e.g. Checkmk Server
+  # - 127.0.0.1/24 # e.g. Metallb speakers
+
+## Configuration for cluster-collector
 clusterCollector:
   image:
     repository: lisapichlertribe29/kubernetes-collector
@@ -42,17 +51,11 @@ clusterCollector:
   rbac:
     pspEnabled: true
 
-  ## ref: https://kubernetes.io/docs/concepts/services-networking/network-policies/
-  networkPolicy:
-    enabled: false
-    # specify ipBlock cidrs here for your ingress to the cluster-collector, especially the checkmk server ip range
-    allowIngressFromCIDRs: []
-    # - 127.0.0.1/32 # e.g. Checkmk Server
-    # - 127.0.0.1/24 # e.g. Metallb speakers
-
   service:
-    type: ClusterIP # NodePort TODO: test if this would also create a nodePort on the service automatically
-    port: 80 # 30035
+    # if required specify "NodePort" here to expose the cluster-collector via the "nodePort" specified below
+    type: ClusterIP
+    port: 8080
+    # nodePort: 30035
 
   ingress:
     enabled: false
@@ -83,6 +86,7 @@ clusterCollector:
 
   affinity: {}
 
+## Configuration for node-collector
 nodeCollector:
   podAnnotations: {}
 
@@ -91,10 +95,6 @@ nodeCollector:
 
   rbac:
     pspEnabled: true
-
-  ## ref: https://kubernetes.io/docs/concepts/services-networking/network-policies/
-  networkPolicy:
-    enabled: false
 
   machineSectionsCollector:
     image:

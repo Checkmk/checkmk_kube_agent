@@ -6,14 +6,17 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "checkmk.labels" . | nindent 4 }}
-    app: cluster-collector
+    app: {{ include "checkmk.fullname" . }}-cluster-collector
 spec:
   type: {{ .Values.clusterCollector.service.type }}
   ports:
-    - port: {{ .Values.clusterCollector.service.port }}
+    - name: api
+      port: {{ .Values.clusterCollector.service.port }}
       targetPort: api
+      {{- if eq .Values.clusterCollector.service.type "NodePort" }}
+      nodePort: {{ required "You need to specify a nodePort if using the service type NodePort." .Values.clusterCollector.service.nodePort }}
+      {{- end }}
       protocol: TCP
-      name: api
   selector:
     {{- include "checkmk.selectorLabels" . | nindent 4 }}
-    app: cluster-collector
+    app: {{ include "checkmk.fullname" . }}-cluster-collector
