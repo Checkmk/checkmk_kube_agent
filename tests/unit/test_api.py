@@ -31,6 +31,7 @@ from checkmk_kube_agent.type_defs import (
     ContainerMetric,
     MachineSections,
     MetricCollection,
+    NodeName,
 )
 
 # pylint: disable=redefined-outer-name
@@ -604,7 +605,7 @@ def test_machine_sections(
             "Content-Type": "application/json",
         },
         data=MachineSections(
-            node_name="unittest_node_name",
+            node_name=NodeName("unittest_node_name"),
             sections="<<<section_name>>>\nsection_data 1",
         ).json(),
     )
@@ -619,9 +620,12 @@ def test_machine_sections(
         },
     )
     assert response.status_code == 200
-    assert response.json() == {
-        "unittest_node_name": "<<<section_name>>>\nsection_data 1",
-    }
+    assert response.json() == [
+        {
+            "node_name": "unittest_node_name",
+            "sections": "<<<section_name>>>\nsection_data 1",
+        }
+    ]
 
 
 def test_endpoints_request_authentication() -> None:

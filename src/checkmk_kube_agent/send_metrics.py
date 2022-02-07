@@ -30,6 +30,7 @@ from checkmk_kube_agent.type_defs import (
     MetricName,
     MetricValueString,
     Namespace,
+    NodeName,
     PodName,
     PodUid,
     Timestamp,
@@ -320,12 +321,12 @@ def machine_sections_worker(
             raise RuntimeError("Agent execution failed.")
         if process.stdout is None:
             raise RuntimeError("Could not read agent output")
-        sections = process.stdout.read()
+        sections = process.stdout.read().decode("utf-8")
     cluster_collector_response = session.post(
         f"{cluster_collector_base_url}/update_machine_sections",
         headers=headers,
         data=MachineSections(
-            sections=sections, node_name=os.environ["NODE_NAME"]
+            sections=sections, node_name=NodeName(os.environ["NODE_NAME"])
         ).json(),
         verify=False,
     )

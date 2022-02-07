@@ -11,7 +11,7 @@ import argparse
 import json
 import os
 import sys
-from typing import Dict, FrozenSet, NewType, Optional, Sequence, Tuple
+from typing import FrozenSet, NewType, Optional, Sequence
 
 import requests
 import uvicorn  # type: ignore[import]
@@ -24,6 +24,7 @@ from checkmk_kube_agent.type_defs import (
     ContainerMetric,
     MachineSections,
     MetricCollection,
+    NodeName,
 )
 
 app = FastAPI()
@@ -184,17 +185,15 @@ def update_machine_sections(
     token: str = Depends(authenticate_post),  # pylint: disable=unused-argument
 ) -> None:
     """Update sections for the kubernetes machines"""
-    app.state.machine_sections_queue.put(
-        (machine_sections.node_name, machine_sections.sections)
-    )
+    app.state.machine_sections_queue.put(machine_sections)
 
 
 @app.get("/machine_sections")
 def send_machine_sections(
     token: str = Depends(authenticate_get),  # pylint: disable=unused-argument
-) -> Dict[str, str]:
+) -> Sequence[MachineSections]:
     """Get all available host metrics"""
-    return dict(app.state.machine_sections_queue.get_all())
+    return app.state.machine_sections_queue.get_all()
 
 
 @app.post("/update_container_metrics")
@@ -310,8 +309,8 @@ def _init_app_state(
         ttl=cache_ttl,
     )
     app_.state.container_metric_queue = container_metric_queue
-    app_.state.machine_sections_queue = DedupTTLCache[str, Tuple[str, str]](
-        key=lambda x: x[0],
+    app_.state.machine_sections_queue = DedupTTLCache[NodeName, MachineSections](
+        key=lambda x: x.node_name,
         maxsize=cache_maxsize,
         ttl=cache_ttl,
     )
