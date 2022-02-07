@@ -1,0 +1,122 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "checkmk.fullname" . }}-cluster-collector
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "checkmk.labels" . | nindent 4 }}
+    app: cluster-collector
+  annotations:
+    seccomp.security.alpha.kubernetes.io/pod: runtime/default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "checkmk.selectorLabels" . | nindent 6 }}
+      app: cluster-collector
+  template:
+    metadata:
+      {{- with .Values.clusterCollector.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "checkmk.selectorLabels" . | nindent 8 }}
+        app: cluster-collector
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "checkmk.fullname" . }}-cluster-collector
+      securityContext:
+        {{- toYaml .Values.clusterCollector.podSecurityContext | nindent 8 }}
+      containers:
+        - name: cluster-collector
+          securityContext:
+            {{- toYaml .Values.clusterCollector.securityContext | nindent 12 }}
+          image: "{{ .Values.clusterCollector.image.repository }}:{{ .Values.clusterCollector.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.clusterCollector.image.pullPolicy }}
+          command:
+            - "/usr/local/bin/checkmk-cluster-collector"
+          args:
+            - "--host=0.0.0.0"
+          {{- if .Values.tlsCommunication.enabled }}
+            - "--ssl-keyfile=/etc/ca-certificates/cluster-collector-key.pam"
+            - "--ssl-keyfile-password=$(CLUSTER_COLLECTOR_KEYPASS)"
+            - "--ssl-certfile=/etc/ca-certificates/cluster-collector-cert.pam"
+            - "--secure-protocol"
+            - "--reader-whitelist=checkmk-monitoring:checkmk"
+            - "--writer-whitelist=checkmk-monitoring:node-collector-cadvisor"
+          {{- end }}
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            {{- if .Values.tlsCommunication.enabled }}
+            - name: CLUSTER_COLLECTOR_KEYPASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "checkmk.fullname" . }}-cluster-collector-tls
+                  key: cluster-collector-keypass
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: api
+              httpHeaders:
+                - name: status
+                  value: available
+              {{- if .Values.tlsCommunication.enabled }}
+              scheme: HTTPS
+              {{- else }}
+              scheme: HTTP
+              {{- end }}
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.clusterCollector.resources | nindent 12 }}
+          ports:
+            - containerPort: 10050
+              name: api
+              protocol: TCP
+          {{- if .Values.tlsCommunication.enabled }}
+          volumeMounts:
+            - name: cluster-collector-key
+              mountPath: /etc/ca-certificates/cluster-collector-key.pam
+              subPath: cluster-collector-key.pam
+              readOnly: true
+            - name: cluster-collector-cert
+              mountPath: /etc/ca-certificates/cluster-collector-cert.pam
+              subPath: cluster-collector-cert.pam
+              readOnly: true
+          {{- end }}
+      {{- if .Values.tlsCommunication.enabled }}
+      volumes:
+        - name: cluster-collector-key
+          secret:
+            secretName: {{ include "checkmk.fullname" . }}-cluster-collector-tls
+            items:
+              - key: cluster-collector-key
+                path: cluster-collector-key.pam
+        - name: cluster-collector-cert
+          secret:
+            secretName: {{ include "checkmk.fullname" . }}-cluster-collector-tls
+            items:
+              - key: cluster-collector-cert
+                path: cluster-collector-cert.pam
+      {{- end }}
+      {{- with .Values.clusterCollector.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.clusterCollector.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.clusterCollector.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

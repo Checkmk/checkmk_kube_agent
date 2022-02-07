@@ -1,0 +1,19 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "checkmk.fullname" . }}-cluster-collector
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "checkmk.labels" . | nindent 4 }}
+    app: cluster-collector
+spec:
+  type: {{ .Values.clusterCollector.service.type }}
+  ports:
+    - port: {{ .Values.clusterCollector.service.port }}
+      targetPort: api
+      protocol: TCP
+      name: api
+  selector:
+    {{- include "checkmk.selectorLabels" . | nindent 4 }}
+    app: cluster-collector

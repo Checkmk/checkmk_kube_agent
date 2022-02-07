@@ -1,0 +1,175 @@
+# Default values for checkmk.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+nameOverride: ""
+fullnameOverride: ""
+
+imagePullSecrets: []
+
+tlsCommunication:
+  enabled: false # TODO: true
+  # ## Secret name containing the TLS certificate for checkmk with the fields: cluster-collector-key, cluster-collector-keypass, cluster-collector-cert
+  # ## Secret must be manually created in the namespace. If left 
+  # tlsSecretName: ""
+  clusterCollectorKey: ""
+  clusterCollectorKeypass: ""
+  clusterCollectorCert: ""
+
+clusterCollector:
+  image:
+    repository: lisapichlertribe29/kubernetes-collector
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "2.1.0i1"
+
+  podAnnotations: {}
+
+  podSecurityContext: {}
+    # fsGroup: 2000
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    privileged: false
+    readOnlyRootFilesystem: true
+    runAsGroup: 10001
+    runAsNonRoot: true
+    runAsUser: 10001
+
+  rbac:
+    pspEnabled: true
+
+  ## ref: https://kubernetes.io/docs/concepts/services-networking/network-policies/
+  networkPolicy:
+    enabled: false
+    # specify ipBlock cidrs here for your ingress to the cluster-collector, especially the checkmk server ip range
+    allowIngressFromCIDRs: []
+    # - 127.0.0.1/32 # e.g. Checkmk Server
+    # - 127.0.0.1/24 # e.g. Metallb speakers
+
+  service:
+    type: ClusterIP # NodePort TODO: test if this would also create a nodePort on the service automatically
+    port: 80 # 30035
+
+  ingress:
+    enabled: false
+    className: ""
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: /
+    hosts:
+      - host: checkmk-cluster-collector.local
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - chart-example.local
+
+  resources:
+    limits:
+      cpu: 300m
+      memory: 2000Mi
+    requests:
+      cpu: 150m
+      memory: 200Mi
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  affinity: {}
+
+nodeCollector:
+  podAnnotations: {}
+
+  podSecurityContext: {}
+    # fsGroup: 2000
+
+  rbac:
+    pspEnabled: true
+
+  ## ref: https://kubernetes.io/docs/concepts/services-networking/network-policies/
+  networkPolicy:
+    enabled: false
+
+  machineSectionsCollector:
+    image:
+      repository: lisapichlertribe29/kubernetes-collector
+      pullPolicy: IfNotPresent
+      # Overrides the image tag whose default is the chart appVersion.
+      tag: "2.1.0i1"
+
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      privileged: false
+      readOnlyRootFilesystem: true
+      runAsGroup: 10001
+      runAsNonRoot: true
+      runAsUser: 10001
+
+    resources:
+      limits:
+        cpu: 300m
+        memory: 2000Mi
+      requests:
+        cpu: 150m
+        memory: 200Mi
+
+  containerMetricsCollector:
+    image:
+      repository: lisapichlertribe29/kubernetes-collector
+      pullPolicy: IfNotPresent
+      # Overrides the image tag whose default is the chart appVersion.
+      tag: "2.1.0i1"
+
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      privileged: false
+      readOnlyRootFilesystem: true
+      runAsGroup: 10001
+      runAsNonRoot: true
+      runAsUser: 10001
+
+    resources:
+      limits:
+        cpu: 300m
+        memory: 2000Mi
+      requests:
+        cpu: 150m
+        memory: 200Mi
+
+  cadvisor:
+    image:
+      repository: lisapichlertribe29/cadvisor-patched
+      pullPolicy: IfNotPresent
+      # Overrides the image tag whose default is the chart appVersion.
+      tag: "2.1.0i1"
+
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      privileged: false
+      readOnlyRootFilesystem: true
+      runAsGroup: 10001
+      runAsNonRoot: true
+      runAsUser: 10001
+
+    resources:
+      limits:
+        cpu: 300m
+        memory: 2000Mi
+      requests:
+        cpu: 150m
+        memory: 200Mi
