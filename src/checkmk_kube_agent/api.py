@@ -277,6 +277,11 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
         help="Specify the time-to-live (seconds) entries are persisted in the "
         "cache. Entries exceeding ttl are removed from the cache.",
     )
+    parser.add_argument(
+        "--log-level",
+        choices=["trace", "debug", "info", "warning", "error", "critical"],
+        help="Uvicorn log level.",
+    )
 
     parser.set_defaults(
         host="127.0.0.1",
@@ -285,6 +290,7 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
         writer_whitelist="checkmk-monitoring:node-collector",
         cache_maxsize=10000,
         cache_ttl=120,
+        log_level="error",
     )
 
     return parser.parse_args(argv)
@@ -333,12 +339,14 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
             ssl_keyfile=args.ssl_keyfile,
             ssl_keyfile_password=args.ssl_keyfile_password,
             ssl_certfile=args.ssl_certfile,
+            log_level=args.log_level,
         )
     else:
         uvicorn.run(
             app,
             host=args.host,
             port=args.port,
+            log_level=args.log_level,
         )
 
 
