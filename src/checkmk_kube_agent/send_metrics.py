@@ -290,7 +290,10 @@ def container_metrics_worker(
     """
     Query cadvisor api, send metrics to cluster collector
     """
-    cadvisor_response = session.get("http://localhost:8080/metrics")
+    cadvisor_response = session.get(
+        f"http://{os.environ['CADVISOR_SERVICE_HOST']}:"
+        f"{os.environ['CADVISOR_SERVICE_PORT']}/metrics"
+    )
     cadvisor_response.raise_for_status()
 
     cluster_collector_response = session.post(

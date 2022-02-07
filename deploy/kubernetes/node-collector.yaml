@@ -4,20 +4,20 @@ kind: ServiceAccount
 metadata:
   labels:
     app: node-collector
-  name: node-collector-cadvisor
+  name: node-collector
   namespace: checkmk-monitoring
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: checkmk-node-collector-cadvisor
+  name: checkmk-node-collector
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: checkmk-collectors-podsecurity
 subjects:
   - kind: ServiceAccount
-    name: node-collector-cadvisor
+    name: node-collector
     namespace: checkmk-monitoring
 ---
 apiVersion: apps/v1
@@ -26,64 +26,21 @@ metadata:
   annotations:
     seccomp.security.alpha.kubernetes.io/pod: runtime/default
   labels:
-    app: node-collector
-  name: node-collector
+    app: node-collector-cadvisor
+  name: cadvisor
   namespace: checkmk-monitoring
 spec:
   selector:
     matchLabels:
-      app: node-collector
-      name: node-collector
+      app: node-collector-cadvisor
+      name: node-collector-cadvisor
   template:
     metadata:
       labels:
-        app: node-collector
-        name: node-collector
+        app: node-collector-cadvisor
+        name: node-collector-cadvisor
     spec:
       containers:
-        - image: lisapichlertribe29/kubernetes-collector:0.1.0
-          imagePullPolicy: Always
-          name: machine-sections-collector
-          command:
-            - "/usr/local/bin/checkmk-machine-sections-collector"
-          args:
-            - "--secure-protocol"
-          env:
-            - name: NODE_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: spec.nodeName
-          resources:
-            limits:
-              cpu: 300m
-              memory: 2000Mi
-            requests:
-              cpu: 150m
-              memory: 200Mi
-        - image: lisapichlertribe29/kubernetes-collector:0.1.0
-          imagePullPolicy: Always
-          name: container-metrics-collector
-          command:
-            - "/usr/local/bin/checkmk-container-metrics-collector"
-          args:
-            - "--secure-protocol"
-          resources:
-            limits:
-              cpu: 300m
-              memory: 2000Mi
-            requests:
-              cpu: 150m
-              memory: 200Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            privileged: false
-            readOnlyRootFilesystem: true
-            runAsGroup: 10001
-            runAsNonRoot: true
-            runAsUser: 10001
         - image: lisapichlertribe29/cadvisor-patched:0.1.0
           imagePullPolicy: Always
           name: cadvisor
@@ -105,7 +62,7 @@ spec:
           resources:
             limits:
               cpu: 300m
-              memory: 2000Mi
+              memory: 200Mi
             requests:
               cpu: 150m
               memory: 200Mi
@@ -119,7 +76,7 @@ spec:
             - name: docker
               mountPath: /var/lib/docker
               readOnly: true
-      serviceAccountName: node-collector-cadvisor
+      automountServiceAccountToken: false
       terminationGracePeriodSeconds: 30
       volumes:
         - name: var-run
@@ -131,3 +88,94 @@ spec:
         - name: docker
           hostPath:
             path: /var/lib/docker
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    seccomp.security.alpha.kubernetes.io/pod: runtime/default
+  labels:
+    app: node-collector-container-metrics
+  name: node-collector-container-metrics
+  namespace: checkmk-monitoring
+spec:
+  selector:
+    matchLabels:
+      app: node-collector-container-metrics
+      name: node-collector-container-metrics
+  template:
+    metadata:
+      labels:
+        app: node-collector-container-metrics
+        name: node-collector-container-metrics
+    spec:
+      containers:
+        - image: lisapichlertribe29/kubernetes-collector:0.1.0
+          imagePullPolicy: Always
+          name: container-metrics-collector
+          command:
+            - "/usr/local/bin/checkmk-container-metrics-collector"
+          args:
+            - "--secure-protocol"
+          resources:
+            limits:
+              cpu: 300m
+              memory: 200Mi
+            requests:
+              cpu: 150m
+              memory: 200Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsGroup: 10001
+            runAsNonRoot: true
+            runAsUser: 10001
+      serviceAccountName: node-collector
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    seccomp.security.alpha.kubernetes.io/pod: runtime/default
+  labels:
+    app: node-collector-machine-sections
+  name: node-collector-machine-sections
+  namespace: checkmk-monitoring
+spec:
+  selector:
+    matchLabels:
+      app: node-collector-machine-sections
+      name: node-collector-machine-sections
+  template:
+    metadata:
+      labels:
+        app: node-collector-machine-sections
+        name: node-collector-machine-sections
+    spec:
+      containers:
+        - image: lisapichlertribe29/kubernetes-collector:0.1.0
+          imagePullPolicy: Always
+          name: machine-sections-collector
+          command:
+            - "/usr/local/bin/checkmk-machine-sections-collector"
+          args:
+            - "--secure-protocol"
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          resources:
+            limits:
+              cpu: 300m
+              memory: 200Mi
+            requests:
+              cpu: 150m
+              memory: 200Mi
+      serviceAccountName: node-collector
+      terminationGracePeriodSeconds: 30
