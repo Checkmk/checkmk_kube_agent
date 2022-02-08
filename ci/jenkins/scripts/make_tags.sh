@@ -4,6 +4,7 @@ set -e
 
 VERSION=$1
 METHOD=$2
+BRANCH=main
 
 case $METHOD in
   rebuild_version)
@@ -13,11 +14,12 @@ case $METHOD in
 
   minor | patch)
     # Create set version commit and switch to a new branch
+    git checkout ${BRANCH}
     NEW_VERSION=${VERSION} make setversion;
     git tag ${VERSION}
     git commit -am "Set version to ${VERSION}"
-    git pull --tags origin main
-    git push --tags origin main
+    git pull --tags origin ${BRANCH}
+    git push --tags origin ${BRANCH}
     ;;
 
   *)
