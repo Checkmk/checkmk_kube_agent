@@ -15,6 +15,7 @@ case $METHOD in
   minor | patch)
     # Create set version commit and switch to a new branch
     git checkout ${BRANCH}
+    git pull --rebase
     NEW_VERSION=${VERSION} make setversion;
     git tag ${VERSION}
     git commit -am "Set version to ${VERSION}"
