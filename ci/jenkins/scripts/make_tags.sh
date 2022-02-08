@@ -17,8 +17,8 @@ case $METHOD in
     git checkout ${BRANCH}
     git pull --rebase
     NEW_VERSION=${VERSION} make setversion;
-    git tag ${VERSION}
     git commit -am "Set version to ${VERSION}"
+    git tag ${VERSION}
     git pull --tags origin ${BRANCH}
     git push --tags origin ${BRANCH}
     ;;
