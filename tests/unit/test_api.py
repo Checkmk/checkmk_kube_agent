@@ -11,6 +11,7 @@ import json
 from inspect import signature
 from threading import Thread
 from typing import NamedTuple, Sequence
+from unittest.mock import Mock
 
 import pytest
 import requests
@@ -20,6 +21,7 @@ from fastapi.testclient import TestClient
 
 import checkmk_kube_agent.api
 from checkmk_kube_agent.api import (
+    StandaloneApplication,
     _init_app_state,
     app,
     authenticate,
@@ -141,8 +143,6 @@ def argv() -> Sequence[str]:
         "--secure-protocol",
         "--ssl-keyfile",
         "my-ssl-keyfile",
-        "--ssl-keyfile-password",
-        "123!",
         "--ssl-certfile",
         "my-ssl-certfile",
         "--cache-maxsize",
@@ -160,7 +160,6 @@ def test_parse_arguments(argv: Sequence[str]) -> None:
     assert args.port == 5
     assert args.secure_protocol is True
     assert args.ssl_keyfile == "my-ssl-keyfile"
-    assert args.ssl_keyfile_password == "123!"
     assert args.ssl_certfile == "my-ssl-certfile"
     assert args.cache_maxsize == 3
     assert args.cache_ttl == 400
@@ -629,3 +628,14 @@ def test_endpoints_request_authentication() -> None:
             "Depends(authenticate_get)",
             "Depends(authenticate_post)",
         }
+
+
+def test_standalone_application() -> None:
+    """some basic tests for setting up the gunicorn app"""
+    app_ = Mock()
+
+    StandaloneApplication.cfg = Mock()
+    standalone = StandaloneApplication(app_, {"bind": "value:8080"})
+    standalone.load_config()
+    assert standalone.load() is app_
+    assert standalone.cfg.bind == ["value:8080"]

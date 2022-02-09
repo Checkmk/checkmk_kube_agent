@@ -61,11 +61,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-            - name: CLUSTER_COLLECTOR_KEYPASS
-              valueFrom:
-                secretKeyRef:
-                  name: cluster-collector-secret
-                  key: cluster-collector-keypass
           volumeMounts:
             - name: cluster-collector-key
               mountPath: /etc/ca-certificates/cluster-collector-key.pam
@@ -75,6 +70,10 @@ spec:
               mountPath: /etc/ca-certificates/cluster-collector-cert.pam
               subPath: cluster-collector-cert.pam
               readOnly: true
+            # gunicorn needs a writeable /tmp and runs best with ram backed /tmp
+            # https://docs.gunicorn.org/en/latest/faq.html#blocking-os-fchmod
+            - name: tmp
+              mountPath: /tmp
           livenessProbe:
             httpGet:
               path: /health
@@ -95,7 +94,6 @@ spec:
           args:
             - "--host=0.0.0.0"
             - "--ssl-keyfile=/etc/ca-certificates/cluster-collector-key.pam"
-            - "--ssl-keyfile-password=$(CLUSTER_COLLECTOR_KEYPASS)"
             - "--ssl-certfile=/etc/ca-certificates/cluster-collector-cert.pam"
             - "--secure-protocol"
             - "--reader-whitelist=checkmk-monitoring:checkmk"
@@ -123,6 +121,9 @@ spec:
             runAsUser: 10001
       serviceAccountName: cluster-collector
       volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
         - name: cluster-collector-key
           secret:
             secretName: cluster-collector-secret

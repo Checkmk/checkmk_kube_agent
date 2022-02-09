@@ -4,7 +4,6 @@
 # This file is part of Checkmk (https://checkmk.com). It is subject to the
 # terms and conditions defined in the file COPYING, which is part of this
 # source code package.
-
 """Cluster collector API endpoints to post/get metric data."""
 
 import argparse
@@ -13,7 +12,7 @@ import os
 import sys
 from typing import FrozenSet, NewType, Optional, Sequence
 
-import uvicorn  # type: ignore[import]
+import gunicorn.app.base  # type: ignore[import]
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -228,11 +227,6 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
         help="Path to the SSL key file for HTTPS connections",
     )
     parser.add_argument(
-        "--ssl-keyfile-password",
-        required="--secure-protocol" in argv,
-        help="Password for the SSL key file for HTTPS connections",
-    )
-    parser.add_argument(
         "--ssl-certfile",
         required="--secure-protocol" in argv,
         help="Path to the SSL certificate file for HTTPS connections",
@@ -266,8 +260,8 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
     )
     parser.add_argument(
         "--log-level",
-        choices=["trace", "debug", "info", "warning", "error", "critical"],
-        help="Uvicorn log level.",
+        choices=["debug", "info", "warning", "error", "critical"],
+        help="gunicorn log level.",
     )
 
     parser.set_defaults(
@@ -321,23 +315,46 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         tcp_timeout=(args.connect_timeout, args.read_timeout),
     )
 
+    options = {
+        "bind": f"{args.host}:{args.port}",
+        "workers": 1,
+        "worker_class": "uvicorn.workers.UvicornWorker",
+        "loglevel": args.log_level,
+        "accesslog": "-",
+    }
     if args.secure_protocol:
-        uvicorn.run(
-            app,
-            host=args.host,
-            port=args.port,
-            ssl_keyfile=args.ssl_keyfile,
-            ssl_keyfile_password=args.ssl_keyfile_password,
-            ssl_certfile=args.ssl_certfile,
-            log_level=args.log_level,
+        options.update(
+            {
+                "keyfile": args.ssl_keyfile,
+                "certfile": args.ssl_certfile,
+            }
         )
-    else:
-        uvicorn.run(
-            app,
-            host=args.host,
-            port=args.port,
-            log_level=args.log_level,
-        )
+
+    StandaloneApplication(app, options).run()
+
+
+class StandaloneApplication(
+    gunicorn.app.base.BaseApplication
+):  # pylint: disable=abstract-method
+    """
+    normally gunicorn is started from the command line, but we want it to fully
+    integrate into our own script.
+    https://docs.gunicorn.org/en/stable/custom.html#custom-application
+    """
+
+    def __init__(self, app_, options=None) -> None:
+        self.options = options or {}
+        self.application = app_
+        super().__init__()
+
+    def load_config(self):
+        """load config"""
+        for key, value in self.options.items():
+            self.cfg.set(key, value)
+
+    def load(self):
+        """load app"""
+        return self.application
 
 
 if __name__ == "__main__":
