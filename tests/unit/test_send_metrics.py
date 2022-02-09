@@ -114,7 +114,7 @@ def test_parse_arguments(argv: Sequence[str]) -> None:
     args = parse_arguments(argv)
 
     assert args.host == "8.8.8.8"
-    assert args.port == "88"
+    assert args.port == 88
     assert args.secure_protocol is True
     assert args.polling_interval == 60
     assert args.max_retries == 20

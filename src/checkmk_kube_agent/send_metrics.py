@@ -20,6 +20,7 @@ import requests
 from requests import Session
 from urllib3.util.retry import Retry  # type: ignore[import]
 
+from checkmk_kube_agent.common import collector_argument_parser
 from checkmk_kube_agent.type_defs import (
     ContainerMetric,
     ContainerName,
@@ -246,39 +247,19 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
     """Parse arguments used to configure the node collector and cluster
     collector API endpoint"""
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--host",
-        "-s",
-        help="Host IP address",
-    )
-    parser.add_argument(
-        "--port",
-        "-p",
-        help="Host port",
-    )
-    parser.add_argument(
-        "--secure-protocol",
-        action="store_true",
-        help="Use secure protocol (HTTPS)",
-    )
+    parser = collector_argument_parser()
+
     parser.add_argument(
         "--polling-interval",
         "-i",
         type=int,
         help="Interval in seconds at which to poll data",
     )
-    parser.add_argument(
-        "--max-retries",
-        "-r",
-        type=int,
-        help="Maximum number of retries on connection error",
-    )
     parser.set_defaults(
         host=os.environ.get("CLUSTER_COLLECTOR_SERVICE_HOST", "127.0.0.1"),
         port=os.environ.get("CLUSTER_COLLECTOR_SERVICE_PORT_API", "10050"),
+        max_retries=10,
         polling_interval=60,
-        max_retires=10,
     )
 
     return parser.parse_args(argv)

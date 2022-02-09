@@ -19,6 +19,7 @@ from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from checkmk_kube_agent.common import collector_argument_parser
 from checkmk_kube_agent.dedup_ttl_cache import DedupTTLCache
 from checkmk_kube_agent.type_defs import (
     ContainerMetric,
@@ -216,24 +217,9 @@ def send_container_metrics(
 
 def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
     """Parse arguments used to configure the API endpoint and the DedupQueue"""
-    parser = argparse.ArgumentParser()
 
-    parser.add_argument(
-        "--host",
-        "-s",
-        help="Host IP address on which to start the API",
-    )
-    parser.add_argument(
-        "--port",
-        "-p",
-        type=int,
-        help="Port",
-    )
-    parser.add_argument(
-        "--secure-protocol",
-        action="store_true",
-        help="Use secure protocol (HTTPS)",
-    )
+    parser = collector_argument_parser()
+
     parser.add_argument(
         "--ssl-keyfile",
         required="--secure-protocol" in argv,
