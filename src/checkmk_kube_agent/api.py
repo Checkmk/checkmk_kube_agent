@@ -13,13 +13,13 @@ import os
 import sys
 from typing import FrozenSet, NewType, Optional, Sequence
 
-import requests
 import uvicorn  # type: ignore[import]
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from requests import Session
 
-from checkmk_kube_agent.common import collector_argument_parser
+from checkmk_kube_agent.common import TCPTimeout, collector_argument_parser, tcp_session
 from checkmk_kube_agent.dedup_ttl_cache import DedupTTLCache
 from checkmk_kube_agent.type_defs import (
     ContainerMetric,
@@ -58,6 +58,7 @@ def authenticate(
     *,
     kubernetes_service_host: Optional[str],
     kubernetes_service_port_https: Optional[str],
+    session: Session,
     serviceaccount_whitelist: FrozenSet[str],
 ) -> HTTPAuthorizationCredentials:
     """Verify whether the Service Account has access to GET/POST from/to the
@@ -77,14 +78,13 @@ def authenticate(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    token_review_response = requests.post(
+    token_review_response = session.post(
         (
             f"https://{kubernetes_service_host}:{kubernetes_service_port_https}/"
             "apis/authentication.k8s.io/v1/tokenreviews"
         ),
         headers={
             "Authorization": f"Bearer {api_token}",
-            "Content-Type": "application/json",
         },
         data=json.dumps(
             {
@@ -145,6 +145,7 @@ async def authenticate_post(
         token,
         kubernetes_service_host=kubernetes_service_host,
         kubernetes_service_port_https=kubernetes_service_port_https,
+        session=app.state.tcp_session,
         serviceaccount_whitelist=app.state.writer_whitelist,
     )
 
@@ -162,6 +163,7 @@ async def authenticate_get(
         token,
         kubernetes_service_host=kubernetes_service_host,
         kubernetes_service_port_https=kubernetes_service_port_https,
+        session=app.state.tcp_session,
         serviceaccount_whitelist=app.state.reader_whitelist,
     )
 
@@ -288,6 +290,7 @@ def _init_app_state(
     cache_ttl: int,
     reader_whitelist: Sequence[str],
     writer_whitelist: Sequence[str],
+    tcp_timeout: TCPTimeout,
 ) -> None:
     container_metric_queue = DedupTTLCache[ContainerMetricKey, ContainerMetric](
         key=container_metric_key,
@@ -302,6 +305,7 @@ def _init_app_state(
     )
     app_.state.reader_whitelist = frozenset(reader_whitelist)
     app_.state.writer_whitelist = frozenset(writer_whitelist)
+    app_.state.tcp_session = tcp_session(timeout=tcp_timeout)
 
 
 def main(argv: Optional[Sequence[str]] = None) -> None:
@@ -314,6 +318,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         cache_ttl=args.cache_ttl,
         reader_whitelist=args.reader_whitelist.split(","),
         writer_whitelist=args.writer_whitelist.split(","),
+        tcp_timeout=(args.connect_timeout, args.read_timeout),
     )
 
     if args.secure_protocol:

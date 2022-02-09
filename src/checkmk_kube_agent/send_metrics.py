@@ -16,11 +16,9 @@ import time
 from functools import partial
 from typing import Callable, Dict, Iterable, Mapping, Optional, Sequence
 
-import requests
 from requests import Session
-from urllib3.util.retry import Retry  # type: ignore[import]
 
-from checkmk_kube_agent.common import collector_argument_parser
+from checkmk_kube_agent.common import collector_argument_parser, tcp_session
 from checkmk_kube_agent.type_defs import (
     ContainerMetric,
     ContainerName,
@@ -325,15 +323,11 @@ def _main(
     args = parse_arguments(argv or sys.argv[1:])
     protocol = "https" if args.secure_protocol else "http"
 
-    session = requests.Session()
-
-    retries = Retry(
-        total=args.max_retries,
+    session = tcp_session(
+        retries=args.max_retries,
         backoff_factor=0.1,
+        timeout=(args.connect_timeout, args.read_timeout),
     )
-
-    session.mount("http://", requests.adapters.HTTPAdapter(max_retries=retries))
-    session.mount("https://", requests.adapters.HTTPAdapter(max_retries=retries))
     cluster_collector_base_url = f"{protocol}://{args.host}:{args.port}"
 
     while True:
@@ -341,7 +335,6 @@ def _main(
 
         headers = {
             "Authorization": f"Bearer {read_node_collector_token()}",
-            "Content-Type": "application/json",
         }
         worker(session, cluster_collector_base_url, headers)
 
