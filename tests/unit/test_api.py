@@ -37,7 +37,7 @@ from checkmk_kube_agent.type_defs import (
 # pylint: disable=redefined-outer-name
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def cluster_collector_client():
     """Cluster collector API test client"""
     _init_app_state(
@@ -175,7 +175,7 @@ def test_udpate_container_metrics(
     cluster_collector_client,
 ) -> None:
     """`update_container_metrics` endpoint writes container metric data to
-    queue"""
+    queue, `container_metrics` endpoint returns all data from queue"""
     response = cluster_collector_client.post(
         "/update_container_metrics",
         headers={
@@ -190,12 +190,6 @@ def test_udpate_container_metrics(
         == metric_collection.container_metrics
     )
 
-
-def test_send_container_metrics(
-    metric_collection: MetricCollection,
-    cluster_collector_client,
-) -> None:
-    """`container_metrics` endpoint returns all data from queue"""
     response = cluster_collector_client.get(
         "/container_metrics",
         headers={
