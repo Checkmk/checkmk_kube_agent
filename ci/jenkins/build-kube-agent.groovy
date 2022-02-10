@@ -7,6 +7,12 @@ withFolderProperties{
     NODE = env.BUILD_NODE
 }
 
+// TODO: Duplicate code from checkmk repo -> move to common repo
+def get_branch(scm) {
+    def BRANCH = scm.branches[0].name.replaceAll("/","-")
+    return BRANCH
+}
+
 properties([
     buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '7', numToKeepStr: '14')),
     parameters([
@@ -23,6 +29,7 @@ properties([
 
 def RELEASE_BUILD
 def DOCKER_TAG_SUFFIX
+def BRANCH = get_branch(scm)
 
 if (METHOD == "rebuild_version" && VERSION == "") {error "You need to specify VERSION when rebuilding one."}
 
@@ -33,7 +40,7 @@ switch (METHOD) {
         def DATE_FORMAT = new SimpleDateFormat("yyyy.MM.dd")
         def DATE = new Date()
         DOCKER_TAG_SUFFIX = "_" + DATE_FORMAT.format(DATE)
-        break;
+        break
     default:
         // A release job
         RELEASE_BUILD = true
@@ -74,7 +81,7 @@ timeout(time: 12, unit: 'HOURS') {
                                  "GIT_SSH_VARIANT=ssh",
                                  "GIT_COMMITTER_NAME=Checkmk release system",
                                  "GIT_COMMITTER_EMAIL=feedback@check-mk.org"]) {
-                            sh("./ci/jenkins/scripts/make_tags.sh ${VERSION} ${METHOD}")
+                            sh("./ci/jenkins/scripts/make_tags.sh ${VERSION} ${METHOD} ${BRANCH}")
                         }
                     }
                 }
@@ -91,17 +98,17 @@ timeout(time: 12, unit: 'HOURS') {
             }
         }
         stage("Build Images") {
-            COLLECTOR_IMAGE = docker.build("kubernetes-collector", "--target=release --tag 'version:${PROJECT_VERSION}' --build-arg PROJECT_VERSION=${PROJECT_VERSION} --build-arg CHECKMK_AGENT_VERSION=${CHECKMK_AGENT_VERSION} -f docker/kubernetes-collector/Dockerfile .");
-            // TODO: The name for the cadvisor image is not clear yet - needs to be defined by Martin H. 
-            CADVISOR_IMAGE = docker.build("cadvisor", "--target=release --tag 'version:${PROJECT_VERSION}' --build-arg PROJECT_VERSION=${PROJECT_VERSION} -f docker/cadvisor/Dockerfile .");
-            IMAGES = [COLLECTOR_IMAGE, CADVISOR_IMAGE];
-        }
-
-        stage('Push Images') {
-            docker.withRegistry(DOCKER_REGISTRY, 'nexus') {
-                IMAGES.each {IMAGE -> IMAGE.push("v" + PROJECT_VERSION + DOCKER_TAG_SUFFIX)}
+            docker.image("checkmk-kube-agent-ci:latest").inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
+                sh("#!/bin/ash\nDOCKER_TAG_SUFFIX=${DOCKER_TAG_SUFFIX} make release-image");
             }
 
+        stage('Push Images') {
+            withCredentials([
+                    usernamePassword(credentialsId: '11fb3d5f-e44e-4f33-a651-274227cc48ab', passwordVariable: 'DOCKER_PASSPHRASE', usernameVariable: 'DOCKER_USERNAME')]) {
+                    sh('echo "${DOCKER_PASSPHRASE}" | docker login -u ${DOCKER_USERNAME} --password-stdin')
+                    sh("DOCKER_TAG_SUFFIX=${DOCKER_TAG_SUFFIX} make push-images")
+                }
+            }
         }
     }
 }

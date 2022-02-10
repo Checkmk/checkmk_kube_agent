@@ -4,7 +4,7 @@ set -e
 
 VERSION=$1
 METHOD=$2
-BRANCH=main
+BRANCH=$3
 
 case $METHOD in
   rebuild_version)

@@ -35,7 +35,7 @@ BROWSER := $(PYTHON) -c "$$BROWSER_PYSCRIPT"
 PROJECT_NAME := checkmk_kube_agent
 CHECKMK_AGENT_VERSION := 2022.02.01
 PROJECT_VERSION := $(shell $(PYTHON) -c "import src.${PROJECT_NAME};print(src.${PROJECT_NAME}.__version__)")
-DOCKER_IMAGE_TAG := $(PROJECT_VERSION)
+DOCKER_IMAGE_TAG := $(PROJECT_VERSION)$(DOCKER_TAG_SUFFIX)
 DOCKERHUB_PUBLISHER := checkmk
 COLLECTOR_IMAGE_NAME := kubernetes-collector
 COLLECTOR_IMAGE := $(DOCKERHUB_PUBLISHER)/${COLLECTOR_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
@@ -214,3 +214,8 @@ print-bumped-version:
 .PHONY: setversion
 setversion:
 	sed -ri 's/^(__version__[[:space:]]*:?= *).*/\1'\""$(NEW_VERSION)\"/" src/checkmk_kube_agent/__init__.py;
+
+.PHONY: push-images
+push-images:
+	docker push $(COLLECTOR_IMAGE)
+	docker push $(CADVISOR_IMAGE)
