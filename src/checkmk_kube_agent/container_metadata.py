@@ -10,6 +10,9 @@
 from checkmk_kube_agent.type_defs import (
     CheckmkKubeAgentMetadata,
     CollectorMetadata,
+    CollectorType,
+    Components,
+    HostName,
     NodeCollectorMetadata,
     NodeName,
     OsName,
@@ -23,6 +26,7 @@ def parse_metadata(
     *,
     os_release_content: str,
     node: str,
+    host_name: str,
     python_version: str,
     python_compiler: str,
     checkmk_kube_agent_version: str,
@@ -38,6 +42,7 @@ def parse_metadata(
 
     return CollectorMetadata(
         node=NodeName(node),
+        host_name=HostName(host_name),
         container_platform=PlatformMetadata(
             os_name=OsName(release_content["ID"]),
             os_version=Version(release_content["VERSION_ID"].replace('"', "")),
@@ -52,14 +57,15 @@ def parse_metadata(
 
 def parse_node_collector_metadata(
     collector_metadata: CollectorMetadata,
-    cadvisor_version: str,
-    checkmk_agent_version: str,
+    collector_type: CollectorType,
+    components: Components,
 ) -> NodeCollectorMetadata:
-    """Node collector metadata: platform and cAdvisor metadata"""
+    """Node collector metadata: platform and external component metadata"""
     return NodeCollectorMetadata(
         node=collector_metadata.node,
+        host_name=collector_metadata.host_name,
         container_platform=collector_metadata.container_platform,
         checkmk_kube_agent=collector_metadata.checkmk_kube_agent,
-        cadvisor_version=Version(cadvisor_version),
-        checkmk_agent_version=Version(checkmk_agent_version),
+        collector_type=collector_type,
+        components=components,
     )

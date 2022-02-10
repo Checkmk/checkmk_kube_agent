@@ -7,13 +7,15 @@
 
 """Cluster collector API data type definitions."""
 
-from typing import NewType, Sequence
+from enum import Enum
+from typing import NewType, Optional, Sequence
 
-from pydantic import BaseModel
+from pydantic import BaseModel, root_validator
 
 LabelName = NewType("LabelName", str)
 LabelValue = NewType("LabelValue", str)
 ContainerName = NewType("ContainerName", LabelValue)
+HostName = NewType("HostName", str)
 MetricName = NewType("MetricName", str)
 MetricValueString = NewType("MetricValueString", str)
 Namespace = NewType("Namespace", LabelValue)
@@ -26,7 +28,10 @@ Timestamp = NewType("Timestamp", float)
 Version = NewType("Version", str)
 
 # pylint: disable=missing-class-docstring
+# pylint: disable=missing-function-docstring
 # pylint: disable=too-few-public-methods
+# pylint: disable=no-self-argument
+# pylint: disable=no-self-use
 
 
 class ContainerMetric(BaseModel):
@@ -61,6 +66,9 @@ class CheckmkKubeAgentMetadata(BaseModel):
 
 class CollectorMetadata(BaseModel):
     node: NodeName
+    host_name: HostName  # This looks like the pod name, but it is not. It is
+    # possible to give the host an arbitrary host name, different from the pod
+    # name which is managed by Kubernetes.
     container_platform: PlatformMetadata
     checkmk_kube_agent: CheckmkKubeAgentMetadata
 
@@ -69,9 +77,51 @@ class ClusterCollectorMetadata(CollectorMetadata):
     pass
 
 
+class CollectorType(Enum):
+    CONTAINER_METRICS = "Container Metrics"
+    MACHINE_SECTIONS = "Machine Sections"
+
+    @classmethod
+    def __get_validators__(cls):
+        cls.lookup = {v: k.value for v, k in cls.__members__.items()}
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, value):
+        if isinstance(value, str):
+            value = cls(value)
+        if not (lookup_value := cls.lookup.get(value.name)):
+            raise ValueError(f"invalid collector type: {lookup_value}")
+        return lookup_value
+
+
+class Components(BaseModel):
+    cadvisor_version: Optional[Version]
+    checkmk_agent_version: Optional[Version]
+
+
 class NodeCollectorMetadata(CollectorMetadata):
-    cadvisor_version: Version
-    checkmk_agent_version: Version
+    collector_type: CollectorType
+    components: Components
+
+    @root_validator()
+    def validate_components(cls, values):
+        components = dict(values["components"])
+        collector_type = CollectorType(values.get("collector_type"))
+        # pylint: disable=fixme
+        # TODO: could be refactored to match expression as soon as it is
+        # supported by mypy
+        if collector_type is CollectorType.CONTAINER_METRICS:
+            if components["cadvisor_version"] is None:
+                raise ValueError("cadvisor_version must be set")
+            return values
+        if collector_type is CollectorType.MACHINE_SECTIONS:
+            if components["checkmk_agent_version"] is None:
+                raise ValueError("checkmk_agent_version must be set")
+            return values
+        raise ValueError(  # pragma: no cover
+            f"Unknown collector type: {collector_type}"
+        )
 
 
 class Metadata(BaseModel):
