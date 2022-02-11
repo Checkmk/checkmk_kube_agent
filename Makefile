@@ -132,7 +132,7 @@ lint-docker-image/trivy: ## check vulnerability issues of Docker images with tri
 .PHONY: lint-docker-image/trivy-containerised
 lint-docker-image/trivy-containerised: release-image ## check vulnerability issues of Docker images with trivy
 	./scripts/run-in-docker.sh \
-		-i aquasec/trivy:0.21.2 \
+		-i aquasec/trivy:0.23.0 \
 		-o "-v /var/run/docker.sock:/var/run/docker.sock" \
 		-o "--group-add=$$(getent group docker | cut -d: -f3)" \
 		-c "trivy --cache-dir .cache image $(COLLECTOR_IMAGE); \
