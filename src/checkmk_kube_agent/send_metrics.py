@@ -16,10 +16,9 @@ import time
 from functools import partial
 from typing import Callable, Dict, Iterable, Mapping, Optional, Sequence
 
-import requests
 from requests import Session
-from urllib3.util.retry import Retry  # type: ignore[import]
 
+from checkmk_kube_agent.common import collector_argument_parser, tcp_session
 from checkmk_kube_agent.type_defs import (
     ContainerMetric,
     ContainerName,
@@ -30,6 +29,7 @@ from checkmk_kube_agent.type_defs import (
     MetricName,
     MetricValueString,
     Namespace,
+    NodeName,
     PodName,
     PodUid,
     Timestamp,
@@ -245,39 +245,19 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
     """Parse arguments used to configure the node collector and cluster
     collector API endpoint"""
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--host",
-        "-s",
-        help="Host IP address",
-    )
-    parser.add_argument(
-        "--port",
-        "-p",
-        help="Host port",
-    )
-    parser.add_argument(
-        "--secure-protocol",
-        action="store_true",
-        help="Use secure protocol (HTTPS)",
-    )
+    parser = collector_argument_parser()
+
     parser.add_argument(
         "--polling-interval",
         "-i",
         type=int,
         help="Interval in seconds at which to poll data",
     )
-    parser.add_argument(
-        "--max-retries",
-        "-r",
-        type=int,
-        help="Maximum number of retries on connection error",
-    )
     parser.set_defaults(
         host=os.environ.get("CLUSTER_COLLECTOR_SERVICE_HOST", "127.0.0.1"),
         port=os.environ.get("CLUSTER_COLLECTOR_SERVICE_PORT_API", "10050"),
+        max_retries=10,
         polling_interval=60,
-        max_retires=10,
     )
 
     return parser.parse_args(argv)
@@ -289,7 +269,10 @@ def container_metrics_worker(
     """
     Query cadvisor api, send metrics to cluster collector
     """
-    cadvisor_response = session.get("http://localhost:8080/metrics")
+    cadvisor_response = session.get(
+        f"http://{os.environ['CADVISOR_SERVICE_HOST']}:"
+        f"{os.environ['CADVISOR_SERVICE_PORT']}/metrics"
+    )
     cadvisor_response.raise_for_status()
 
     cluster_collector_response = session.post(
@@ -320,12 +303,12 @@ def machine_sections_worker(
             raise RuntimeError("Agent execution failed.")
         if process.stdout is None:
             raise RuntimeError("Could not read agent output")
-        sections = process.stdout.read()
+        sections = process.stdout.read().decode("utf-8")
     cluster_collector_response = session.post(
         f"{cluster_collector_base_url}/update_machine_sections",
         headers=headers,
         data=MachineSections(
-            sections=sections, node_name=os.environ["NODE_NAME"]
+            sections=sections, node_name=NodeName(os.environ["NODE_NAME"])
         ).json(),
         verify=False,
     )
@@ -340,15 +323,11 @@ def _main(
     args = parse_arguments(argv or sys.argv[1:])
     protocol = "https" if args.secure_protocol else "http"
 
-    session = requests.Session()
-
-    retries = Retry(
-        total=args.max_retries,
+    session = tcp_session(
+        retries=args.max_retries,
         backoff_factor=0.1,
+        timeout=(args.connect_timeout, args.read_timeout),
     )
-
-    session.mount("http://", requests.adapters.HTTPAdapter(max_retries=retries))
-    session.mount("https://", requests.adapters.HTTPAdapter(max_retries=retries))
     cluster_collector_base_url = f"{protocol}://{args.host}:{args.port}"
 
     while True:
@@ -356,7 +335,6 @@ def _main(
 
         headers = {
             "Authorization": f"Bearer {read_node_collector_token()}",
-            "Content-Type": "application/json",
         }
         worker(session, cluster_collector_base_url, headers)
 

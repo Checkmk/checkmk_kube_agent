@@ -34,3 +34,19 @@ spec:
       protocol: TCP
   selector:
     app: cluster-collector
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cadvisor
+  namespace: checkmk-monitoring
+  labels:
+    app: node-collector-cadvisor
+spec:
+  ports:
+    - name: cadvisor
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+  selector:
+    app: node-collector-cadvisor

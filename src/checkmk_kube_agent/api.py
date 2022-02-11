@@ -11,19 +11,21 @@ import argparse
 import json
 import os
 import sys
-from typing import Dict, FrozenSet, NewType, Optional, Sequence, Tuple
+from typing import FrozenSet, NewType, Optional, Sequence
 
-import requests
 import uvicorn  # type: ignore[import]
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from requests import Session
 
+from checkmk_kube_agent.common import TCPTimeout, collector_argument_parser, tcp_session
 from checkmk_kube_agent.dedup_ttl_cache import DedupTTLCache
 from checkmk_kube_agent.type_defs import (
     ContainerMetric,
     MachineSections,
     MetricCollection,
+    NodeName,
 )
 
 app = FastAPI()
@@ -56,6 +58,7 @@ def authenticate(
     *,
     kubernetes_service_host: Optional[str],
     kubernetes_service_port_https: Optional[str],
+    session: Session,
     serviceaccount_whitelist: FrozenSet[str],
 ) -> HTTPAuthorizationCredentials:
     """Verify whether the Service Account has access to GET/POST from/to the
@@ -75,14 +78,13 @@ def authenticate(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    token_review_response = requests.post(
+    token_review_response = session.post(
         (
             f"https://{kubernetes_service_host}:{kubernetes_service_port_https}/"
             "apis/authentication.k8s.io/v1/tokenreviews"
         ),
         headers={
             "Authorization": f"Bearer {api_token}",
-            "Content-Type": "application/json",
         },
         data=json.dumps(
             {
@@ -143,6 +145,7 @@ async def authenticate_post(
         token,
         kubernetes_service_host=kubernetes_service_host,
         kubernetes_service_port_https=kubernetes_service_port_https,
+        session=app.state.tcp_session,
         serviceaccount_whitelist=app.state.writer_whitelist,
     )
 
@@ -160,6 +163,7 @@ async def authenticate_get(
         token,
         kubernetes_service_host=kubernetes_service_host,
         kubernetes_service_port_https=kubernetes_service_port_https,
+        session=app.state.tcp_session,
         serviceaccount_whitelist=app.state.reader_whitelist,
     )
 
@@ -184,17 +188,15 @@ def update_machine_sections(
     token: str = Depends(authenticate_post),  # pylint: disable=unused-argument
 ) -> None:
     """Update sections for the kubernetes machines"""
-    app.state.machine_sections_queue.put(
-        (machine_sections.node_name, machine_sections.sections)
-    )
+    app.state.machine_sections_queue.put(machine_sections)
 
 
 @app.get("/machine_sections")
 def send_machine_sections(
     token: str = Depends(authenticate_get),  # pylint: disable=unused-argument
-) -> Dict[str, str]:
+) -> Sequence[MachineSections]:
     """Get all available host metrics"""
-    return dict(app.state.machine_sections_queue.get_all())
+    return app.state.machine_sections_queue.get_all()
 
 
 @app.post("/update_container_metrics")
@@ -217,24 +219,9 @@ def send_container_metrics(
 
 def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
     """Parse arguments used to configure the API endpoint and the DedupQueue"""
-    parser = argparse.ArgumentParser()
 
-    parser.add_argument(
-        "--host",
-        "-s",
-        help="Host IP address on which to start the API",
-    )
-    parser.add_argument(
-        "--port",
-        "-p",
-        type=int,
-        help="Port",
-    )
-    parser.add_argument(
-        "--secure-protocol",
-        action="store_true",
-        help="Use secure protocol (HTTPS)",
-    )
+    parser = collector_argument_parser()
+
     parser.add_argument(
         "--ssl-keyfile",
         required="--secure-protocol" in argv,
@@ -277,6 +264,11 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
         help="Specify the time-to-live (seconds) entries are persisted in the "
         "cache. Entries exceeding ttl are removed from the cache.",
     )
+    parser.add_argument(
+        "--log-level",
+        choices=["trace", "debug", "info", "warning", "error", "critical"],
+        help="Uvicorn log level.",
+    )
 
     parser.set_defaults(
         host="127.0.0.1",
@@ -285,6 +277,7 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
         writer_whitelist="checkmk-monitoring:node-collector",
         cache_maxsize=10000,
         cache_ttl=120,
+        log_level="error",
     )
 
     return parser.parse_args(argv)
@@ -297,6 +290,7 @@ def _init_app_state(
     cache_ttl: int,
     reader_whitelist: Sequence[str],
     writer_whitelist: Sequence[str],
+    tcp_timeout: TCPTimeout,
 ) -> None:
     container_metric_queue = DedupTTLCache[ContainerMetricKey, ContainerMetric](
         key=container_metric_key,
@@ -304,13 +298,14 @@ def _init_app_state(
         ttl=cache_ttl,
     )
     app_.state.container_metric_queue = container_metric_queue
-    app_.state.machine_sections_queue = DedupTTLCache[str, Tuple[str, str]](
-        key=lambda x: x[0],
+    app_.state.machine_sections_queue = DedupTTLCache[NodeName, MachineSections](
+        key=lambda x: x.node_name,
         maxsize=cache_maxsize,
         ttl=cache_ttl,
     )
     app_.state.reader_whitelist = frozenset(reader_whitelist)
     app_.state.writer_whitelist = frozenset(writer_whitelist)
+    app_.state.tcp_session = tcp_session(timeout=tcp_timeout)
 
 
 def main(argv: Optional[Sequence[str]] = None) -> None:
@@ -323,6 +318,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         cache_ttl=args.cache_ttl,
         reader_whitelist=args.reader_whitelist.split(","),
         writer_whitelist=args.writer_whitelist.split(","),
+        tcp_timeout=(args.connect_timeout, args.read_timeout),
     )
 
     if args.secure_protocol:
@@ -333,12 +329,14 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
             ssl_keyfile=args.ssl_keyfile,
             ssl_keyfile_password=args.ssl_keyfile_password,
             ssl_certfile=args.ssl_certfile,
+            log_level=args.log_level,
         )
     else:
         uvicorn.run(
             app,
             host=args.host,
             port=args.port,
+            log_level=args.log_level,
         )
 
 
