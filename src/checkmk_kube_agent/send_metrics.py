@@ -14,7 +14,7 @@ import subprocess  # nosec
 import sys
 import time
 from functools import partial
-from typing import Callable, Dict, Iterable, Mapping, NewType, Optional, Sequence
+from typing import Callable, Dict, Iterable, Mapping, NewType, Optional, Sequence, Union
 
 import urllib3
 from requests import Session
@@ -50,6 +50,8 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 Url = NewType("Url", str)
 RequestHeaders = Mapping[str, str]
+CaCertPath = NewType("CaCertPath", str)
+SslVerify = Union[bool, CaCertPath]
 
 
 def _split_labels(raw_labels: str) -> Iterable[str]:
@@ -266,18 +268,32 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
         type=int,
         help="Interval in seconds at which to poll data",
     )
+    parser.add_argument(
+        "--verify-ssl",
+        action="store_true",
+        help="Validate cluster collector SSL certificate.",
+    )
+    parser.add_argument(
+        "--ca-cert",
+        type=str,
+        help="Path to the CA certificate to validate SSL certificates against.",
+    )
     parser.set_defaults(
         host=os.environ.get("CLUSTER_COLLECTOR_SERVICE_HOST", "127.0.0.1"),
         port=os.environ.get("CLUSTER_COLLECTOR_SERVICE_PORT_API", "10050"),
         max_retries=10,
         polling_interval=60,
+        ca_cert="/etc/ca-certificates/checkmk-ca-cert.pam",
     )
 
     return parser.parse_args(argv)
 
 
 def container_metrics_worker(
-    session: Session, cluster_collector_base_url: Url, headers: RequestHeaders
+    session: Session,
+    cluster_collector_base_url: Url,
+    headers: RequestHeaders,
+    verify: SslVerify,
 ) -> None:  # pragma: no cover
     """
     Query cadvisor api, send metrics to cluster collector
@@ -311,13 +327,16 @@ def container_metrics_worker(
                 ),
             ),
         ).json(),
-        verify=False,
+        verify=verify,
     )
     cluster_collector_response.raise_for_status()
 
 
 def machine_sections_worker(
-    session: Session, cluster_collector_base_url: Url, headers: RequestHeaders
+    session: Session,
+    cluster_collector_base_url: Url,
+    headers: RequestHeaders,
+    verify: SslVerify,
 ) -> None:  # pragma: no cover
     """
     Call check_mk_agent, send sections to cluster collector
@@ -351,18 +370,22 @@ def machine_sections_worker(
                 ),
             ),
         ).json(),
-        verify=False,
+        verify=verify,
     )
     cluster_collector_response.raise_for_status()
 
 
 def _main(
-    worker: Callable[[Session, Url, RequestHeaders], None],
+    worker: Callable[[Session, Url, RequestHeaders, SslVerify], None],
     argv: Optional[Sequence[str]] = None,
 ) -> None:  # pragma: no cover
     """Run in infinite loop and execute worker function"""
     args = parse_arguments(argv or sys.argv[1:])
     protocol = "https" if args.secure_protocol else "http"
+
+    verify = args.verify_ssl
+    if verify:
+        verify = CaCertPath(args.ca_cert)
 
     session = tcp_session(
         retries=args.max_retries,
@@ -377,7 +400,7 @@ def _main(
         headers = {
             "Authorization": f"Bearer {read_node_collector_token()}",
         }
-        worker(session, cluster_collector_base_url, headers)
+        worker(session, cluster_collector_base_url, headers, verify)
 
         time.sleep(max(args.polling_interval - int(time.time() - start_time), 0))
 

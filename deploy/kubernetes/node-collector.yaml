@@ -113,10 +113,16 @@ spec:
         - image: checkmk/kubernetes-collector:main_<YYYY.MM.DD>
           imagePullPolicy: Always
           name: container-metrics-collector
+          volumeMounts:
+            - name: checkmk-ca-cert
+              mountPath: /etc/ca-certificates/checkmk-ca-cert.pam
+              subPath: checkmk-ca-cert.pam
+              readOnly: true
           command:
             - "/usr/local/bin/checkmk-container-metrics-collector"
           args:
             - "--secure-protocol"
+            - "--verify-ssl"
           env:
             - name: NODE_NAME
               valueFrom:
@@ -141,6 +147,13 @@ spec:
             runAsUser: 10001
       serviceAccountName: node-collector
       terminationGracePeriodSeconds: 30
+      volumes:
+        - name: checkmk-ca-cert
+          secret:
+            secretName: cluster-collector-secret
+            items:
+              - key: checkmk-ca-cert
+                path: checkmk-ca-cert.pam
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -166,10 +179,16 @@ spec:
         - image: checkmk/kubernetes-collector:main_<YYYY.MM.DD>
           imagePullPolicy: Always
           name: machine-sections-collector
+          volumeMounts:
+            - name: checkmk-ca-cert
+              mountPath: /etc/ca-certificates/checkmk-ca-cert.pam
+              subPath: checkmk-ca-cert.pam
+              readOnly: true
           command:
             - "/usr/local/bin/checkmk-machine-sections-collector"
           args:
             - "--secure-protocol"
+            - "--verify-ssl"
           env:
             - name: NODE_NAME
               valueFrom:
@@ -184,3 +203,10 @@ spec:
               memory: 200Mi
       serviceAccountName: node-collector
       terminationGracePeriodSeconds: 30
+      volumes:
+        - name: checkmk-ca-cert
+          secret:
+            secretName: cluster-collector-secret
+            items:
+              - key: checkmk-ca-cert
+                path: checkmk-ca-cert.pam

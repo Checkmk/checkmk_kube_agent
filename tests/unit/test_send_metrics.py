@@ -107,6 +107,9 @@ def argv() -> Sequence[str]:
         "60",
         "--max-retries",
         "20",
+        "--verify-ssl",
+        "--ca-cert",
+        "/myca",
     ]
 
 
@@ -119,6 +122,8 @@ def test_parse_arguments(argv: Sequence[str]) -> None:
     assert args.secure_protocol is True
     assert args.polling_interval == 60
     assert args.max_retries == 20
+    assert args.verify_ssl is True
+    assert args.ca_cert == "/myca"
 
 
 def test_parse_raw_response_skip_comments(commentary_text: str) -> None:
