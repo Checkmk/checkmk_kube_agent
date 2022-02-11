@@ -17,7 +17,7 @@ Here's how to set up `checkmk_kube_agent` for local development.
 1. Clone the `checkmk_kube_agent` repo.
 2. Install your local copy into a virtualenv in editable mode, e.g.::
 
-    $ cd checkmk_kubernetes/
+    $ cd checkmk_kube_agent/
     $ python3 -m venv /path/to/new/virtual/environment
     $ pip3 install -e .
 
