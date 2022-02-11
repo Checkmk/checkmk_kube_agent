@@ -7,7 +7,8 @@ ARG CHECKMK_AGENT_VERSION
 COPY dist/checkmk_kube_agent-"$PROJECT_VERSION".tar.gz /tmp/
 COPY --from=checkmk "/opt/omd/versions/${CHECKMK_AGENT_VERSION}.cre/share/check_mk/agents/check_mk_agent.openwrt" /usr/local/bin/check_mk_agent.openwrt
 COPY docker/kubernetes-collector/wrapper.sh /usr/local/bin/check_mk_agent
-RUN pip3 install --no-cache-dir pip==22.0.2 setuptools==60.7.0 wheel==0.37.1 && \
+RUN apk add --no-cache expat=2.4.4-r0 libuuid=2.37.3-r0 && \
+    pip3 install --no-cache-dir pip==22.0.2 setuptools==60.7.0 wheel==0.37.1 && \
     pip3 install --no-cache-dir /tmp/checkmk_kube_agent-"$PROJECT_VERSION".tar.gz && \
     addgroup appgroup -g 10001 && \
     adduser -HD appuser -G appgroup -u 10001 && \
