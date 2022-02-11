@@ -16,6 +16,7 @@ import time
 from functools import partial
 from typing import Callable, Dict, Iterable, Mapping, Optional, Sequence
 
+import urllib3
 from requests import Session
 
 from checkmk_kube_agent.common import collector_argument_parser, tcp_session
@@ -34,6 +35,9 @@ from checkmk_kube_agent.type_defs import (
     PodUid,
     Timestamp,
 )
+
+# urllib warnings clutter logs
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 def _split_labels(raw_labels: str) -> Iterable[str]:
