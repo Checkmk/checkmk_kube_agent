@@ -14,7 +14,7 @@ import subprocess  # nosec
 import sys
 import time
 from functools import partial
-from typing import Callable, Dict, Iterable, Mapping, Optional, Sequence
+from typing import Callable, Dict, Iterable, Mapping, NewType, Optional, Sequence
 
 import urllib3
 from requests import Session
@@ -47,6 +47,9 @@ from checkmk_kube_agent.type_defs import (
 
 # urllib warnings clutter logs
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+Url = NewType("Url", str)
+RequestHeaders = Mapping[str, str]
 
 
 def _split_labels(raw_labels: str) -> Iterable[str]:
@@ -274,7 +277,7 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
 
 
 def container_metrics_worker(
-    session: Session, cluster_collector_base_url: str, headers: Mapping[str, str]
+    session: Session, cluster_collector_base_url: Url, headers: RequestHeaders
 ) -> None:  # pragma: no cover
     """
     Query cadvisor api, send metrics to cluster collector
@@ -314,7 +317,7 @@ def container_metrics_worker(
 
 
 def machine_sections_worker(
-    session: Session, cluster_collector_base_url: str, headers: Mapping[str, str]
+    session: Session, cluster_collector_base_url: Url, headers: RequestHeaders
 ) -> None:  # pragma: no cover
     """
     Call check_mk_agent, send sections to cluster collector
@@ -354,7 +357,7 @@ def machine_sections_worker(
 
 
 def _main(
-    worker: Callable[[Session, str, Mapping[str, str]], None],
+    worker: Callable[[Session, Url, RequestHeaders], None],
     argv: Optional[Sequence[str]] = None,
 ) -> None:  # pragma: no cover
     """Run in infinite loop and execute worker function"""
@@ -366,7 +369,7 @@ def _main(
         backoff_factor=0.1,
         timeout=(args.connect_timeout, args.read_timeout),
     )
-    cluster_collector_base_url = f"{protocol}://{args.host}:{args.port}"
+    cluster_collector_base_url = Url(f"{protocol}://{args.host}:{args.port}")
 
     while True:
         start_time = time.time()
