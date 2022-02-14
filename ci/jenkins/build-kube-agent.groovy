@@ -28,6 +28,7 @@ properties([
 ])
 
 def RELEASE_BUILD
+def DOCKER_TAG_PREFIX
 def DOCKER_TAG_SUFFIX
 def BRANCH = get_branch(scm)
 
@@ -39,6 +40,7 @@ switch (METHOD) {
         def DATE_FORMAT = new SimpleDateFormat("yyyy.MM.dd")
         def DATE = new Date()
         DOCKER_TAG_SUFFIX = "_" + DATE_FORMAT.format(DATE)
+        DOCKER_TAG_PREFIX = "main"
         break
     default:
         // A release job
@@ -101,14 +103,14 @@ timeout(time: 12, unit: 'HOURS') {
         }
         stage("Build Images") {
             docker.image("checkmk-kube-agent-ci:latest").inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
-                sh("#!/bin/ash\nDOCKER_TAG_SUFFIX=${DOCKER_TAG_SUFFIX} make release-image");
+                sh("#!/bin/ash\nDOCKER_TAG_PREFIX=${DOCKER_TAG_PREFIX} DOCKER_TAG_SUFFIX=${DOCKER_TAG_SUFFIX} make release-image");
             }
 
         stage('Push Images') {
             withCredentials([
                     usernamePassword(credentialsId: '11fb3d5f-e44e-4f33-a651-274227cc48ab', passwordVariable: 'DOCKER_PASSPHRASE', usernameVariable: 'DOCKER_USERNAME')]) {
                     sh('echo "${DOCKER_PASSPHRASE}" | docker login -u ${DOCKER_USERNAME} --password-stdin')
-                    sh("DOCKER_TAG_SUFFIX=${DOCKER_TAG_SUFFIX} make push-images")
+                    sh("DOCKER_TAG_PREFIX=${DOCKER_TAG_PREFIX} DOCKER_TAG_SUFFIX=${DOCKER_TAG_SUFFIX} make push-images")
                 }
             }
         }
