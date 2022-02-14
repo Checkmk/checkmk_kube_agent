@@ -36,7 +36,7 @@ spec:
     - from:
       - namespaceSelector:
           matchLabels:
-            name: {{ .Release.Namespace }}
+            kubernetes.io/metadata.name: {{ .Release.Namespace }}
         podSelector:
           matchLabels:
             component: {{ include "checkmk.fullname" . }}-node-collector
