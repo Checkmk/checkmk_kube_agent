@@ -31,7 +31,6 @@ def RELEASE_BUILD
 def DOCKER_TAG_SUFFIX
 def BRANCH = get_branch(scm)
 
-if (METHOD == "rebuild_version" && VERSION == "") {error "You need to specify VERSION when rebuilding one."}
 
 switch (METHOD) {
     case "daily":
@@ -45,11 +44,17 @@ switch (METHOD) {
         // A release job
         RELEASE_BUILD = true
         DOCKER_TAG_SUFFIX = ""
-        if (METHOD == "major") {
-            error "We currently only do major releases manually by creating a new branch!"
-        }
         break
 }
+
+def validate_parameters_and_branch(method, version, branch) {
+    // This function validates the parameters in combination with the branch to be built from
+    if (method == "rebuild_version" && version == "") error "You need to specify VERSION when rebuilding one!"
+    if (method == "major") error "We currently only do major releases manually by creating a new branch!"
+    if (branch == "main" && method != "daily") error "We currently only create daily builds from branch main!"
+}
+validate_parameters_and_branch(METHOD, VERSION, BRANCH)
+
 timeout(time: 12, unit: 'HOURS') {
     node(NODE) {
         stage('Checkout Sources') {
