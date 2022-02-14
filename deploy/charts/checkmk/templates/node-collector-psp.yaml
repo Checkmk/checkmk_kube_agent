@@ -37,7 +37,7 @@ spec:
   allowPrivilegeEscalation: false
   readOnlyRootFilesystem: true
   requiredDropCapabilities: [ALL]
-  allowedCapabilities: []
+  allowedCapabilities: [CAP_SYS_PTRACE]
   privileged: false
   hostIPC: false
   hostPID: false

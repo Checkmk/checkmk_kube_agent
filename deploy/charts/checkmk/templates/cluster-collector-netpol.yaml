@@ -11,7 +11,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: {{ include "checkmk.fullname" . }}-cluster-collector
+      component: {{ include "checkmk.fullname" . }}-cluster-collector
   policyTypes:
     - Ingress
     - Egress
@@ -29,7 +29,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: {{ include "checkmk.fullname" . }}-cluster-collector
+      component: {{ include "checkmk.fullname" . }}-cluster-collector
   policyTypes:
     - Ingress
   ingress:
@@ -39,7 +39,7 @@ spec:
             name: {{ .Release.Namespace }}
         podSelector:
           matchLabels:
-            app: {{ include "checkmk.fullname" . }}-node-collector
+            component: {{ include "checkmk.fullname" . }}-node-collector
 {{- if gt (len .Values.networkPolicy.allowIngressFromCIDRs) 0 }}
 ---
 # Allow certain incoming traffic as specified in values.yaml, e.g. from Checkmk monitoring server
@@ -53,7 +53,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: {{ include "checkmk.fullname" . }}-cluster-collector
+      component: {{ include "checkmk.fullname" . }}-cluster-collector
   policyTypes:
     - Ingress
   ingress:

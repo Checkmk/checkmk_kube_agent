@@ -22,7 +22,7 @@ _See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation
 
 ```console
 # Helm
-$ helm upgrade --install --create-namespace -n [RELEASE_NAMESPACE] [RELEASE_NAME] .
+$ helm upgrade --install --create-namespace -n [RELEASE_NAMESPACE] [RELEASE_NAME] [-f values.yaml] .
 ```
 
 Note that the flag `--create-namespace` will create the specified namespace `RELEASE_NAMESPACE` if it does not yet exists.
@@ -50,7 +50,7 @@ Install it via `helm plugin install https://github.com/databus23/helm-diff`, the
 
 ```console
 # Helm (requires helm-diff plugin)
-$ helm diff upgrade --install -n [RELEASE_NAMESPACE] [RELEASE_NAME] .
+$ helm diff upgrade --install -n [RELEASE_NAMESPACE] [RELEASE_NAME] [-f values.yaml] .
 ```
 
 ## Render Helm templates

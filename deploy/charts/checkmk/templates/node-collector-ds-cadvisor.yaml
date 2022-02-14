@@ -1,0 +1,74 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "checkmk.fullname" . }}-node-collector-cadvisor
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "checkmk.labels" . | nindent 4 }}
+    app: {{ include "checkmk.fullname" . }}-node-collector-cadvisor
+    component: {{ include "checkmk.fullname" . }}-node-collector
+spec:
+  selector:
+    matchLabels:
+      {{- include "checkmk.selectorLabels" . | nindent 6 }}
+      app: {{ include "checkmk.fullname" . }}-node-collector-cadvisor
+      component: {{ include "checkmk.fullname" . }}-node-collector
+  template:
+    metadata:
+      {{- with .Values.nodeCollector.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "checkmk.selectorLabels" . | nindent 8 }}
+        app: {{ include "checkmk.fullname" . }}-node-collector-cadvisor
+        component: {{ include "checkmk.fullname" . }}-node-collector
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "checkmk.fullname" . }}-node-collector
+      automountServiceAccountToken: false
+      securityContext:
+        {{- toYaml .Values.nodeCollector.podSecurityContext | nindent 8 }}
+      containers:
+        - name: cadvisor
+          securityContext:
+            {{- toYaml .Values.nodeCollector.cadvisor.securityContext | nindent 12 }}
+          image: "{{ .Values.nodeCollector.cadvisor.image.repository }}:{{ .Values.nodeCollector.cadvisor.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.nodeCollector.cadvisor.image.pullPolicy }}
+          command:
+            - "/usr/bin/cadvisor"
+          args:
+          {{- with .Values.nodeCollector.cadvisor.additionalArgs }}
+            {{ toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.nodeCollector.cadvisor.resources | nindent 12 }}
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          volumeMounts:
+            - name: var-run
+              mountPath: /var/run
+              readOnly: true
+            - name: sys
+              mountPath: /sys
+              readOnly: true
+            - name: docker
+              mountPath: /var/lib/docker
+              readOnly: true
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: var-run
+          hostPath:
+            path: /var/run
+        - name: sys
+          hostPath:
+            path: /sys
+        - name: docker
+          hostPath:
+            path: /var/lib/docker

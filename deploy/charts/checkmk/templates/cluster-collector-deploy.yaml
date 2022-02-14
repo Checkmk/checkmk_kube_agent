@@ -7,14 +7,14 @@ metadata:
   labels:
     {{- include "checkmk.labels" . | nindent 4 }}
     app: {{ include "checkmk.fullname" . }}-cluster-collector
-  annotations:
-    seccomp.security.alpha.kubernetes.io/pod: runtime/default
+    component: {{ include "checkmk.fullname" . }}-cluster-collector
 spec:
   replicas: 1
   selector:
     matchLabels:
       {{- include "checkmk.selectorLabels" . | nindent 6 }}
       app: {{ include "checkmk.fullname" . }}-cluster-collector
+      component: {{ include "checkmk.fullname" . }}-cluster-collector
   template:
     metadata:
       {{- with .Values.clusterCollector.podAnnotations }}
@@ -24,6 +24,7 @@ spec:
       labels:
         {{- include "checkmk.selectorLabels" . | nindent 8 }}
         app: {{ include "checkmk.fullname" . }}-cluster-collector
+        component: {{ include "checkmk.fullname" . }}-cluster-collector
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:

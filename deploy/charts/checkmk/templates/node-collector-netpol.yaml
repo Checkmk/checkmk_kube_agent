@@ -11,14 +11,14 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: {{ include "checkmk.fullname" . }}-node-collector
+      component: {{ include "checkmk.fullname" . }}-node-collector
   policyTypes:
     - Ingress
     - Egress
   ingress: []
   egress: []
 ---
-# Allow outgoing traffic from node-collector to cluster-collector
+# Allow outgoing traffic from node-collector components to cluster-collector
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -29,7 +29,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: {{ include "checkmk.fullname" . }}-node-collector
+      component: {{ include "checkmk.fullname" . }}-node-collector
   policyTypes:
     - Egress
   egress:
@@ -39,5 +39,5 @@ spec:
             name: {{ .Release.Namespace }}
         podSelector:
           matchLabels:
-            app: {{ include "checkmk.fullname" . }}-cluster-collector
+            component: {{ include "checkmk.fullname" . }}-cluster-collector
 {{- end }}

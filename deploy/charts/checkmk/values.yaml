@@ -30,9 +30,10 @@ clusterCollector:
     repository: lisapichlertribe29/kubernetes-collector
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "2.1.0i1"
+    tag: "0.1.0"
 
-  podAnnotations: {}
+  podAnnotations:
+    seccomp.security.alpha.kubernetes.io/pod: runtime/default
 
   podSecurityContext: {}
     # fsGroup: 2000
@@ -88,7 +89,8 @@ clusterCollector:
 
 ## Configuration for node-collector
 nodeCollector:
-  podAnnotations: {}
+  podAnnotations:
+    seccomp.security.alpha.kubernetes.io/pod: runtime/default
 
   podSecurityContext: {}
     # fsGroup: 2000
@@ -101,7 +103,7 @@ nodeCollector:
       repository: lisapichlertribe29/kubernetes-collector
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
-      tag: "2.1.0i1"
+      tag: "0.1.0"
 
     securityContext:
       allowPrivilegeEscalation: false
@@ -117,7 +119,7 @@ nodeCollector:
     resources:
       limits:
         cpu: 300m
-        memory: 2000Mi
+        memory: 200Mi
       requests:
         cpu: 150m
         memory: 200Mi
@@ -127,7 +129,7 @@ nodeCollector:
       repository: lisapichlertribe29/kubernetes-collector
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
-      tag: "2.1.0i1"
+      tag: "0.1.0"
 
     securityContext:
       allowPrivilegeEscalation: false
@@ -143,7 +145,7 @@ nodeCollector:
     resources:
       limits:
         cpu: 300m
-        memory: 2000Mi
+        memory: 200Mi
       requests:
         cpu: 150m
         memory: 200Mi
@@ -153,13 +155,28 @@ nodeCollector:
       repository: lisapichlertribe29/cadvisor-patched
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
-      tag: "2.1.0i1"
+      tag: "0.1.0"
+
+    additionalArgs:
+      - "--housekeeping_interval=30s"
+      - "--max_housekeeping_interval=35s"
+      - "--event_storage_event_limit=default=0"
+      - "--event_storage_age_limit=default=0"
+      - "--store_container_labels=false"
+      - "--whitelisted_container_labels=io.kubernetes.container.name,io.kubernetes.pod.name,io.kubernetes.pod.namespace,io.kubernetes.pod.uid"
+      - "--global_housekeeping_interval=30s"
+      - "--event_storage_event_limit=default=0"
+      - "--event_storage_age_limit=default=0"
+      - "--disable_metrics=percpu,process,sched,tcp,udp,diskIO,disk,network"
+      - "--allow_dynamic_housekeeping=true"
+      - "--storage_duration=1m0s"
 
     securityContext:
       allowPrivilegeEscalation: false
       capabilities:
         drop:
           - ALL
+        add: ["CAP_SYS_PTRACE"]
       privileged: false
       readOnlyRootFilesystem: true
       runAsGroup: 10001
@@ -169,7 +186,7 @@ nodeCollector:
     resources:
       limits:
         cpu: 300m
-        memory: 2000Mi
+        memory: 200Mi
       requests:
         cpu: 150m
         memory: 200Mi
