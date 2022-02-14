@@ -84,6 +84,7 @@ dev-image: dist ## build image to be used to run tests in a Docker container
 	docker build --rm --target=dev --build-arg PROJECT_VERSION="${PROJECT_VERSION}" --build-arg CHECKMK_AGENT_VERSION="${CHECKMK_AGENT_VERSION}" -t $(COLLECTOR_IMAGE_NAME)-dev -f docker/kubernetes-collector/Dockerfile .
 
 dist: clean ## builds source and wheel package
+	@echo "Building collector in Version: ${PROJECT_VERSION} using checkmk agent in Version: ${CHECKMK_AGENT_VERSION}"
 	$(PYTHON) setup.py sdist
 	$(PYTHON) setup.py bdist_wheel
 	ls -l dist

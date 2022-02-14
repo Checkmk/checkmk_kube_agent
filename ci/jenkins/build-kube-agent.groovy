@@ -91,9 +91,6 @@ timeout(time: 12, unit: 'HOURS') {
 
         stage("Build source and wheel package") {
             docker.image("checkmk-kube-agent-ci:latest").inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
-                PROJECT_VERSION = sh(script: "#!/bin/ash\nmake print-project-version", returnStdout: true).toString().trim();
-                CHECKMK_AGENT_VERSION = sh(script: "#!/bin/ash\nmake print-checkmk-agent-version", returnStdout: true).toString().trim();
-                println("Building collector in Version: " + PROJECT_VERSION + ", using checkmk agent in Version: " + CHECKMK_AGENT_VERSION)
                 sh("#!/bin/ash\nmake dist");
             }
         }
