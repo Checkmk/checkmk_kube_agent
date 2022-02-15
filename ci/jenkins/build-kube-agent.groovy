@@ -109,8 +109,10 @@ timeout(time: 12, unit: 'HOURS') {
         stage('Push Images') {
             withCredentials([
                     usernamePassword(credentialsId: '11fb3d5f-e44e-4f33-a651-274227cc48ab', passwordVariable: 'DOCKER_PASSPHRASE', usernameVariable: 'DOCKER_USERNAME')]) {
-                    sh('echo "${DOCKER_PASSPHRASE}" | docker login -u ${DOCKER_USERNAME} --password-stdin')
-                    sh("DOCKER_TAG_PREFIX=${DOCKER_TAG_PREFIX} DOCKER_TAG_SUFFIX=${DOCKER_TAG_SUFFIX} make push-images")
+                    docker.image("checkmk-kube-agent-ci:latest").inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
+                        sh('#!/bin/ash\necho "${DOCKER_PASSPHRASE}" | docker login -u ${DOCKER_USERNAME} --password-stdin')
+                        sh("#!/bin/ash\nDOCKER_TAG_PREFIX=${DOCKER_TAG_PREFIX} DOCKER_TAG_SUFFIX=${DOCKER_TAG_SUFFIX} make push-images")
+                    }
                 }
             }
         }
