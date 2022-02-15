@@ -54,7 +54,7 @@ spec:
     spec:
       containers:
         - name: cluster-collector
-          image: lisapichlertribe29/kubernetes-collector:0.1.0
+          image: checkmk/kubernetes-collector:main_<YYYY.MM.DD>
           imagePullPolicy: Always
           env:
             - name: NODE_NAME

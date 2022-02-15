@@ -41,7 +41,7 @@ spec:
         name: node-collector-cadvisor
     spec:
       containers:
-        - image: lisapichlertribe29/cadvisor-patched:0.1.0
+        - image: checkmk/cadvisor-patched:main_<YYYY.MM.DD>
           imagePullPolicy: Always
           name: cadvisor
           command:
@@ -110,7 +110,7 @@ spec:
         name: node-collector-container-metrics
     spec:
       containers:
-        - image: lisapichlertribe29/kubernetes-collector:0.1.0
+        - image: checkmk/kubernetes-collector:main_<YYYY.MM.DD>
           imagePullPolicy: Always
           name: container-metrics-collector
           command:
@@ -158,7 +158,7 @@ spec:
         name: node-collector-machine-sections
     spec:
       containers:
-        - image: lisapichlertribe29/kubernetes-collector:0.1.0
+        - image: checkmk/kubernetes-collector:main_<YYYY.MM.DD>
           imagePullPolicy: Always
           name: machine-sections-collector
           command:
