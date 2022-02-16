@@ -43,7 +43,13 @@ spec:
           {{- if .Values.tlsCommunication.enabled }}
           args:
             - "--secure-protocol"
+            - "--verify-ssl"
           {{- end }}
+          volumeMounts:
+            - name: checkmk-ca-cert
+              mountPath: /etc/ca-certificates/checkmk-ca-cert.pam
+              subPath: checkmk-ca-cert.pam
+              readOnly: true
           env:
             - name: NODE_NAME
               valueFrom:
@@ -60,3 +66,10 @@ spec:
           resources:
             {{- toYaml .Values.nodeCollector.machineSectionsCollector.resources | nindent 12 }}
       terminationGracePeriodSeconds: 30
+      volumes:
+        - name: checkmk-ca-cert
+          secret:
+            secretName: {{ include "checkmk.fullname" . }}-checkmk-tls
+            items:
+              - key: checkmk-ca-cert
+                path: checkmk-ca-cert.pam

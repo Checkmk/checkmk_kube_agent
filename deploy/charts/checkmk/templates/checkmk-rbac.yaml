@@ -9,12 +9,15 @@ rules:
   - apiGroups:
       - ""  # core API group
       - apps
+      - batch
     resources:
       - nodes
       - nodes/proxy
       - pods
       - deployments
       - replicasets
+      - jobs
+      - cronjobs
     verbs:
       - "get"
       - "list"

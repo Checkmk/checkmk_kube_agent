@@ -7,12 +7,12 @@ fullnameOverride: ""
 
 tlsCommunication:
   enabled: false # TODO: true
-  # ## Secret name containing the TLS certificate for checkmk with the fields: cluster-collector-key, cluster-collector-keypass, cluster-collector-cert
+  # ## Secret name containing the TLS certificate for checkmk with the fields: cluster-collector-key, cluster-collector-cert, checkmk-ca-cert
   # ## Secret must be manually created in the namespace. If left 
   # tlsSecretName: ""
-  clusterCollectorKey: ""
-  clusterCollectorKeypass: ""
-  clusterCollectorCert: ""
+  clusterCollectorKey: "LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1IY0NBUUVFSURFVU10MGErY3hpVCtXWkNGc2p0QzlDcXVNVExLd0h1YjA1aFRjQnNQNkRvQW9HQ0NxR1NNNDkKQXdFSG9VUURRZ0FFYUFPNlhQT3hCMStqNTA0YlN0UXEvRlkzZjd6bmIxV1FUNlpoSzg1NFFlKyt4L083NHRPVApDbCtRWXdJK1dDYUVnMCtmMG5zczlrVjNMMmdCZDFKODFBPT0KLS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo="
+  clusterCollectorCert: "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURJRENDQXNhZ0F3SUJBZ0lVY0Z2cVN2Z2k5MFFOdGRLNUx4U0R1MVF1Z2Nrd0NnWUlLb1pJemowRUF3SXcKWWpFTE1Ba0dBMVVFQmhNQ1JFVXhFREFPQmdOVkJBZ01CMEpoZG1GeWFXRXhEekFOQmdOVkJBY01CazExYm1sagphREVNTUFvR0ExVUVDZ3dEZERJNU1Rd3dDZ1lEVlFRTERBTmtaWFl4RkRBU0JnTlZCQU1NQzJOb1pXTnJiV3N1ClkyOXRNQjRYRFRJeU1ESXhNVEUwTlRRMU5sb1hEVEkwTVRFd056RTBOVFExTmxvd2dZa3hDekFKQmdOVkJBWVQKQWtSRk1SQXdEZ1lEVlFRSURBZENZWFpoY21saE1ROHdEUVlEVlFRSERBWk5kVzVwWTJneEREQUtCZ05WQkFvTQpBM1F5T1RFTU1Bb0dBMVVFQ3d3RFpHVjJNVHN3T1FZRFZRUUREREpqYkhWemRHVnlMV052Ykd4bFkzUnZjaTVqCmFHVmphMjFyTFcxdmJtbDBiM0pwYm1jdVkyeDFjM1JsY2k1c2IyTmhiREJaTUJNR0J5cUdTTTQ5QWdFR0NDcUcKU000OUF3RUhBMElBQkdnRHVsenpzUWRmbytkT0cwclVLdnhXTjMrODUyOVZrRSttWVN2T2VFSHZ2c2Z6dStMVAprd3Bma0dNQ1BsZ21oSU5QbjlKN0xQWkZkeTlvQVhkU2ZOU2pnZ0V3TUlJQkxEQWRCZ05WSFE0RUZnUVVZVEZDCjhxR1liNnR6MFZac0R0QzVpVnRzRDVrd2daOEdBMVVkSXdTQmx6Q0JsSUFVVVVlN2Iyb2NaRXhBMkxoUlpCZzMKaUQyZTJvR2hacVJrTUdJeEN6QUpCZ05WQkFZVEFrUkZNUkF3RGdZRFZRUUlEQWRDWVhaaGNtbGhNUTh3RFFZRApWUVFIREFaTmRXNXBZMmd4RERBS0JnTlZCQW9NQTNReU9URU1NQW9HQTFVRUN3d0RaR1YyTVJRd0VnWURWUVFECkRBdGphR1ZqYTIxckxtTnZiWUlVTytDSUdDcFhmNGQ1KzJGRnlKRVVERkR5VDk4d0RBWURWUjBUQkFVd0F3RUIKL3pBTEJnTlZIUThFQkFNQ0F2d3dRd1lEVlIwUkJEd3dPb0l5WTJ4MWMzUmxjaTFqYjJ4c1pXTjBiM0l1WTJobApZMnR0YXkxdGIyNXBkRzl5YVc1bkxtTnNkWE4wWlhJdWJHOWpZV3lIQkFwc0VoRXdDUVlEVlIwU0JBSXdBREFLCkJnZ3Foa2pPUFFRREFnTklBREJGQWlFQTk4VEFPWVRQMG9GY2x2R2dheTVick9Samhxa2IvL3dydXEvd0ZEaFgKZ2pVQ0lHL25rY05BcUhFY3RRSHNkRmxYZ1d1cU4wdjRlSUpUMC9DeGxNSG9ZVnQ2Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K"
+  checkmkCaCert: "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUNHVENDQWIrZ0F3SUJBZ0lVTytDSUdDcFhmNGQ1KzJGRnlKRVVERkR5VDk4d0NnWUlLb1pJemowRUF3SXcKWWpFTE1Ba0dBMVVFQmhNQ1JFVXhFREFPQmdOVkJBZ01CMEpoZG1GeWFXRXhEekFOQmdOVkJBY01CazExYm1sagphREVNTUFvR0ExVUVDZ3dEZERJNU1Rd3dDZ1lEVlFRTERBTmtaWFl4RkRBU0JnTlZCQU1NQzJOb1pXTnJiV3N1ClkyOXRNQjRYRFRJeU1ESXhNVEUwTlRNMU0xb1hEVEl5TURNeE16RTBOVE0xTTFvd1lqRUxNQWtHQTFVRUJoTUMKUkVVeEVEQU9CZ05WQkFnTUIwSmhkbUZ5YVdFeER6QU5CZ05WQkFjTUJrMTFibWxqYURFTU1Bb0dBMVVFQ2d3RApkREk1TVF3d0NnWURWUVFMREFOa1pYWXhGREFTQmdOVkJBTU1DMk5vWldOcmJXc3VZMjl0TUZrd0V3WUhLb1pJCnpqMENBUVlJS29aSXpqMERBUWNEUWdBRTBtZW4vQ3RpUUJyUGpnZzVtcDF1NnRxQXg2c1NFeWxCRHUyeXNMMHgKTEY1Z1J5SFFjYndodVZ6eUp0K3NjTDErTm1lc1NTd3E5WFBtQVR1RVYwTTJhNk5UTUZFd0hRWURWUjBPQkJZRQpGRkZIdTI5cUhHUk1RTmk0VVdRWU40ZzludHFCTUI4R0ExVWRJd1FZTUJhQUZGRkh1MjlxSEdSTVFOaTRVV1FZCk40ZzludHFCTUE4R0ExVWRFd0VCL3dRRk1BTUJBZjh3Q2dZSUtvWkl6ajBFQXdJRFNBQXdSUUloQUx4RzVhSDEKemJjMGd0MDdYTHlId2NUbDJMMW1RNnJ5YlQ1NXdlRk5keU9JQWlCK0lldVltdUJyYkVPQ2RvbktiN3ZFOWFTNgpvRXo3WHNiaWpnMldVWGxDSUE9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg=="
 
 imagePullSecrets: []
 
@@ -27,10 +27,10 @@ networkPolicy:
 ## Configuration for cluster-collector
 clusterCollector:
   image:
-    repository: lisapichlertribe29/kubernetes-collector
+    repository: checkmk/kubernetes-collector
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "0.1.0"
+    tag: "main_2022.02.16" # main_<YYYY.MM.DD>
 
   podAnnotations:
     seccomp.security.alpha.kubernetes.io/pod: runtime/default
@@ -100,10 +100,10 @@ nodeCollector:
 
   machineSectionsCollector:
     image:
-      repository: lisapichlertribe29/kubernetes-collector
+      repository: checkmk/kubernetes-collector
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
-      tag: "0.1.0"
+      tag: "main_2022.02.16" # main_<YYYY.MM.DD>
 
     securityContext:
       allowPrivilegeEscalation: false
@@ -126,10 +126,10 @@ nodeCollector:
 
   containerMetricsCollector:
     image:
-      repository: lisapichlertribe29/kubernetes-collector
+      repository: checkmk/kubernetes-collector
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
-      tag: "0.1.0"
+      tag: "main_2022.02.16" # main_<YYYY.MM.DD>
 
     securityContext:
       allowPrivilegeEscalation: false
@@ -152,10 +152,10 @@ nodeCollector:
 
   cadvisor:
     image:
-      repository: lisapichlertribe29/cadvisor-patched
+      repository: checkmk/cadvisor-patched
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
-      tag: "0.1.0"
+      tag: "main_2022.02.16" # main_<YYYY.MM.DD>
 
     additionalArgs:
       - "--housekeeping_interval=30s"
