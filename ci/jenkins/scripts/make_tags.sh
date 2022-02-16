@@ -12,7 +12,7 @@ case $METHOD in
     git checkout ${VERSION}
     ;;
 
-  minor | patch)
+  minor | patch | beta | finalize_version)
     # Create set version commit and switch to a new branch
     git checkout ${BRANCH}
     git pull --rebase

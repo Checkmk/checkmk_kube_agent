@@ -22,11 +22,19 @@ export PRINT_HELP_PYSCRIPT
 
 define VERSION_BUMP_PYSCRIPT
 import sys
-from semver import bump_major, bump_minor, bump_patch
+from semver import bump_major, bump_minor, bump_patch, bump_prerelease, finalize_version
 
 version = sys.argv[1]
 method = sys.argv[2]
-print({"major": bump_major, "minor": bump_minor, "patch": bump_patch}[method](version))
+print(
+    {
+        "major": bump_major,
+        "minor": bump_minor,
+        "patch": bump_patch,
+        "beta": lambda x: bump_prerelease(x, token="beta"),
+        "finalize_version": finalize_version,
+    }[method](version)
+)
 endef
 export VERSION_BUMP_PYSCRIPT
 

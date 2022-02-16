@@ -16,7 +16,7 @@ def get_branch(scm) {
 properties([
     buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '7', numToKeepStr: '14')),
     parameters([
-        choice(choices: ['daily', 'minor', 'patch', 'rebuild_version'], name: 'METHOD',
+        choice(choices: ['daily', 'beta', 'minor', 'patch', 'rebuild_version', 'finalize_version'], name: 'METHOD',
                 description: '<b>Choose the method the build job should follow.</b><br>' +
                         'daily -> Create a build on the current git state<br>' +
                         'minor/patch -> Create a release build with taging and incrementing the version<br>' +
