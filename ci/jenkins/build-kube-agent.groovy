@@ -46,6 +46,7 @@ switch (METHOD) {
         // A release job
         RELEASE_BUILD = true
         DOCKER_TAG_SUFFIX = ""
+        DOCKER_TAG_PREFIX = ""
         break
 }
 
