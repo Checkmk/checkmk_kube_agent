@@ -132,6 +132,16 @@ spec:
             requests:
               cpu: 150m
               memory: 200Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsGroup: 10001
+            runAsNonRoot: true
+            runAsUser: 10001
       serviceAccountName: node-collector
       terminationGracePeriodSeconds: 30
       volumes:

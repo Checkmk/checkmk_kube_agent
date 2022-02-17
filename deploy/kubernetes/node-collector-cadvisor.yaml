@@ -7,6 +7,62 @@ metadata:
   name: node-collector-cadvisor
   namespace: checkmk-monitoring
 ---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  labels:
+    app: node-collector-cadvisor
+  name: node-collector-cadvisor
+spec:
+  allowedHostPaths:
+    - pathPrefix: /var/run
+      readOnly: true
+    - pathPrefix: /sys
+      readOnly: true
+    - pathPrefix: /var/lib/docker
+      readOnly: true
+  fsGroup:
+    rule: RunAsAny
+  runAsUser:
+    rule: RunAsAny
+  seLinux:
+    rule: RunAsAny
+  supplementalGroups:
+    rule: RunAsAny
+  volumes:
+    - hostPath
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app: node-collector-cadvisor
+  name: node-collector-cadvisor
+rules:
+  - apiGroups:
+      - policy
+    resourceNames:
+      - node-collector-cadvisor
+    resources:
+      - podsecuritypolicies
+    verbs:
+      - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app: node-collector-cadvisor
+  name: node-collector-cadvisor
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: node-collector-cadvisor
+subjects:
+  - kind: ServiceAccount
+    name: node-collector-cadvisor
+    namespace: checkmk-monitoring
+---
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
