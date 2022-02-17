@@ -14,7 +14,7 @@ requirements = [
     "pydantic==1.9.0",
     "requests==2.27.1",
     "urllib3==1.26.8",
-    "uvicorn==0.17.1",
+    "uvicorn==0.17.5",
     "gunicorn==20.1.0",
 ]
 
