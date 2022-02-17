@@ -40,7 +40,7 @@ switch (METHOD) {
         def DATE_FORMAT = new SimpleDateFormat("yyyy.MM.dd")
         def DATE = new Date()
         DOCKER_TAG_SUFFIX = "_" + DATE_FORMAT.format(DATE)
-        DOCKER_TAG_PREFIX = "main"
+        DOCKER_TAG_PREFIX = BRANCH
         break
     default:
         // A release job
@@ -79,17 +79,15 @@ timeout(time: 12, unit: 'HOURS') {
                 }
             }
 
-            if (METHOD != "rebuild_version") {
-                stage("Create tag and set version") {
-                    withCredentials([sshUserPrivateKey(credentialsId: "release", keyFileVariable: 'keyfile')]) {
-                        withEnv(["GIT_AUTHOR_NAME=Checkmk release system",
-                                 "GIT_AUTHOR_EMAIL='feedback@check-mk.org'",
-                                 "GIT_SSH_COMMAND=ssh -i ${keyfile} -l release",
-                                 "GIT_SSH_VARIANT=ssh",
-                                 "GIT_COMMITTER_NAME=Checkmk release system",
-                                 "GIT_COMMITTER_EMAIL=feedback@check-mk.org"]) {
-                            sh("./ci/jenkins/scripts/make_tags.sh ${VERSION} ${METHOD} ${BRANCH}")
-                        }
+            stage("Create or switch to tag") {
+                withCredentials([sshUserPrivateKey(credentialsId: "release", keyFileVariable: 'keyfile')]) {
+                    withEnv(["GIT_AUTHOR_NAME=Checkmk release system",
+                             "GIT_AUTHOR_EMAIL='feedback@check-mk.org'",
+                             "GIT_SSH_COMMAND=ssh -i ${keyfile} -l release",
+                             "GIT_SSH_VARIANT=ssh",
+                             "GIT_COMMITTER_NAME=Checkmk release system",
+                             "GIT_COMMITTER_EMAIL=feedback@check-mk.org"]) {
+                        sh("./ci/jenkins/scripts/tagging.sh ${VERSION} ${METHOD} ${BRANCH}")
                     }
                 }
             }
