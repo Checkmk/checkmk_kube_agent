@@ -31,7 +31,7 @@ def RELEASE_BUILD
 def DOCKER_TAG_PREFIX
 def DOCKER_TAG_SUFFIX
 def BRANCH = get_branch(scm)
-
+def CI_IMAGE = "checkmk-kube-agent-ci"
 
 switch (METHOD) {
     case "daily":
@@ -70,12 +70,12 @@ timeout(time: 12, unit: 'HOURS') {
 
         // TODO: at least consolidate in this repo...
         def DOCKER_GROUP_ID = sh(script: "getent group docker | cut -d: -f3", returnStdout: true);
-        docker.build("checkmk-kube-agent-ci", "-f docker/ci/Dockerfile .");
+        docker.build(CI_IMAGE, "-f docker/ci/Dockerfile .");
 
         if (RELEASE_BUILD) {
             stage('Calculate Version') {
                 if (METHOD != "rebuild_version") {
-                    docker.image("checkmk-kube-agent-ci:latest").inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
+                    docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
                         VERSION = run_in_ash("METHOD=${METHOD} make print-bumped-version", true).toString().trim();
                     }
                 }
@@ -92,7 +92,7 @@ timeout(time: 12, unit: 'HOURS') {
                              "GIT_SSH_VARIANT=ssh",
                              "GIT_COMMITTER_NAME=Checkmk release system",
                              "GIT_COMMITTER_EMAIL=feedback@check-mk.org"]) {
-                        docker.image("checkmk-kube-agent-ci:latest").inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
+                        docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
                             run_in_ash("./ci/jenkins/scripts/tagging.sh ${VERSION} ${METHOD} ${BRANCH}")
                         }
                     }
@@ -102,19 +102,19 @@ timeout(time: 12, unit: 'HOURS') {
 
 
         stage("Build source and wheel package") {
-            docker.image("checkmk-kube-agent-ci:latest").inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
+            docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
                 run_in_ash("make dist")
             }
         }
         stage("Build Images") {
-            docker.image("checkmk-kube-agent-ci:latest").inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
+            docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
                 run_in_ash("DOCKER_TAG_PREFIX=${DOCKER_TAG_PREFIX} DOCKER_TAG_SUFFIX=${DOCKER_TAG_SUFFIX} make release-image")
             }
 
         stage('Push Images') {
             withCredentials([
                     usernamePassword(credentialsId: '11fb3d5f-e44e-4f33-a651-274227cc48ab', passwordVariable: 'DOCKER_PASSPHRASE', usernameVariable: 'DOCKER_USERNAME')]) {
-                    docker.image("checkmk-kube-agent-ci:latest").inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
+                    docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
                         run_in_ash('echo \"${DOCKER_PASSPHRASE}\" | docker login -u ${DOCKER_USERNAME} --password-stdin')
                         run_in_ash("DOCKER_TAG_PREFIX=${DOCKER_TAG_PREFIX} DOCKER_TAG_SUFFIX=${DOCKER_TAG_SUFFIX} make push-images")
                     }
