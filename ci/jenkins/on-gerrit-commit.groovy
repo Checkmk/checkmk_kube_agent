@@ -35,7 +35,7 @@ def do_it() {
         }
     }
     stage("build dev image") {
-        COLLECTOR_IMAGE = docker.build("kubernetes-collector-dev", "--target=dev --build-arg PROJECT_PYVERSION=${PROJECT_PYVERSION} --build-arg CHECKMK_AGENT_VERSION=${CHECKMK_AGENT_VERSION} -f docker/kubernetes-collector/Dockerfile .");
+        COLLECTOR_IMAGE = docker.build("kubernetes-collector-dev", "--target=dev --build-arg GIT_HASH=${env.GIT_COMMIT} --build-arg PROJECT_PYVERSION=${PROJECT_PYVERSION} --build-arg CHECKMK_AGENT_VERSION=${CHECKMK_AGENT_VERSION} -f docker/kubernetes-collector/Dockerfile .");
     }
     stage("lint python: bandit") {
         run_target(COLLECTOR_IMAGE, "lint-python/bandit", "--entrypoint=");

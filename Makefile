@@ -54,6 +54,7 @@ COLLECTOR_IMAGE_NAME := kubernetes-collector
 COLLECTOR_IMAGE := $(DOCKERHUB_PUBLISHER)/${COLLECTOR_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
 CADVISOR_IMAGE_NAME := cadvisor-patched
 CADVISOR_IMAGE := $(DOCKERHUB_PUBLISHER)/${CADVISOR_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
+GIT_HASH := $(shell git rev-parse HEAD)
 
 .PHONY: help
 help:
@@ -187,8 +188,8 @@ lint-yaml/yamllint: ## check yaml formatting with yamllint
 
 .PHONY: release-image
 release-image: dist ## create the node and cluster collector Docker images
-	docker build --rm --no-cache --build-arg PROJECT_PYVERSION="${PROJECT_PYVERSION}" --build-arg CHECKMK_AGENT_VERSION="${CHECKMK_AGENT_VERSION}" -t $(COLLECTOR_IMAGE) -f docker/kubernetes-collector/Dockerfile .
-	docker build --rm --no-cache -t $(CADVISOR_IMAGE) -f docker/cadvisor/Dockerfile .
+	docker build --rm --no-cache --build-arg PROJECT_PYVERSION="${PROJECT_PYVERSION}" --build-arg CHECKMK_AGENT_VERSION="${CHECKMK_AGENT_VERSION}"  --build-arg GIT_HASH="${GIT_HASH}" -t $(COLLECTOR_IMAGE) -f docker/kubernetes-collector/Dockerfile .
+	docker build --rm --no-cache --build-arg GIT_HASH="${GIT_HASH}" -t $(CADVISOR_IMAGE) -f docker/cadvisor/Dockerfile .
 
 .PHONY: servedocs
 servedocs: docs ## compile the docs watching for changes
