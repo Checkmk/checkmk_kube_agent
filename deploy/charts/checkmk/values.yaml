@@ -30,7 +30,7 @@ clusterCollector:
     repository: checkmk/kubernetes-collector
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "main_2022.02.16" # main_<YYYY.MM.DD>
+    tag: "main_2022.02.18" # main_<YYYY.MM.DD>
 
   podAnnotations:
     seccomp.security.alpha.kubernetes.io/pod: runtime/default
@@ -103,7 +103,7 @@ nodeCollector:
       repository: checkmk/kubernetes-collector
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
-      tag: "main_2022.02.16" # main_<YYYY.MM.DD>
+      tag: "main_2022.02.18" # main_<YYYY.MM.DD>
 
     securityContext:
       allowPrivilegeEscalation: false
@@ -129,7 +129,7 @@ nodeCollector:
       repository: checkmk/kubernetes-collector
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
-      tag: "main_2022.02.16" # main_<YYYY.MM.DD>
+      tag: "main_2022.02.18" # main_<YYYY.MM.DD>
 
     securityContext:
       allowPrivilegeEscalation: false
@@ -155,7 +155,7 @@ nodeCollector:
       repository: checkmk/cadvisor-patched
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
-      tag: "main_2022.02.16" # main_<YYYY.MM.DD>
+      tag: "main_2022.02.18" # main_<YYYY.MM.DD>
 
     additionalArgs:
       - "--housekeeping_interval=30s"
