@@ -1,4 +1,5 @@
 import java.text.SimpleDateFormat
+import org.jenkinsci.plugins.pipeline.modeldefinition.Utils
 
 currentBuild.description = '\nBuilding the Kubernetes Agent\n'
 
@@ -24,6 +25,7 @@ properties([
                         'in the format of Major.Minor.Patch for this method.'),
         string(name: 'VERSION', defaultValue: '', description:
                 'Set this in combination with "rebuild_version" in order to rebuild a specific version' ),
+        booleanParam(name: 'PUSH_TO_DOCKERHUB', defaultValue: false, description: 'Set to true if you want to push the images to dockerhub.'),
     ])
 ])
 
@@ -32,6 +34,7 @@ def DOCKER_TAG_PREFIX
 def DOCKER_TAG_SUFFIX
 def BRANCH = get_branch(scm)
 def CI_IMAGE = "checkmk-kube-agent-ci"
+def STAGE_PUSH_IMAGES = 'Push Images'
 
 switch (METHOD) {
     case "daily":
@@ -111,16 +114,21 @@ timeout(time: 12, unit: 'HOURS') {
             docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
                 run_in_ash("DOCKER_TAG_PREFIX=${DOCKER_TAG_PREFIX} DOCKER_TAG_SUFFIX=${DOCKER_TAG_SUFFIX} make release-image")
             }
-
-        stage('Push Images') {
-            withCredentials([
-                    usernamePassword(credentialsId: '11fb3d5f-e44e-4f33-a651-274227cc48ab', passwordVariable: 'DOCKER_PASSPHRASE', usernameVariable: 'DOCKER_USERNAME')]) {
+            
+        stage(STAGE_PUSH_IMAGES) {
+            if (params.PUSH_TO_DOCKERHUB) {
+                withCredentials([
+                        usernamePassword(credentialsId: '11fb3d5f-e44e-4f33-a651-274227cc48ab', passwordVariable: 'DOCKER_PASSPHRASE', usernameVariable: 'DOCKER_USERNAME')]) {
                     docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
                         run_in_ash('echo \"${DOCKER_PASSPHRASE}\" | docker login -u ${DOCKER_USERNAME} --password-stdin')
                         run_in_ash("DOCKER_TAG_PREFIX=${DOCKER_TAG_PREFIX} DOCKER_TAG_SUFFIX=${DOCKER_TAG_SUFFIX} make push-images")
+                        }
                     }
                 }
+            else {
+                Utils.markStageSkippedForConditional(STAGE_PUSH_IMAGES)
             }
+        }
         }
     }
 }
