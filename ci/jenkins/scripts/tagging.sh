@@ -5,10 +5,12 @@ VERSION=$1
 METHOD=$2
 BRANCH=$3
 
+TAG_NAME="v${VERSION}"
+
 case $METHOD in
   rebuild_version)
     # Only switch to the exisiting tag and expect it to exist
-    git checkout ${VERSION}
+    git checkout "${TAG_NAME}"
     ;;
 
   minor | patch | beta | finalize_version)
@@ -17,7 +19,7 @@ case $METHOD in
     git pull --rebase
     NEW_VERSION=${VERSION} make setversion;
     git commit -am "Set version to ${VERSION}"
-    git tag ${VERSION}
+    git tag ${TAG_NAME}
     git push --tags origin ${BRANCH}
     ;;
 
