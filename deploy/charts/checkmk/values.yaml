@@ -69,7 +69,7 @@ clusterCollector:
     repository: checkmk/kubernetes-collector
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "main_2022.02.18" # main_<YYYY.MM.DD>
+    tag: "main_2022.02.22" # main_<YYYY.MM.DD>
 
   # can be: "debug", "info", "warning" (default), "critical"
   logLevel: warning
@@ -145,7 +145,7 @@ cadvisor:
     repository: checkmk/cadvisor-patched
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "main_2022.02.18" # main_<YYYY.MM.DD>
+    tag: "main_2022.02.22" # main_<YYYY.MM.DD>
 
   additionalArgs:
     - "--housekeeping_interval=30s"
@@ -201,7 +201,7 @@ nodeCollector:
       repository: checkmk/kubernetes-collector
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
-      tag: "main_2022.02.18" # main_<YYYY.MM.DD>
+      tag: "main_2022.02.22" # main_<YYYY.MM.DD>
 
     securityContext:
       allowPrivilegeEscalation: false
@@ -227,7 +227,7 @@ nodeCollector:
       repository: checkmk/kubernetes-collector
       pullPolicy: IfNotPresent
       # Overrides the image tag whose default is the chart appVersion.
-      tag: "main_2022.02.18" # main_<YYYY.MM.DD>
+      tag: "main_2022.02.22" # main_<YYYY.MM.DD>
 
     securityContext:
       allowPrivilegeEscalation: false
