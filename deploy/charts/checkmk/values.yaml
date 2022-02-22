@@ -1,0 +1,217 @@
+# Default values for checkmk.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+nameOverride: ""
+fullnameOverride: ""
+
+tlsCommunication:
+  enabled: true
+  verifySsl: true
+  # clusterCollectorKey: |-
+  #   -----BEGIN EC PRIVATE KEY-----
+  #   XYZ
+  #   -----END EC PRIVATE KEY-----
+  # clusterCollectorCert: |-
+  #   -----BEGIN CERTIFICATE-----
+  #   XYZ
+  #   -----END CERTIFICATE-----
+  # checkmkCaCert: |-
+  #   -----BEGIN CERTIFICATE-----
+  #   XYZ
+  #   -----END CERTIFICATE-----
+
+imagePullSecrets: []
+image:
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "main_2022.03.02" # main_<YYYY.MM.DD>
+
+rbac:
+  pspEnabled: true
+
+## ref: https://kubernetes.io/docs/concepts/services-networking/network-policies/
+networkPolicy:
+  # keep in mind: your cluster network plugin has to support NetworkPolicies, otherwise they won't have any effect
+  enabled: false
+
+  # specify ipBlock cidrs here to allow ingress to the cluster-collector
+  # this is required for the checkmk servers to be able to scrape data from checkmk, so include the resprective ip range(s) here
+  allowIngressFromCIDRs: []
+  # - 127.0.0.1/32 # e.g. Checkmk Server
+  # - 127.0.0.1/24 # e.g. Metallb speakers
+
+  # the cluster-collector needs to be able to contact the kube-apiserver
+  # you have three options here to choose from, depending on your cluster setup:
+  # 1) if your apiserver resides outside the cluster, resp. you have a kubernetes endpoint available (check via "kubectl -n default get ep kubernetes")
+  #    we can make use of helm lookup to automatically inject the endpoińt (cidr + port) here.
+  #    This is the most comfortable one, just note that helm lookup won't work on a "helm template" or "helm diff" command.
+  #    (see also: https://helm.sh/docs/chart_template_guide/functions_and_pipelines/#using-the-lookup-function)
+  # 2) similar to 1) you can also specify the "ipBlockCidr" directly. Make sure to disable "enableCidrLookup", and also fill the "port".
+  # 3) if the apiserver resides inside the cluster, disable "enableCidrLookup", unset "ipBlockCidr", and fill the "labelSelectors" section
+  #    with the name of the namespace where the kube-apiserver is availabe, and the label key and label value that defines your kube-apiserver pod.
+  egressKubeApiserver:
+    enableCidrLookup: true
+    # ipBlockCidr: 172.31.0.3/32
+    # port: 6443
+    # labelSelectors:
+    #   namespace: kube-system
+    #   key: app
+    #   value: kube-apiserver
+
+
+## Configuration for cluster-collector
+clusterCollector:
+  image:
+    repository: checkmk/kubernetes-collector
+    pullPolicy: IfNotPresent
+
+  # can be: "debug", "info", "warning" (default), "critical"
+  logLevel: warning
+
+  podAnnotations:
+    seccomp.security.alpha.kubernetes.io/pod: runtime/default
+
+  podSecurityContext: {}
+    # fsGroup: 2000
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    privileged: false
+    readOnlyRootFilesystem: true
+    runAsGroup: 10001
+    runAsNonRoot: true
+    runAsUser: 10001
+
+  service:
+    # if required specify "NodePort" here to expose the cluster-collector via the "nodePort" specified below
+    type: ClusterIP
+    port: 8080
+    # nodePort: 30035
+
+  ingress:
+    enabled: false
+    className: ""
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: /
+    hosts:
+      - host: checkmk-cluster-collector.local
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - chart-example.local
+
+  resources:
+    limits:
+      cpu: 300m
+      memory: 200Mi
+    requests:
+      cpu: 150m
+      memory: 200Mi
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  affinity: {}
+
+
+## Configuration for node-collector components (cadvisor, container-metrics, machine-sections)
+nodeCollector:
+  # logLevel for container-metrics and machine-sections; can be: "debug", "info", "warning" (default), "critical"
+  logLevel: debug
+
+  podAnnotations:
+    seccomp.security.alpha.kubernetes.io/pod: runtime/default
+
+  podSecurityContext: {}
+    # fsGroup: 2000
+
+  cadvisor:
+    image:
+      repository: checkmk/cadvisor-patched
+      pullPolicy: IfNotPresent
+
+    additionalArgs:
+      - "--housekeeping_interval=30s"
+      - "--max_housekeeping_interval=35s"
+      - "--event_storage_event_limit=default=0"
+      - "--event_storage_age_limit=default=0"
+      - "--store_container_labels=false"
+      - "--whitelisted_container_labels=io.kubernetes.container.name,io.kubernetes.pod.name,io.kubernetes.pod.namespace,io.kubernetes.pod.uid"
+      - "--global_housekeeping_interval=30s"
+      - "--event_storage_event_limit=default=0"
+      - "--event_storage_age_limit=default=0"
+      - "--disable_metrics=percpu,process,sched,tcp,udp,diskIO,disk,network"
+      - "--allow_dynamic_housekeeping=true"
+      - "--storage_duration=1m0s"
+
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+        add: ["CAP_SYS_PTRACE"]
+      privileged: false
+      readOnlyRootFilesystem: true
+
+    resources:
+      limits:
+        cpu: 300m
+        memory: 200Mi
+      requests:
+        cpu: 150m
+        memory: 200Mi
+
+  containerMetricsCollector:
+    image:
+      repository: checkmk/kubernetes-collector
+      pullPolicy: IfNotPresent
+
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      privileged: false
+      readOnlyRootFilesystem: true
+      runAsGroup: 10001
+      runAsNonRoot: true
+      runAsUser: 10001
+
+    resources:
+      limits:
+        cpu: 300m
+        memory: 200Mi
+      requests:
+        cpu: 150m
+        memory: 200Mi
+
+  machineSectionsCollector:
+    image:
+      repository: checkmk/kubernetes-collector
+      pullPolicy: IfNotPresent
+
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      privileged: false
+      readOnlyRootFilesystem: true
+      runAsGroup: 10001
+      runAsNonRoot: true
+      runAsUser: 10001
+
+    resources:
+      limits:
+        cpu: 300m
+        memory: 200Mi
+      requests:
+        cpu: 150m
+        memory: 200Mi
