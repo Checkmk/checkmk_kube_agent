@@ -321,10 +321,7 @@ def container_metrics_worker(
     Query cadvisor api, send metrics to cluster collector
     """
 
-    cadvisor_url = (
-        f"http://{os.environ['CADVISOR_SERVICE_HOST']}:"
-        f"{os.environ['CADVISOR_SERVICE_PORT']}"
-    )
+    cadvisor_url = "http://localhost:8080"
 
     logger.info("Querying cadvisor version")
     cadvisor_version = session.get(f"{cadvisor_url}/api/v2.0/version")
