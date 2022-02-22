@@ -1,0 +1,69 @@
+{{- if .Values.rbac.pspEnabled }}
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: {{ include "checkmk.fullname" . }}-node-collector-container-metrics
+  labels:
+    {{- include "checkmk.labels" . | nindent 4 }}
+  annotations:
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: >-
+      docker/default,runtime/default
+    apparmor.security.beta.kubernetes.io/allowedProfileNames: >-
+      runtime/default
+    apparmor.security.beta.kubernetes.io/defaultProfileName: >-
+      runtime/default
+spec:
+  allowedHostPaths:
+    - pathPrefix: /var/run
+      readOnly: false
+    - pathPrefix: /sys
+      readOnly: true
+    - pathPrefix: /var/lib/docker
+      readOnly: true
+    - pathPrefix: /etc/ca-certificates/
+      readOnly: true
+  fsGroup:
+    rule: RunAsAny
+  runAsUser:
+    rule: RunAsAny
+  seLinux:
+    rule: RunAsAny
+  supplementalGroups:
+    rule: RunAsAny
+  volumes:
+    - "hostPath"
+    - "secret"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "checkmk.fullname" . }}-node-collector-container-metrics
+  labels:
+    {{- include "checkmk.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - policy
+    resourceNames:
+      - {{ include "checkmk.fullname" . }}-node-collector-container-metrics
+    resources:
+      - podsecuritypolicies
+    verbs:
+      - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "checkmk.fullname" . }}-node-collector-container-metrics
+  labels:
+    {{- include "checkmk.labels" . | nindent 4 }}
+    app: {{ include "checkmk.fullname" . }}-node-collector-container-metrics
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "checkmk.fullname" . }}-node-collector-container-metrics
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "checkmk.fullname" . }}-node-collector-container-metrics
+    namespace: {{ .Release.Namespace }}
+{{- end }}
