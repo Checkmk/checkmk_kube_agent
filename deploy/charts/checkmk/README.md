@@ -75,3 +75,23 @@ helm show values .
 ### Multiple releases
 
 The same chart can be used to run multiple checkmk instances in the same cluster (or even the same namespace) if required. To achieve this, just rename the `RELEASE_NAME` when installing.
+
+## Debug
+
+To debug in-cluster, you can launch a debug pod with network tools via
+
+```console
+kubectl -n [RELEASE_NAMESPACE] run -it debug --rm --image praqma/network-multitool --restart=Never -- sh
+```
+
+and, with the token of the service account `[RELEAE_NAME]--checkmk`, issue queries against the `cluster-collector`:
+
+```console
+# non-TLS
+curl -H "Authorization: Bearer <TOKEN>" <RELEAE_NAME>-cluster-collector.<RELEASE_NAMESPACE>.svc:8080/metadata | jq
+
+# TLS
+curl -k -H "Authorization: Bearer <TOKEN>" https://<RELEAE_NAME>-cluster-collector.<RELEASE_NAMESPACE>.svc:8080/metadata | jq
+```
+
+As endpoints, instead of `/metadata`, feel free to also test `/container_metrics`, `/machine_sections`, etc.

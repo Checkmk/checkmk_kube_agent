@@ -17,10 +17,13 @@ spec:
       component: {{ include "checkmk.fullname" . }}-cluster-collector
   template:
     metadata:
-      {{- with .Values.clusterCollector.podAnnotations }}
       annotations:
+        {{- if .Values.tlsCommunication.enabled }}
+        checksum/config: {{ include (print $.Template.BasePath "/checkmk-secret.yaml") . | sha256sum }}
+        {{- end }}
+        {{- with .Values.clusterCollector.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
       labels:
         {{- include "checkmk.selectorLabels" . | nindent 8 }}
         app: {{ include "checkmk.fullname" . }}-cluster-collector
@@ -42,6 +45,7 @@ spec:
           command:
             - "/usr/local/bin/checkmk-cluster-collector"
           args:
+            - "--log-level={{ .Values.clusterCollector.logLevel }}"
             - "--host=0.0.0.0"
             - "--reader-whitelist={{ .Release.Namespace }}:{{ include "checkmk.fullname" . }}-checkmk"
             - "--writer-whitelist={{ .Release.Namespace }}:{{ include "checkmk.fullname" . }}-node-collector"
@@ -75,8 +79,10 @@ spec:
             - containerPort: 10050
               name: api
               protocol: TCP
-          {{- if .Values.tlsCommunication.enabled }}
           volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          {{- if .Values.tlsCommunication.enabled }}
             - name: cluster-collector-key
               mountPath: /etc/ca-certificates/cluster-collector-key.pam
               subPath: cluster-collector-key.pam
@@ -86,8 +92,13 @@ spec:
               subPath: cluster-collector-cert.pam
               readOnly: true
           {{- end }}
-      {{- if .Values.tlsCommunication.enabled }}
       volumes:
+        # gunicorn needs a writeable /tmp and runs best with ram backed /tmp
+        # https://docs.gunicorn.org/en/latest/faq.html#blocking-os-fchmod
+        - name: tmp
+          emptyDir:
+            medium: Memory
+      {{- if .Values.tlsCommunication.enabled }}
         - name: cluster-collector-key
           secret:
             secretName: {{ include "checkmk.fullname" . }}-checkmk-tls

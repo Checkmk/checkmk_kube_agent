@@ -2,51 +2,51 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: {{ include "checkmk.fullname" . }}-node-collector-cadvisor
+  name: {{ include "checkmk.fullname" . }}-cadvisor
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "checkmk.labels" . | nindent 4 }}
-    app: {{ include "checkmk.fullname" . }}-node-collector-cadvisor
-    component: {{ include "checkmk.fullname" . }}-node-collector
+    app: {{ include "checkmk.fullname" . }}-cadvisor
+    component: {{ include "checkmk.fullname" . }}-cadvisor
 spec:
   selector:
     matchLabels:
       {{- include "checkmk.selectorLabels" . | nindent 6 }}
-      app: {{ include "checkmk.fullname" . }}-node-collector-cadvisor
-      component: {{ include "checkmk.fullname" . }}-node-collector
+      app: {{ include "checkmk.fullname" . }}-cadvisor
+      component: {{ include "checkmk.fullname" . }}-cadvisor
   template:
     metadata:
-      {{- with .Values.nodeCollector.podAnnotations }}
+      {{- with .Values.cadvisor.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
         {{- include "checkmk.selectorLabels" . | nindent 8 }}
-        app: {{ include "checkmk.fullname" . }}-node-collector-cadvisor
-        component: {{ include "checkmk.fullname" . }}-node-collector
+        app: {{ include "checkmk.fullname" . }}-cadvisor
+        component: {{ include "checkmk.fullname" . }}-cadvisor
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "checkmk.fullname" . }}-node-collector
+      serviceAccountName: {{ include "checkmk.fullname" . }}-cadvisor
       automountServiceAccountToken: false
       securityContext:
-        {{- toYaml .Values.nodeCollector.podSecurityContext | nindent 8 }}
+        {{- toYaml .Values.cadvisor.podSecurityContext | nindent 8 }}
       containers:
         - name: cadvisor
           securityContext:
-            {{- toYaml .Values.nodeCollector.cadvisor.securityContext | nindent 12 }}
-          image: "{{ .Values.nodeCollector.cadvisor.image.repository }}:{{ .Values.nodeCollector.cadvisor.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.nodeCollector.cadvisor.image.pullPolicy }}
+            {{- toYaml .Values.cadvisor.securityContext | nindent 12 }}
+          image: "{{ .Values.cadvisor.image.repository }}:{{ .Values.cadvisor.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.cadvisor.image.pullPolicy }}
           command:
             - "/usr/bin/cadvisor"
           args:
-          {{- with .Values.nodeCollector.cadvisor.additionalArgs }}
+          {{- with .Values.cadvisor.additionalArgs }}
             {{ toYaml . | nindent 12 }}
           {{- end }}
           resources:
-            {{- toYaml .Values.nodeCollector.cadvisor.resources | nindent 12 }}
+            {{- toYaml .Values.cadvisor.resources | nindent 12 }}
           ports:
             - containerPort: 8080
               name: http

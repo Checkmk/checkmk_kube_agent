@@ -16,10 +16,13 @@ spec:
       component: {{ include "checkmk.fullname" . }}-node-collector
   template:
     metadata:
-      {{- with .Values.nodeCollector.podAnnotations }}
       annotations:
+        {{- if .Values.tlsCommunication.enabled }}
+        checksum/config: {{ include (print $.Template.BasePath "/checkmk-secret.yaml") . | sha256sum }}
+        {{- end }}
+        {{- with .Values.nodeCollector.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
       labels:
         {{- include "checkmk.selectorLabels" . | nindent 8 }}
         app: {{ include "checkmk.fullname" . }}-node-collector-container-metrics
@@ -40,10 +43,11 @@ spec:
           imagePullPolicy: {{ .Values.nodeCollector.containerMetricsCollector.image.pullPolicy }}
           command:
             - "/usr/local/bin/checkmk-container-metrics-collector"
-          {{- if .Values.tlsCommunication.enabled }}
           args:
+            - "--log-level={{ .Values.nodeCollector.logLevel }}"
+          {{- if .Values.tlsCommunication.enabled }}
             - "--secure-protocol"
-            - "--verify-ssl"
+            #- "--verify-ssl"
           {{- end }}
           {{- if .Values.tlsCommunication.enabled }}
           volumeMounts:
@@ -62,7 +66,7 @@ spec:
             - name: CLUSTER_COLLECTOR_SERVICE_PORT_API
               value: "{{ .Values.clusterCollector.service.port }}"
             - name: CADVISOR_SERVICE_HOST
-              value: "{{ include "checkmk.fullname" . }}-node-collector-cadvisor.{{ .Release.Namespace }}"
+              value: "{{ include "checkmk.fullname" . }}-cadvisor.{{ .Release.Namespace }}"
             - name: CADVISOR_SERVICE_PORT
               value: "8080"
           resources:

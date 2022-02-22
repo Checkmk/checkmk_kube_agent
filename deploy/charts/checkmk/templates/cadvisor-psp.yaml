@@ -1,0 +1,61 @@
+{{- if .Values.cadvisor.rbac.pspEnabled }}
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  labels:
+    {{- include "checkmk.labels" . | nindent 4 }}
+    app: {{ include "checkmk.fullname" . }}-cadvisor
+    component: {{ include "checkmk.fullname" . }}-cadvisor
+  name: {{ include "checkmk.fullname" . }}-cadvisor
+spec:
+  allowedHostPaths:
+    - pathPrefix: /var/run
+      readOnly: true
+    - pathPrefix: /sys
+      readOnly: true
+    - pathPrefix: /var/lib/docker
+      readOnly: true
+  fsGroup:
+    rule: RunAsAny
+  runAsUser:
+    rule: RunAsAny
+  seLinux:
+    rule: RunAsAny
+  supplementalGroups:
+    rule: RunAsAny
+  volumes:
+    - hostPath
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "checkmk.fullname" . }}-cadvisor
+  labels:
+    {{- include "checkmk.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - policy
+    resourceNames:
+      - {{ include "checkmk.fullname" . }}-cadvisor
+    resources:
+      - podsecuritypolicies
+    verbs:
+      - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "checkmk.fullname" . }}-cadvisor
+  labels:
+    {{- include "checkmk.labels" . | nindent 4 }}
+    app: {{ include "checkmk.fullname" . }}-cadvisor
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "checkmk.fullname" . }}-cadvisor
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "checkmk.fullname" . }}-cadvisor
+    namespace: {{ .Release.Namespace }}
+{{- end }}

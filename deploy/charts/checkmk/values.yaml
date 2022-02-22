@@ -6,13 +6,51 @@ nameOverride: ""
 fullnameOverride: ""
 
 tlsCommunication:
-  enabled: false # TODO: true
+  enabled: true # TODO: true
   # ## Secret name containing the TLS certificate for checkmk with the fields: cluster-collector-key, cluster-collector-cert, checkmk-ca-cert
   # ## Secret must be manually created in the namespace. If left 
   # tlsSecretName: ""
-  clusterCollectorKey: "LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1IY0NBUUVFSURFVU10MGErY3hpVCtXWkNGc2p0QzlDcXVNVExLd0h1YjA1aFRjQnNQNkRvQW9HQ0NxR1NNNDkKQXdFSG9VUURRZ0FFYUFPNlhQT3hCMStqNTA0YlN0UXEvRlkzZjd6bmIxV1FUNlpoSzg1NFFlKyt4L083NHRPVApDbCtRWXdJK1dDYUVnMCtmMG5zczlrVjNMMmdCZDFKODFBPT0KLS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo="
-  clusterCollectorCert: "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURJRENDQXNhZ0F3SUJBZ0lVY0Z2cVN2Z2k5MFFOdGRLNUx4U0R1MVF1Z2Nrd0NnWUlLb1pJemowRUF3SXcKWWpFTE1Ba0dBMVVFQmhNQ1JFVXhFREFPQmdOVkJBZ01CMEpoZG1GeWFXRXhEekFOQmdOVkJBY01CazExYm1sagphREVNTUFvR0ExVUVDZ3dEZERJNU1Rd3dDZ1lEVlFRTERBTmtaWFl4RkRBU0JnTlZCQU1NQzJOb1pXTnJiV3N1ClkyOXRNQjRYRFRJeU1ESXhNVEUwTlRRMU5sb1hEVEkwTVRFd056RTBOVFExTmxvd2dZa3hDekFKQmdOVkJBWVQKQWtSRk1SQXdEZ1lEVlFRSURBZENZWFpoY21saE1ROHdEUVlEVlFRSERBWk5kVzVwWTJneEREQUtCZ05WQkFvTQpBM1F5T1RFTU1Bb0dBMVVFQ3d3RFpHVjJNVHN3T1FZRFZRUUREREpqYkhWemRHVnlMV052Ykd4bFkzUnZjaTVqCmFHVmphMjFyTFcxdmJtbDBiM0pwYm1jdVkyeDFjM1JsY2k1c2IyTmhiREJaTUJNR0J5cUdTTTQ5QWdFR0NDcUcKU000OUF3RUhBMElBQkdnRHVsenpzUWRmbytkT0cwclVLdnhXTjMrODUyOVZrRSttWVN2T2VFSHZ2c2Z6dStMVAprd3Bma0dNQ1BsZ21oSU5QbjlKN0xQWkZkeTlvQVhkU2ZOU2pnZ0V3TUlJQkxEQWRCZ05WSFE0RUZnUVVZVEZDCjhxR1liNnR6MFZac0R0QzVpVnRzRDVrd2daOEdBMVVkSXdTQmx6Q0JsSUFVVVVlN2Iyb2NaRXhBMkxoUlpCZzMKaUQyZTJvR2hacVJrTUdJeEN6QUpCZ05WQkFZVEFrUkZNUkF3RGdZRFZRUUlEQWRDWVhaaGNtbGhNUTh3RFFZRApWUVFIREFaTmRXNXBZMmd4RERBS0JnTlZCQW9NQTNReU9URU1NQW9HQTFVRUN3d0RaR1YyTVJRd0VnWURWUVFECkRBdGphR1ZqYTIxckxtTnZiWUlVTytDSUdDcFhmNGQ1KzJGRnlKRVVERkR5VDk4d0RBWURWUjBUQkFVd0F3RUIKL3pBTEJnTlZIUThFQkFNQ0F2d3dRd1lEVlIwUkJEd3dPb0l5WTJ4MWMzUmxjaTFqYjJ4c1pXTjBiM0l1WTJobApZMnR0YXkxdGIyNXBkRzl5YVc1bkxtTnNkWE4wWlhJdWJHOWpZV3lIQkFwc0VoRXdDUVlEVlIwU0JBSXdBREFLCkJnZ3Foa2pPUFFRREFnTklBREJGQWlFQTk4VEFPWVRQMG9GY2x2R2dheTVick9Samhxa2IvL3dydXEvd0ZEaFgKZ2pVQ0lHL25rY05BcUhFY3RRSHNkRmxYZ1d1cU4wdjRlSUpUMC9DeGxNSG9ZVnQ2Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K"
-  checkmkCaCert: "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUNHVENDQWIrZ0F3SUJBZ0lVTytDSUdDcFhmNGQ1KzJGRnlKRVVERkR5VDk4d0NnWUlLb1pJemowRUF3SXcKWWpFTE1Ba0dBMVVFQmhNQ1JFVXhFREFPQmdOVkJBZ01CMEpoZG1GeWFXRXhEekFOQmdOVkJBY01CazExYm1sagphREVNTUFvR0ExVUVDZ3dEZERJNU1Rd3dDZ1lEVlFRTERBTmtaWFl4RkRBU0JnTlZCQU1NQzJOb1pXTnJiV3N1ClkyOXRNQjRYRFRJeU1ESXhNVEUwTlRNMU0xb1hEVEl5TURNeE16RTBOVE0xTTFvd1lqRUxNQWtHQTFVRUJoTUMKUkVVeEVEQU9CZ05WQkFnTUIwSmhkbUZ5YVdFeER6QU5CZ05WQkFjTUJrMTFibWxqYURFTU1Bb0dBMVVFQ2d3RApkREk1TVF3d0NnWURWUVFMREFOa1pYWXhGREFTQmdOVkJBTU1DMk5vWldOcmJXc3VZMjl0TUZrd0V3WUhLb1pJCnpqMENBUVlJS29aSXpqMERBUWNEUWdBRTBtZW4vQ3RpUUJyUGpnZzVtcDF1NnRxQXg2c1NFeWxCRHUyeXNMMHgKTEY1Z1J5SFFjYndodVZ6eUp0K3NjTDErTm1lc1NTd3E5WFBtQVR1RVYwTTJhNk5UTUZFd0hRWURWUjBPQkJZRQpGRkZIdTI5cUhHUk1RTmk0VVdRWU40ZzludHFCTUI4R0ExVWRJd1FZTUJhQUZGRkh1MjlxSEdSTVFOaTRVV1FZCk40ZzludHFCTUE4R0ExVWRFd0VCL3dRRk1BTUJBZjh3Q2dZSUtvWkl6ajBFQXdJRFNBQXdSUUloQUx4RzVhSDEKemJjMGd0MDdYTHlId2NUbDJMMW1RNnJ5YlQ1NXdlRk5keU9JQWlCK0lldVltdUJyYkVPQ2RvbktiN3ZFOWFTNgpvRXo3WHNiaWpnMldVWGxDSUE9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg=="
+  clusterCollectorKey: |-
+    -----BEGIN EC PRIVATE KEY-----
+    MHcCAQEEIDEUMt0a+cxiT+WZCFsjtC9CquMTLKwHub05hTcBsP6DoAoGCCqGSM49
+    AwEHoUQDQgAEaAO6XPOxB1+j504bStQq/FY3f7znb1WQT6ZhK854Qe++x/O74tOT
+    Cl+QYwI+WCaEg0+f0nss9kV3L2gBd1J81A==
+    -----END EC PRIVATE KEY-----
+  clusterCollectorCert: |-
+    -----BEGIN CERTIFICATE-----
+    MIIDIDCCAsagAwIBAgIUcFvqSvgi90QNtdK5LxSDu1QugckwCgYIKoZIzj0EAwIw
+    YjELMAkGA1UEBhMCREUxEDAOBgNVBAgMB0JhdmFyaWExDzANBgNVBAcMBk11bmlj
+    aDEMMAoGA1UECgwDdDI5MQwwCgYDVQQLDANkZXYxFDASBgNVBAMMC2NoZWNrbWsu
+    Y29tMB4XDTIyMDIxMTE0NTQ1NloXDTI0MTEwNzE0NTQ1NlowgYkxCzAJBgNVBAYT
+    AkRFMRAwDgYDVQQIDAdCYXZhcmlhMQ8wDQYDVQQHDAZNdW5pY2gxDDAKBgNVBAoM
+    A3QyOTEMMAoGA1UECwwDZGV2MTswOQYDVQQDDDJjbHVzdGVyLWNvbGxlY3Rvci5j
+    aGVja21rLW1vbml0b3JpbmcuY2x1c3Rlci5sb2NhbDBZMBMGByqGSM49AgEGCCqG
+    SM49AwEHA0IABGgDulzzsQdfo+dOG0rUKvxWN3+8529VkE+mYSvOeEHvvsfzu+LT
+    kwpfkGMCPlgmhINPn9J7LPZFdy9oAXdSfNSjggEwMIIBLDAdBgNVHQ4EFgQUYTFC
+    8qGYb6tz0VZsDtC5iVtsD5kwgZ8GA1UdIwSBlzCBlIAUUUe7b2ocZExA2LhRZBg3
+    iD2e2oGhZqRkMGIxCzAJBgNVBAYTAkRFMRAwDgYDVQQIDAdCYXZhcmlhMQ8wDQYD
+    VQQHDAZNdW5pY2gxDDAKBgNVBAoMA3QyOTEMMAoGA1UECwwDZGV2MRQwEgYDVQQD
+    DAtjaGVja21rLmNvbYIUO+CIGCpXf4d5+2FFyJEUDFDyT98wDAYDVR0TBAUwAwEB
+    /zALBgNVHQ8EBAMCAvwwQwYDVR0RBDwwOoIyY2x1c3Rlci1jb2xsZWN0b3IuY2hl
+    Y2ttay1tb25pdG9yaW5nLmNsdXN0ZXIubG9jYWyHBApsEhEwCQYDVR0SBAIwADAK
+    BggqhkjOPQQDAgNIADBFAiEA98TAOYTP0oFclvGgay5brORjhqkb//wruq/wFDhX
+    gjUCIG/nkcNAqHEctQHsdFlXgWuqN0v4eIJT0/CxlMHoYVt6
+    -----END CERTIFICATE-----
+  checkmkCaCert: |-
+    -----BEGIN CERTIFICATE-----
+    MIICGTCCAb+gAwIBAgIUO+CIGCpXf4d5+2FFyJEUDFDyT98wCgYIKoZIzj0EAwIw
+    YjELMAkGA1UEBhMCREUxEDAOBgNVBAgMB0JhdmFyaWExDzANBgNVBAcMBk11bmlj
+    aDEMMAoGA1UECgwDdDI5MQwwCgYDVQQLDANkZXYxFDASBgNVBAMMC2NoZWNrbWsu
+    Y29tMB4XDTIyMDIxMTE0NTM1M1oXDTIyMDMxMzE0NTM1M1owYjELMAkGA1UEBhMC
+    REUxEDAOBgNVBAgMB0JhdmFyaWExDzANBgNVBAcMBk11bmljaDEMMAoGA1UECgwD
+    dDI5MQwwCgYDVQQLDANkZXYxFDASBgNVBAMMC2NoZWNrbWsuY29tMFkwEwYHKoZI
+    zj0CAQYIKoZIzj0DAQcDQgAE0men/CtiQBrPjgg5mp1u6tqAx6sSEylBDu2ysL0x
+    LF5gRyHQcbwhuVzyJt+scL1+NmesSSwq9XPmATuEV0M2a6NTMFEwHQYDVR0OBBYE
+    FFFHu29qHGRMQNi4UWQYN4g9ntqBMB8GA1UdIwQYMBaAFFFHu29qHGRMQNi4UWQY
+    N4g9ntqBMA8GA1UdEwEB/wQFMAMBAf8wCgYIKoZIzj0EAwIDSAAwRQIhALxG5aH1
+    zbc0gt07XLyHwcTl2L1mQ6rybT55weFNdyOIAiB+IeuYmuBrbEOCdonKb7vE9aS6
+    oEz7Xsbijg2WUXlCIA==
+    -----END CERTIFICATE-----
 
 imagePullSecrets: []
 
@@ -24,6 +62,7 @@ networkPolicy:
   # - 127.0.0.1/32 # e.g. Checkmk Server
   # - 127.0.0.1/24 # e.g. Metallb speakers
 
+
 ## Configuration for cluster-collector
 clusterCollector:
   image:
@@ -31,6 +70,9 @@ clusterCollector:
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
     tag: "main_2022.02.18" # main_<YYYY.MM.DD>
+
+  # can be: "debug", "info", "warning" (default), "critical"
+  logLevel: warning
 
   podAnnotations:
     seccomp.security.alpha.kubernetes.io/pod: runtime/default
@@ -76,7 +118,7 @@ clusterCollector:
   resources:
     limits:
       cpu: 300m
-      memory: 2000Mi
+      memory: 200Mi
     requests:
       cpu: 150m
       memory: 200Mi
@@ -87,8 +129,64 @@ clusterCollector:
 
   affinity: {}
 
-## Configuration for node-collector
+
+## Configuration for cadvisor
+cadvisor:
+  podAnnotations:
+    seccomp.security.alpha.kubernetes.io/pod: runtime/default
+
+  podSecurityContext: {}
+    # fsGroup: 2000
+
+  rbac:
+    pspEnabled: true
+
+  image:
+    repository: checkmk/cadvisor-patched
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "main_2022.02.18" # main_<YYYY.MM.DD>
+
+  additionalArgs:
+    - "--housekeeping_interval=30s"
+    - "--max_housekeeping_interval=35s"
+    - "--event_storage_event_limit=default=0"
+    - "--event_storage_age_limit=default=0"
+    - "--store_container_labels=false"
+    - "--whitelisted_container_labels=io.kubernetes.container.name,io.kubernetes.pod.name,io.kubernetes.pod.namespace,io.kubernetes.pod.uid"
+    - "--global_housekeeping_interval=30s"
+    - "--event_storage_event_limit=default=0"
+    - "--event_storage_age_limit=default=0"
+    - "--disable_metrics=percpu,process,sched,tcp,udp,diskIO,disk,network"
+    - "--allow_dynamic_housekeeping=true"
+    - "--storage_duration=1m0s"
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+      add: ["CAP_SYS_PTRACE"]
+    privileged: false
+    readOnlyRootFilesystem: true
+    runAsGroup: 10001
+    runAsNonRoot: true
+    runAsUser: 10001
+
+  resources:
+    limits:
+      cpu: 300m
+      memory: 200Mi
+    requests:
+      cpu: 150m
+      memory: 200Mi
+
+
+## Configuration for node-collectors (container-metrics and machine-sections)
 nodeCollector:
+  # can be: "debug", "info", "warning" (default), "critical"
+  logLevel: debug
+
   podAnnotations:
     seccomp.security.alpha.kubernetes.io/pod: runtime/default
 
@@ -136,47 +234,6 @@ nodeCollector:
       capabilities:
         drop:
           - ALL
-      privileged: false
-      readOnlyRootFilesystem: true
-      runAsGroup: 10001
-      runAsNonRoot: true
-      runAsUser: 10001
-
-    resources:
-      limits:
-        cpu: 300m
-        memory: 200Mi
-      requests:
-        cpu: 150m
-        memory: 200Mi
-
-  cadvisor:
-    image:
-      repository: checkmk/cadvisor-patched
-      pullPolicy: IfNotPresent
-      # Overrides the image tag whose default is the chart appVersion.
-      tag: "main_2022.02.18" # main_<YYYY.MM.DD>
-
-    additionalArgs:
-      - "--housekeeping_interval=30s"
-      - "--max_housekeeping_interval=35s"
-      - "--event_storage_event_limit=default=0"
-      - "--event_storage_age_limit=default=0"
-      - "--store_container_labels=false"
-      - "--whitelisted_container_labels=io.kubernetes.container.name,io.kubernetes.pod.name,io.kubernetes.pod.namespace,io.kubernetes.pod.uid"
-      - "--global_housekeeping_interval=30s"
-      - "--event_storage_event_limit=default=0"
-      - "--event_storage_age_limit=default=0"
-      - "--disable_metrics=percpu,process,sched,tcp,udp,diskIO,disk,network"
-      - "--allow_dynamic_housekeeping=true"
-      - "--storage_duration=1m0s"
-
-    securityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop:
-          - ALL
-        add: ["CAP_SYS_PTRACE"]
       privileged: false
       readOnlyRootFilesystem: true
       runAsGroup: 10001

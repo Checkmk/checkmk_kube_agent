@@ -2,11 +2,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "checkmk.fullname" . }}-node-collector-cadvisor
+  name: {{ include "checkmk.fullname" . }}-cadvisor
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "checkmk.labels" . | nindent 4 }}
-    app: {{ include "checkmk.fullname" . }}-node-collector-cadvisor
+    app: {{ include "checkmk.fullname" . }}-cadvisor
 spec:
   type: ClusterIP
   ports:
@@ -16,4 +16,4 @@ spec:
       protocol: TCP
   selector:
     {{- include "checkmk.selectorLabels" . | nindent 4 }}
-    app: {{ include "checkmk.fullname" . }}-node-collector-cadvisor
+    app: {{ include "checkmk.fullname" . }}-cadvisor
