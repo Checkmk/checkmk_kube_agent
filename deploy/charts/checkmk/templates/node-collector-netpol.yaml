@@ -1,0 +1,43 @@
+{{- if .Values.networkPolicy.enabled }}
+---
+# Deny all incoming/outgoing traffic to/from node-collector
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "checkmk.fullname" . }}-node-collector-deny-all
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "checkmk.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      component: {{ include "checkmk.fullname" . }}-node-collector
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress: []
+  egress: []
+---
+# Allow outgoing traffic from node-collector components to cluster-collector
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "checkmk.fullname" . }}-node-collector-allow-egress
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "checkmk.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      component: {{ include "checkmk.fullname" . }}-node-collector
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: {{ .Release.Namespace }}
+        podSelector:
+          matchLabels:
+            component: {{ include "checkmk.fullname" . }}-cluster-collector
+{{- end }}

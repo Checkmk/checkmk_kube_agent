@@ -1,0 +1,249 @@
+# Default values for checkmk.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+nameOverride: ""
+fullnameOverride: ""
+
+tlsCommunication:
+  enabled: true
+  # ## Secret name containing the TLS certificate for checkmk with the fields: cluster-collector-key, cluster-collector-cert, checkmk-ca-cert
+  # ## Secret must be manually created in the namespace. If left 
+  # tlsSecretName: ""
+  clusterCollectorKey: |-
+    -----BEGIN EC PRIVATE KEY-----
+    MHcCAQEEIDEUMt0a+cxiT+WZCFsjtC9CquMTLKwHub05hTcBsP6DoAoGCCqGSM49
+    AwEHoUQDQgAEaAO6XPOxB1+j504bStQq/FY3f7znb1WQT6ZhK854Qe++x/O74tOT
+    Cl+QYwI+WCaEg0+f0nss9kV3L2gBd1J81A==
+    -----END EC PRIVATE KEY-----
+  clusterCollectorCert: |-
+    -----BEGIN CERTIFICATE-----
+    MIIDIDCCAsagAwIBAgIUcFvqSvgi90QNtdK5LxSDu1QugckwCgYIKoZIzj0EAwIw
+    YjELMAkGA1UEBhMCREUxEDAOBgNVBAgMB0JhdmFyaWExDzANBgNVBAcMBk11bmlj
+    aDEMMAoGA1UECgwDdDI5MQwwCgYDVQQLDANkZXYxFDASBgNVBAMMC2NoZWNrbWsu
+    Y29tMB4XDTIyMDIxMTE0NTQ1NloXDTI0MTEwNzE0NTQ1NlowgYkxCzAJBgNVBAYT
+    AkRFMRAwDgYDVQQIDAdCYXZhcmlhMQ8wDQYDVQQHDAZNdW5pY2gxDDAKBgNVBAoM
+    A3QyOTEMMAoGA1UECwwDZGV2MTswOQYDVQQDDDJjbHVzdGVyLWNvbGxlY3Rvci5j
+    aGVja21rLW1vbml0b3JpbmcuY2x1c3Rlci5sb2NhbDBZMBMGByqGSM49AgEGCCqG
+    SM49AwEHA0IABGgDulzzsQdfo+dOG0rUKvxWN3+8529VkE+mYSvOeEHvvsfzu+LT
+    kwpfkGMCPlgmhINPn9J7LPZFdy9oAXdSfNSjggEwMIIBLDAdBgNVHQ4EFgQUYTFC
+    8qGYb6tz0VZsDtC5iVtsD5kwgZ8GA1UdIwSBlzCBlIAUUUe7b2ocZExA2LhRZBg3
+    iD2e2oGhZqRkMGIxCzAJBgNVBAYTAkRFMRAwDgYDVQQIDAdCYXZhcmlhMQ8wDQYD
+    VQQHDAZNdW5pY2gxDDAKBgNVBAoMA3QyOTEMMAoGA1UECwwDZGV2MRQwEgYDVQQD
+    DAtjaGVja21rLmNvbYIUO+CIGCpXf4d5+2FFyJEUDFDyT98wDAYDVR0TBAUwAwEB
+    /zALBgNVHQ8EBAMCAvwwQwYDVR0RBDwwOoIyY2x1c3Rlci1jb2xsZWN0b3IuY2hl
+    Y2ttay1tb25pdG9yaW5nLmNsdXN0ZXIubG9jYWyHBApsEhEwCQYDVR0SBAIwADAK
+    BggqhkjOPQQDAgNIADBFAiEA98TAOYTP0oFclvGgay5brORjhqkb//wruq/wFDhX
+    gjUCIG/nkcNAqHEctQHsdFlXgWuqN0v4eIJT0/CxlMHoYVt6
+    -----END CERTIFICATE-----
+  checkmkCaCert: |-
+    -----BEGIN CERTIFICATE-----
+    MIICGTCCAb+gAwIBAgIUO+CIGCpXf4d5+2FFyJEUDFDyT98wCgYIKoZIzj0EAwIw
+    YjELMAkGA1UEBhMCREUxEDAOBgNVBAgMB0JhdmFyaWExDzANBgNVBAcMBk11bmlj
+    aDEMMAoGA1UECgwDdDI5MQwwCgYDVQQLDANkZXYxFDASBgNVBAMMC2NoZWNrbWsu
+    Y29tMB4XDTIyMDIxMTE0NTM1M1oXDTIyMDMxMzE0NTM1M1owYjELMAkGA1UEBhMC
+    REUxEDAOBgNVBAgMB0JhdmFyaWExDzANBgNVBAcMBk11bmljaDEMMAoGA1UECgwD
+    dDI5MQwwCgYDVQQLDANkZXYxFDASBgNVBAMMC2NoZWNrbWsuY29tMFkwEwYHKoZI
+    zj0CAQYIKoZIzj0DAQcDQgAE0men/CtiQBrPjgg5mp1u6tqAx6sSEylBDu2ysL0x
+    LF5gRyHQcbwhuVzyJt+scL1+NmesSSwq9XPmATuEV0M2a6NTMFEwHQYDVR0OBBYE
+    FFFHu29qHGRMQNi4UWQYN4g9ntqBMB8GA1UdIwQYMBaAFFFHu29qHGRMQNi4UWQY
+    N4g9ntqBMA8GA1UdEwEB/wQFMAMBAf8wCgYIKoZIzj0EAwIDSAAwRQIhALxG5aH1
+    zbc0gt07XLyHwcTl2L1mQ6rybT55weFNdyOIAiB+IeuYmuBrbEOCdonKb7vE9aS6
+    oEz7Xsbijg2WUXlCIA==
+    -----END CERTIFICATE-----
+
+imagePullSecrets: []
+
+## ref: https://kubernetes.io/docs/concepts/services-networking/network-policies/
+networkPolicy:
+  enabled: false
+  # specify ipBlock cidrs here for your ingress to the cluster-collector, especially the checkmk server ip range
+  allowIngressFromCIDRs: []
+  # - 127.0.0.1/32 # e.g. Checkmk Server
+  # - 127.0.0.1/24 # e.g. Metallb speakers
+
+
+## Configuration for cluster-collector
+clusterCollector:
+  image:
+    repository: checkmk/kubernetes-collector
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "main_2022.02.18" # main_<YYYY.MM.DD>
+
+  # can be: "debug", "info", "warning" (default), "critical"
+  logLevel: warning
+
+  podAnnotations:
+    seccomp.security.alpha.kubernetes.io/pod: runtime/default
+
+  podSecurityContext: {}
+    # fsGroup: 2000
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    privileged: false
+    readOnlyRootFilesystem: true
+    runAsGroup: 10001
+    runAsNonRoot: true
+    runAsUser: 10001
+
+  rbac:
+    pspEnabled: true
+
+  service:
+    # if required specify "NodePort" here to expose the cluster-collector via the "nodePort" specified below
+    type: ClusterIP
+    port: 8080
+    # nodePort: 30035
+
+  ingress:
+    enabled: false
+    className: ""
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: /
+    hosts:
+      - host: checkmk-cluster-collector.local
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - chart-example.local
+
+  resources:
+    limits:
+      cpu: 300m
+      memory: 200Mi
+    requests:
+      cpu: 150m
+      memory: 200Mi
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  affinity: {}
+
+
+## Configuration for cadvisor
+cadvisor:
+  podAnnotations:
+    seccomp.security.alpha.kubernetes.io/pod: runtime/default
+
+  podSecurityContext: {}
+    # fsGroup: 2000
+
+  rbac:
+    pspEnabled: true
+
+  image:
+    repository: checkmk/cadvisor-patched
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "main_2022.02.18" # main_<YYYY.MM.DD>
+
+  additionalArgs:
+    - "--housekeeping_interval=30s"
+    - "--max_housekeeping_interval=35s"
+    - "--event_storage_event_limit=default=0"
+    - "--event_storage_age_limit=default=0"
+    - "--store_container_labels=false"
+    - "--whitelisted_container_labels=io.kubernetes.container.name,io.kubernetes.pod.name,io.kubernetes.pod.namespace,io.kubernetes.pod.uid"
+    - "--global_housekeeping_interval=30s"
+    - "--event_storage_event_limit=default=0"
+    - "--event_storage_age_limit=default=0"
+    - "--disable_metrics=percpu,process,sched,tcp,udp,diskIO,disk,network"
+    - "--allow_dynamic_housekeeping=true"
+    - "--storage_duration=1m0s"
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+      add: ["CAP_SYS_PTRACE"]
+    privileged: false
+    readOnlyRootFilesystem: true
+    runAsGroup: 10001
+    runAsNonRoot: true
+    runAsUser: 10001
+
+  resources:
+    limits:
+      cpu: 300m
+      memory: 200Mi
+    requests:
+      cpu: 150m
+      memory: 200Mi
+
+
+## Configuration for node-collectors (container-metrics and machine-sections)
+nodeCollector:
+  # can be: "debug", "info", "warning" (default), "critical"
+  logLevel: debug
+
+  podAnnotations:
+    seccomp.security.alpha.kubernetes.io/pod: runtime/default
+
+  podSecurityContext: {}
+    # fsGroup: 2000
+
+  rbac:
+    pspEnabled: true
+
+  machineSectionsCollector:
+    image:
+      repository: checkmk/kubernetes-collector
+      pullPolicy: IfNotPresent
+      # Overrides the image tag whose default is the chart appVersion.
+      tag: "main_2022.02.18" # main_<YYYY.MM.DD>
+
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      privileged: false
+      readOnlyRootFilesystem: true
+      runAsGroup: 10001
+      runAsNonRoot: true
+      runAsUser: 10001
+
+    resources:
+      limits:
+        cpu: 300m
+        memory: 200Mi
+      requests:
+        cpu: 150m
+        memory: 200Mi
+
+  containerMetricsCollector:
+    image:
+      repository: checkmk/kubernetes-collector
+      pullPolicy: IfNotPresent
+      # Overrides the image tag whose default is the chart appVersion.
+      tag: "main_2022.02.18" # main_<YYYY.MM.DD>
+
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      privileged: false
+      readOnlyRootFilesystem: true
+      runAsGroup: 10001
+      runAsNonRoot: true
+      runAsUser: 10001
+
+    resources:
+      limits:
+        cpu: 300m
+        memory: 200Mi
+      requests:
+        cpu: 150m
+        memory: 200Mi

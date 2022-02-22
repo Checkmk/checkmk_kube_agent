@@ -1,0 +1,74 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "checkmk.fullname" . }}-cadvisor
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "checkmk.labels" . | nindent 4 }}
+    app: {{ include "checkmk.fullname" . }}-cadvisor
+    component: {{ include "checkmk.fullname" . }}-cadvisor
+spec:
+  selector:
+    matchLabels:
+      {{- include "checkmk.selectorLabels" . | nindent 6 }}
+      app: {{ include "checkmk.fullname" . }}-cadvisor
+      component: {{ include "checkmk.fullname" . }}-cadvisor
+  template:
+    metadata:
+      {{- with .Values.cadvisor.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "checkmk.selectorLabels" . | nindent 8 }}
+        app: {{ include "checkmk.fullname" . }}-cadvisor
+        component: {{ include "checkmk.fullname" . }}-cadvisor
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "checkmk.fullname" . }}-cadvisor
+      automountServiceAccountToken: false
+      securityContext:
+        {{- toYaml .Values.cadvisor.podSecurityContext | nindent 8 }}
+      containers:
+        - name: cadvisor
+          securityContext:
+            {{- toYaml .Values.cadvisor.securityContext | nindent 12 }}
+          image: "{{ .Values.cadvisor.image.repository }}:{{ .Values.cadvisor.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.cadvisor.image.pullPolicy }}
+          command:
+            - "/usr/bin/cadvisor"
+          args:
+          {{- with .Values.cadvisor.additionalArgs }}
+            {{ toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.cadvisor.resources | nindent 12 }}
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          volumeMounts:
+            - name: var-run
+              mountPath: /var/run
+              readOnly: true
+            - name: sys
+              mountPath: /sys
+              readOnly: true
+            - name: docker
+              mountPath: /var/lib/docker
+              readOnly: true
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: var-run
+          hostPath:
+            path: /var/run
+        - name: sys
+          hostPath:
+            path: /sys
+        - name: docker
+          hostPath:
+            path: /var/lib/docker
