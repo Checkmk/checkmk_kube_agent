@@ -66,9 +66,11 @@ spec:
             - name: CLUSTER_COLLECTOR_SERVICE_PORT_API
               value: "{{ .Values.clusterCollector.service.port }}"
             - name: CADVISOR_SERVICE_HOST
-              value: "{{ include "checkmk.fullname" . }}-cadvisor.{{ .Release.Namespace }}"
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
             - name: CADVISOR_SERVICE_PORT
-              value: "8080"
+              value: "9088"
           resources:
             {{- toYaml .Values.nodeCollector.machineSectionsCollector.resources | nindent 12 }}
       terminationGracePeriodSeconds: 30

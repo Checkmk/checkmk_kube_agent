@@ -81,7 +81,7 @@ The same chart can be used to run multiple checkmk instances in the same cluster
 To debug in-cluster, you can launch a debug pod with network tools via
 
 ```console
-kubectl -n [RELEASE_NAMESPACE] run -it debug --rm --image praqma/network-multitool --restart=Never -- sh
+kubectl -n [RELEASE_NAMESPACE] run -it debug --rm --image wbitt/network-multitool --restart=Never -- sh
 ```
 
 and, with the token of the service account `[RELEAE_NAME]--checkmk`, issue queries against the `cluster-collector`:

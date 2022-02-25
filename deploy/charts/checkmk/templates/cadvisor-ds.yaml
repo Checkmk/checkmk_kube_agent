@@ -49,6 +49,7 @@ spec:
             {{- toYaml .Values.cadvisor.resources | nindent 12 }}
           ports:
             - containerPort: 8080
+              hostPort: 9088
               name: http
               protocol: TCP
           volumeMounts:
