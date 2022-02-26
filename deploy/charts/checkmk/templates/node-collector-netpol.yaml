@@ -18,7 +18,7 @@ spec:
   ingress: []
   egress: []
 ---
-# Allow outgoing traffic from node-collector components to cluster-collector, cadvisor, and cluster-internal DNS
+# Allow outgoing traffic from node-collector components to cluster-collector and cluster-internal DNS
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -40,15 +40,6 @@ spec:
         podSelector:
           matchLabels:
             component: {{ include "checkmk.fullname" . }}-cluster-collector
-    - to:
-      - namespaceSelector:
-          matchLabels:
-            kubernetes.io/metadata.name: {{ .Release.Namespace }}
-        podSelector:
-          matchLabels:
-            component: {{ include "checkmk.fullname" . }}-cadvisor
-      ports:
-      - port: 8080
     - to:
       - namespaceSelector:
           matchLabels:

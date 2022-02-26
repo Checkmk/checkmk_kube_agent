@@ -6,3 +6,4 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "checkmk.labels" . | nindent 4 }}
+    app: {{ include "checkmk.fullname" . }}-cluster-collector

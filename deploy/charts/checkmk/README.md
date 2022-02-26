@@ -2,7 +2,7 @@
 
 Installs the checkmk Kubernetes agent.
 
-_Note: This chart is currently work-in-progress. Please use with care, read the documentation carefully, and file Pull Requests if needed._
+_Note: This chart is relatively young. Please use with care, read the documentation carefully, and file Pull Requests if required._
 
 ## Prerequisites
 
@@ -84,7 +84,7 @@ To debug in-cluster, you can launch a debug pod with network tools via
 kubectl -n [RELEASE_NAMESPACE] run -it debug --rm --image wbitt/network-multitool --restart=Never -- sh
 ```
 
-and, with the token of the service account `[RELEAE_NAME]--checkmk`, issue queries against the `cluster-collector`:
+and, with the token of the service account names `[RELEASE_NAME]-checkmk`, issue queries against the `cluster-collector`:
 
 ```console
 # non-TLS
@@ -95,3 +95,5 @@ curl -k -H "Authorization: Bearer <TOKEN>" https://<RELEAE_NAME>-cluster-collect
 ```
 
 As endpoints, instead of `/metadata`, feel free to also test `/container_metrics`, `/machine_sections`, etc.
+
+Note that this will only work when disabling or adjusting the NetworkPolicies accordingly, as the `debug` pod won't be allowed to communicate with the cluster-collector having NetworkPolicies enabled in this chart.
