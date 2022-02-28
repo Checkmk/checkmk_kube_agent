@@ -41,7 +41,7 @@ export VERSION_BUMP_PYSCRIPT
 PYTHON := python3
 BROWSER := $(PYTHON) -c "$$BROWSER_PYSCRIPT"
 PROJECT_NAME := checkmk_kube_agent
-CHECKMK_AGENT_VERSION := 2022.02.01
+CHECKMK_AGENT_VERSION := 2.1.0b1
 PROJECT_VERSION := $(shell $(PYTHON) -c "import src.${PROJECT_NAME};print(src.${PROJECT_NAME}.__version__)")
 PROJECT_PYVERSION := $(shell $(PYTHON) -c "from packaging import version;print(str(version.parse('${PROJECT_VERSION}')))")
 ifdef DOCKER_TAG_PREFIX
