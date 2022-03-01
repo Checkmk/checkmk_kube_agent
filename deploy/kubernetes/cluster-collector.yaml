@@ -81,16 +81,13 @@ spec:
               httpHeaders:
                 - name: status
                   value: available
-              # HTTP:
-              # scheme: HTTP
+              # HTTP/HTTPS: Change scheme to HTTP
               scheme: HTTPS
             initialDelaySeconds: 3
             periodSeconds: 10
           command:
             - "/usr/local/bin/checkmk-cluster-collector"
-          # HTTP:
-          # args:
-          #   - "--host=0.0.0.0"
+          # HTTP / HTTPS: Remove ssl-keyfile, ssl-certfile, secure-protocol from args for HTTP
           args:
             - "--host=0.0.0.0"
             - "--ssl-keyfile=/etc/ca-certificates/cluster-collector-key.pam"
