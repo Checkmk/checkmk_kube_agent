@@ -54,6 +54,8 @@ spec:
     spec:
       containers:
         - name: cluster-collector
+          # You can find available images on
+          # https://hub.docker.com/r/checkmk/kubernetes-collector/tags
           image: checkmk/kubernetes-collector:main_<YYYY.MM.DD>
           imagePullPolicy: Always
           env:
@@ -61,6 +63,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+          # HTTP/HTTPS: Remove the volumeMounts for
+          # cluster-collector-key and cluster-collector-cert for HTTP
           volumeMounts:
             - name: cluster-collector-key
               mountPath: /etc/ca-certificates/cluster-collector-key.pam
@@ -81,16 +85,14 @@ spec:
               httpHeaders:
                 - name: status
                   value: available
-              # HTTP:
-              # scheme: HTTP
+              # HTTP/HTTPS: Change scheme to HTTP for HTTP
               scheme: HTTPS
             initialDelaySeconds: 3
             periodSeconds: 10
           command:
             - "/usr/local/bin/checkmk-cluster-collector"
-          # HTTP:
-          # args:
-          #   - "--host=0.0.0.0"
+          # HTTP/HTTPS: Remove ssl-keyfile, ssl-certfile, secure-protocol
+          # from args for HTTP
           args:
             - "--host=0.0.0.0"
             - "--ssl-keyfile=/etc/ca-certificates/cluster-collector-key.pam"
@@ -124,6 +126,8 @@ spec:
         - name: tmp
           emptyDir:
             medium: Memory
+        # HTTP/HTTPS: Remove the volumes
+        # cluster-collector-key and cluster-collector-cert for HTTP
         - name: cluster-collector-key
           secret:
             secretName: cluster-collector-secret
