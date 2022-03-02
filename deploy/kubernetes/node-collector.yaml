@@ -108,6 +108,9 @@ spec:
             - "/usr/local/bin/checkmk-container-metrics-collector"
           # HTTP/HTTPS: Remove args for HTTP
           args:
+            # host DNS can be determined as:
+            # <service name>.<namespace name>.svc.cluster.local
+            - "--host=cluster-collector.checkmk-monitoring.svc.cluster.local"
             - "--secure-protocol"
             - "--verify-ssl"
           env:
@@ -229,6 +232,9 @@ spec:
             - "/usr/local/bin/checkmk-machine-sections-collector"
           # HTTP/HTTPS: Remove args for HTTP
           args:
+            # host DNS can be determined as:
+            # <service name>.<namespace name>.svc.cluster.local
+            - "--host=cluster-collector.checkmk-monitoring.svc.cluster.local"
             - "--secure-protocol"
             - "--verify-ssl"
           env:
