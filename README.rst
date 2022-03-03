@@ -12,8 +12,8 @@ Checkmk cluster and node collectors to monitor Kubernetes clusters.
 Features
 --------
 
-* Supports vanilla Kubernetes installations
-* Supports Kubernetes version 1.21
+* Officially supports vanilla Kubernetes installations. Unofficially also works on other flavors (e.g. AWS EKS, AKS, GKE).
+* Supports Kubernetes version 1.21 to 1.23
 * Works with *Docker* and *containerd*
 * Uses cAdvisor_ to collect container metrics
 * Runs the following objects on your cluster:
@@ -21,7 +21,7 @@ Features
         * runs as a DaemonSet on every node that has kubelet configured
         * uses cAdvisor to collect **container metrics** and fowards them to the
           cluster collector
-        * uses a checkmk agent to collect **machine sections** and forwards
+        * uses a Checkmk agent to collect **machine sections** and forwards
           them to the cluster collector
    * **cluster collector**:
         * runs as a Deployment
@@ -29,6 +29,11 @@ Features
           and stores them in memory
         * runs an API that provides these metrics
         * can be configured to run the API in *http* or *https* mode
+* Supports PodSecurityPolicy and NetworkPolicy
+
+Installation
+--------
+Please use the Helm charts provided in ``deploy/charts/checkmk`` or the manifests in ``deploy/kubernetes``. You will find detailed installation instructions there.
+
 
 .. _cAdvisor: "https://github.com/google/cadvisor"
-
