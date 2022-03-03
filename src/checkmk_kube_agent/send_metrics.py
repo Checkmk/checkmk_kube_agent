@@ -11,10 +11,12 @@ import json
 import logging
 import os
 import re
+import signal
 import subprocess  # nosec
 import sys
 import time
 from functools import partial
+from threading import Event
 from typing import (
     Callable,
     Dict,
@@ -457,7 +459,10 @@ def _main(
     cluster_collector_base_url = Url(f"{protocol}://{args.host}:{args.port}")
     logger.debug("Cluster collector base url: %s", cluster_collector_base_url)
 
-    while True:
+    terminated = Event()
+    signal.signal(signal.SIGTERM, lambda _sig, _frame: terminated.set())
+
+    while not terminated.is_set():
         start_time = time.time()
 
         headers = {
@@ -467,7 +472,9 @@ def _main(
         process_duration = time.time() - start_time
         logger.info("Worker finished in %.2f seconds", process_duration)
 
-        time.sleep(max(args.polling_interval - int(process_duration), 0))
+        terminated.wait(max(args.polling_interval - int(process_duration), 0))
+
+    logger.info("Shut down gracefully")
 
 
 main_container_metrics = partial(_main, container_metrics_worker)
