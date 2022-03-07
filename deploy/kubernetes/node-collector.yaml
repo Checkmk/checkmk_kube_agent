@@ -96,19 +96,21 @@ spec:
         - image: checkmk/kubernetes-collector:main_<YYYY.MM.DD>
           imagePullPolicy: Always
           name: container-metrics-collector
-          volumeMounts:
-            - name: checkmk-ca-cert
-              mountPath: /etc/ca-certificates/checkmk-ca-cert.pam
-              subPath: checkmk-ca-cert.pam
-              readOnly: true
+          # HTTPS: Uncomment volumeMounts checkmk-ca-cert for HTTPS
+          # volumeMounts:
+          #   - name: checkmk-ca-cert
+          #     mountPath: /etc/ca-certificates/checkmk-ca-cert.pam
+          #     subPath: checkmk-ca-cert.pam
+          #     readOnly: true
           command:
             - "/usr/local/bin/checkmk-container-metrics-collector"
+          # HTTPS: Uncomment secure-protocl and verify-ssl args for HTTP
           args:
+            # - "--secure-protocol"
+            # - "--verify-ssl"
             # host DNS can be determined as:
             # <service name>.<namespace name>
             - "--host=cluster-collector.checkmk-monitoring"
-            - "--secure-protocol"
-            - "--verify-ssl"
           env:
             - name: NODE_NAME
               valueFrom:
@@ -172,13 +174,14 @@ spec:
       # TODO:
       # https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#service-account-token-volume-projection
       terminationGracePeriodSeconds: 30
+      # HTTPS: Uncomment volume checkmk-ca-cert for HTTPS
       volumes:
-        - name: checkmk-ca-cert
-          secret:
-            secretName: cluster-collector-secret
-            items:
-              - key: checkmk-ca-cert
-                path: checkmk-ca-cert.pam
+        # - name: checkmk-ca-cert
+        #   secret:
+        #     secretName: cluster-collector-secret
+        #     items:
+        #       - key: checkmk-ca-cert
+        #         path: checkmk-ca-cert.pam
         - name: var-run
           hostPath:
             path: /var/run
@@ -213,19 +216,21 @@ spec:
         - image: checkmk/kubernetes-collector:main_<YYYY.MM.DD>
           imagePullPolicy: Always
           name: machine-sections-collector
-          volumeMounts:
-            - name: checkmk-ca-cert
-              mountPath: /etc/ca-certificates/checkmk-ca-cert.pam
-              subPath: checkmk-ca-cert.pam
-              readOnly: true
+          # HTTPS: Uncomment volumeMounts checkmk-ca-cert for HTTPS
+          # volumeMounts:
+          #   - name: checkmk-ca-cert
+          #     mountPath: /etc/ca-certificates/checkmk-ca-cert.pam
+          #     subPath: checkmk-ca-cert.pam
+          #     readOnly: true
           command:
             - "/usr/local/bin/checkmk-machine-sections-collector"
+          # HTTPS: Uncomment secure-protocl and verify-ssl args for HTTP
           args:
+            # - "--secure-protocol"
+            # - "--verify-ssl"
             # host DNS can be determined as:
             # <service name>.<namespace name>
             - "--host=cluster-collector.checkmk-monitoring"
-            - "--secure-protocol"
-            - "--verify-ssl"
           env:
             - name: NODE_NAME
               valueFrom:
@@ -250,10 +255,11 @@ spec:
             runAsUser: 10001
       serviceAccountName: node-collector-machine-sections
       terminationGracePeriodSeconds: 30
-      volumes:
-        - name: checkmk-ca-cert
-          secret:
-            secretName: cluster-collector-secret
-            items:
-              - key: checkmk-ca-cert
-                path: checkmk-ca-cert.pam
+      # HTTPS: Uncomment volume checkmk-ca-cert for HTTPS
+      # volumes:
+      #   - name: checkmk-ca-cert
+      #     secret:
+      #       secretName: cluster-collector-secret
+      #       items:
+      #         - key: checkmk-ca-cert
+      #           path: checkmk-ca-cert.pam

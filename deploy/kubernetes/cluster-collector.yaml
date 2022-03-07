@@ -61,15 +61,17 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+          # HTTPS: Uncomment volumeMounts for cluster-collector-key and
+          # cluster-collector-cert HTTPS
           volumeMounts:
-            - name: cluster-collector-key
-              mountPath: /etc/ca-certificates/cluster-collector-key.pam
-              subPath: cluster-collector-key.pam
-              readOnly: true
-            - name: cluster-collector-cert
-              mountPath: /etc/ca-certificates/cluster-collector-cert.pam
-              subPath: cluster-collector-cert.pam
-              readOnly: true
+            # - name: cluster-collector-key
+            #   mountPath: /etc/ca-certificates/cluster-collector-key.pam
+            #   subPath: cluster-collector-key.pam
+            #   readOnly: true
+            # - name: cluster-collector-cert
+            #   mountPath: /etc/ca-certificates/cluster-collector-cert.pam
+            #   subPath: cluster-collector-cert.pam
+            #   readOnly: true
             # gunicorn needs a writeable /tmp and runs best with ram backed /tmp
             # https://docs.gunicorn.org/en/latest/faq.html#blocking-os-fchmod
             - name: tmp
@@ -88,16 +90,14 @@ spec:
             periodSeconds: 10
           command:
             - "/usr/local/bin/checkmk-cluster-collector"
-          # HTTP:
-          # args:
-          #   - "--host=0.0.0.0"
+          # HTTPS: Uncomment ssl-keyfile, ssl-certfile, secure-protocol in args
           args:
             - "--host=0.0.0.0"
-            - "--ssl-keyfile=/etc/ca-certificates/cluster-collector-key.pam"
-            - "--ssl-certfile=/etc/ca-certificates/cluster-collector-cert.pam"
-            - "--secure-protocol"
             - "--reader-whitelist=checkmk-monitoring:checkmk"
             - "--writer-whitelist=checkmk-monitoring:node-collector-container-metrics,checkmk-monitoring:node-collector-machine-sections"
+            # - "--ssl-keyfile=/etc/ca-certificates/cluster-collector-key.pam"
+            # - "--ssl-certfile=/etc/ca-certificates/cluster-collector-cert.pam"
+            # - "--secure-protocol"
           ports:
             - containerPort: 10050
               name: api
@@ -120,19 +120,20 @@ spec:
             runAsNonRoot: true
             runAsUser: 10001
       serviceAccountName: cluster-collector
+      # HTTPS: Uncomment volumes cluster-collector-key and -cert
       volumes:
         - name: tmp
           emptyDir:
             medium: Memory
-        - name: cluster-collector-key
-          secret:
-            secretName: cluster-collector-secret
-            items:
-              - key: cluster-collector-key
-                path: cluster-collector-key.pam
-        - name: cluster-collector-cert
-          secret:
-            secretName: cluster-collector-secret
-            items:
-              - key: cluster-collector-cert
-                path: cluster-collector-cert.pam
+        # - name: cluster-collector-key
+        #   secret:
+        #     secretName: cluster-collector-secret
+        #     items:
+        #       - key: cluster-collector-key
+        #         path: cluster-collector-key.pam
+        # - name: cluster-collector-cert
+        #   secret:
+        #     secretName: cluster-collector-secret
+        #     items:
+        #       - key: cluster-collector-cert
+        #         path: cluster-collector-cert.pam
