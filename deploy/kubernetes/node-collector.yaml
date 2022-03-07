@@ -109,8 +109,8 @@ spec:
           # HTTP/HTTPS: Remove args for HTTP
           args:
             # host DNS can be determined as:
-            # <service name>.<namespace name>.svc.cluster.local
-            - "--host=cluster-collector.checkmk-monitoring.svc.cluster.local"
+            # <service name>.<namespace name>
+            - "--host=cluster-collector.checkmk-monitoring"
             - "--secure-protocol"
             - "--verify-ssl"
           env:
@@ -233,8 +233,8 @@ spec:
           # HTTP/HTTPS: Remove args for HTTP
           args:
             # host DNS can be determined as:
-            # <service name>.<namespace name>.svc.cluster.local
-            - "--host=cluster-collector.checkmk-monitoring.svc.cluster.local"
+            # <service name>.<namespace name>
+            - "--host=cluster-collector.checkmk-monitoring"
             - "--secure-protocol"
             - "--verify-ssl"
           env:
