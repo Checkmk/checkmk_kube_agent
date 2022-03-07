@@ -121,7 +121,7 @@ spec:
             runAsNonRoot: true
             runAsUser: 10001
       serviceAccountName: cluster-collector
-      # HTTPS: Uncomment volumes cluster-collector-key an -cert
+      # HTTPS: Uncomment volumes cluster-collector-key and -cert
       volumes:
         - name: tmp
           emptyDir:
