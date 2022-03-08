@@ -1,25 +1,25 @@
-#!/usr/bin/env bash
-
+#!/usr/bin/env sh
 set -e
 
 VERSION=$1
 METHOD=$2
 BRANCH=$3
 
+TAG_NAME="v${VERSION}"
+
 case $METHOD in
   rebuild_version)
     # Only switch to the exisiting tag and expect it to exist
-    git checkout ${VERSION}
+    git checkout "${TAG_NAME}"
     ;;
 
-  minor | patch)
+  minor | patch | beta | finalize_version)
     # Create set version commit and switch to a new branch
     git checkout ${BRANCH}
     git pull --rebase
     NEW_VERSION=${VERSION} make setversion;
     git commit -am "Set version to ${VERSION}"
-    git tag ${VERSION}
-    git pull --tags origin ${BRANCH}
+    git tag ${TAG_NAME}
     git push --tags origin ${BRANCH}
     ;;
 

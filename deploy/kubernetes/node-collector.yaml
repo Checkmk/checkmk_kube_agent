@@ -3,91 +3,74 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    app: node-collector
-  name: node-collector
+    app: node-collector-machine-sections
+  name: node-collector-machine-sections
   namespace: checkmk-monitoring
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app: node-collector-container-metrics
+  name: node-collector-container-metrics
+  namespace: checkmk-monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: node-collector-container-metrics-clusterrole
+rules:
+  - apiGroups:
+      - policy
+    resourceNames:
+      - node-collector-container-metrics-podsecuritypolicy
+    resources:
+      - podsecuritypolicies
+    verbs:
+      - use
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  labels:
+    app: node-collector-container-metrics
+  name: node-collector-container-metrics-podsecuritypolicy
+spec:
+  allowedHostPaths:
+    - pathPrefix: /var/run
+      readOnly: false
+    - pathPrefix: /sys
+      readOnly: true
+    - pathPrefix: /var/lib/docker
+      readOnly: true
+    - pathPrefix: /etc/ca-certificates/
+      readOnly: true
+  fsGroup:
+    rule: RunAsAny
+  runAsUser:
+    rule: RunAsAny
+  seLinux:
+    rule: RunAsAny
+  supplementalGroups:
+    rule: RunAsAny
+  volumes:
+    - "hostPath"
+    - "secret"
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: checkmk-node-collector
+  labels:
+    app: node-collector-container-metrics
+  name: node-collector-container-metrics-cluterrolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: checkmk-collectors-podsecurity
+  name: node-collector-container-metrics-clusterrole
 subjects:
   - kind: ServiceAccount
-    name: node-collector
+    name: node-collector-container-metrics
     namespace: checkmk-monitoring
----
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  annotations:
-    seccomp.security.alpha.kubernetes.io/pod: runtime/default
-  labels:
-    app: node-collector-cadvisor
-  name: cadvisor
-  namespace: checkmk-monitoring
-spec:
-  selector:
-    matchLabels:
-      app: node-collector-cadvisor
-      name: node-collector-cadvisor
-  template:
-    metadata:
-      labels:
-        app: node-collector-cadvisor
-        name: node-collector-cadvisor
-    spec:
-      containers:
-        - image: checkmk/cadvisor-patched:main_<YYYY.MM.DD>
-          imagePullPolicy: Always
-          name: cadvisor
-          command:
-            - "/usr/bin/cadvisor"
-          args:
-            - "--housekeeping_interval=30s"
-            - "--max_housekeeping_interval=35s"
-            - "--event_storage_event_limit=default=0"
-            - "--event_storage_age_limit=default=0"
-            - "--store_container_labels=false"
-            - "--whitelisted_container_labels=io.kubernetes.container.name,io.kubernetes.pod.name,io.kubernetes.pod.namespace,io.kubernetes.pod.uid"
-            - "--global_housekeeping_interval=30s"
-            - "--event_storage_event_limit=default=0"
-            - "--event_storage_age_limit=default=0"
-            - "--disable_metrics=percpu,process,sched,tcp,udp,diskIO,disk,network"
-            - "--allow_dynamic_housekeeping=true"
-            - "--storage_duration=1m0s"
-          resources:
-            limits:
-              cpu: 300m
-              memory: 200Mi
-            requests:
-              cpu: 150m
-              memory: 200Mi
-          volumeMounts:
-            - name: var-run
-              mountPath: /var/run
-              readOnly: true
-            - name: sys
-              mountPath: /sys
-              readOnly: true
-            - name: docker
-              mountPath: /var/lib/docker
-              readOnly: true
-      automountServiceAccountToken: false
-      terminationGracePeriodSeconds: 30
-      volumes:
-        - name: var-run
-          hostPath:
-            path: /var/run
-        - name: sys
-          hostPath:
-            path: /sys
-        - name: docker
-          hostPath:
-            path: /var/lib/docker
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -145,7 +128,46 @@ spec:
             runAsGroup: 10001
             runAsNonRoot: true
             runAsUser: 10001
-      serviceAccountName: node-collector
+        - image: checkmk/cadvisor-patched:main_<YYYY.MM.DD>
+          imagePullPolicy: Always
+          name: cadvisor
+          command:
+            - "/usr/bin/cadvisor"
+          args:
+            - "--housekeeping_interval=30s"
+            - "--max_housekeeping_interval=35s"
+            - "--event_storage_event_limit=default=0"
+            - "--event_storage_age_limit=default=0"
+            - "--store_container_labels=false"
+            - "--whitelisted_container_labels=io.kubernetes.container.name,io.kubernetes.pod.name,io.kubernetes.pod.namespace,io.kubernetes.pod.uid"
+            - "--global_housekeeping_interval=30s"
+            - "--event_storage_event_limit=default=0"
+            - "--event_storage_age_limit=default=0"
+            - "--disable_metrics=percpu,process,sched,tcp,udp,diskIO,disk,network"
+            - "--allow_dynamic_housekeeping=true"
+            - "--storage_duration=1m0s"
+          resources:
+            limits:
+              cpu: 300m
+              memory: 200Mi
+            requests:
+              cpu: 150m
+              memory: 200Mi
+          volumeMounts:
+            - name: var-run
+              mountPath: /var/run
+              # TODO:
+              # readOnly: true
+            - name: sys
+              mountPath: /sys
+              readOnly: true
+            - name: docker
+              mountPath: /var/lib/docker
+              readOnly: true
+      serviceAccountName: node-collector-container-metrics
+      # automountServiceAccountToken: false
+      # TODO:
+      # https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#service-account-token-volume-projection
       terminationGracePeriodSeconds: 30
       volumes:
         - name: checkmk-ca-cert
@@ -154,6 +176,15 @@ spec:
             items:
               - key: checkmk-ca-cert
                 path: checkmk-ca-cert.pam
+        - name: var-run
+          hostPath:
+            path: /var/run
+        - name: sys
+          hostPath:
+            path: /sys
+        - name: docker
+          hostPath:
+            path: /var/lib/docker
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -201,7 +232,17 @@ spec:
             requests:
               cpu: 150m
               memory: 200Mi
-      serviceAccountName: node-collector
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsGroup: 10001
+            runAsNonRoot: true
+            runAsUser: 10001
+      serviceAccountName: node-collector-machine-sections
       terminationGracePeriodSeconds: 30
       volumes:
         - name: checkmk-ca-cert

@@ -4,12 +4,13 @@ FROM checkmk/check-mk-raw:"$CHECKMK_AGENT_VERSION" as checkmk
 FROM python:3.10.2-alpine3.15 as release
 ARG PROJECT_PYVERSION
 ARG CHECKMK_AGENT_VERSION
+ARG GIT_HASH
 ENV CHECKMK_AGENT_VERSION="${CHECKMK_AGENT_VERSION}"
 COPY dist/checkmk_kube_agent-"$PROJECT_PYVERSION".tar.gz /tmp/
 COPY --from=checkmk "/opt/omd/versions/${CHECKMK_AGENT_VERSION}.cre/share/check_mk/agents/check_mk_agent.openwrt" /usr/local/bin/check_mk_agent.openwrt
 COPY docker/kubernetes-collector/wrapper.sh /usr/local/bin/check_mk_agent
-RUN apk add --no-cache expat=2.4.4-r0 libuuid=2.37.4-r0 && \
-    pip3 install --no-cache-dir pip==22.0.2 setuptools==60.7.0 wheel==0.37.1 && \
+RUN apk add --no-cache expat=2.4.6-r0 libuuid=2.37.4-r0 coreutils=9.0-r2  && \
+    pip3 install --no-cache-dir pip==22.0.3 setuptools==60.9.3 wheel==0.37.1 && \
     pip3 install --no-cache-dir /tmp/checkmk_kube_agent-"$PROJECT_PYVERSION".tar.gz && \
     addgroup appgroup -g 10001 && \
     adduser -HD appuser -G appgroup -u 10001 && \
@@ -18,6 +19,7 @@ RUN apk add --no-cache expat=2.4.4-r0 libuuid=2.37.4-r0 && \
     chmod +x /usr/local/bin/check_mk_agent && \
     rm -rf /tmp/* && \
     rm -rf /var/cache/apk/*
+RUN echo "${GIT_HASH}" > GIT_HASH.txt
 
 FROM release as dev
 COPY ./requirements_dev.txt /tmp

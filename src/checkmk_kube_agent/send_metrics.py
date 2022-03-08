@@ -8,14 +8,26 @@
 
 import argparse
 import json
+import logging
 import os
 import re
 import subprocess  # nosec
 import sys
 import time
 from functools import partial
-from typing import Callable, Dict, Iterable, Mapping, NewType, Optional, Sequence, Union
+from typing import (
+    Callable,
+    Dict,
+    Iterable,
+    Literal,
+    Mapping,
+    NewType,
+    Optional,
+    Sequence,
+    Union,
+)
 
+import requests
 import urllib3
 from requests import Session
 
@@ -52,6 +64,9 @@ Url = NewType("Url", str)
 RequestHeaders = Mapping[str, str]
 CaCertPath = NewType("CaCertPath", str)
 SslVerify = Union[bool, CaCertPath]
+
+
+logger = logging.getLogger(__name__)
 
 
 def _split_labels(raw_labels: str) -> Iterable[str]:
@@ -243,6 +258,7 @@ def parse_raw_response(raw_response: str, now: Timestamp) -> Sequence[ContainerM
         if metric := _parse_metrics_with_labels(open_metric, now):
             container_metrics.append(metric)
 
+    logger.debug("Parsed %d container metrics", len(container_metrics))
     return container_metrics
 
 
@@ -278,6 +294,12 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
         type=str,
         help="Path to the CA certificate to validate SSL certificates against.",
     )
+    parser.add_argument(
+        "--log-level",
+        choices=["debug", "info", "warning", "critical"],
+        default="warning",
+        help="Collector log level.",
+    )
     parser.set_defaults(
         host=os.environ.get("CLUSTER_COLLECTOR_SERVICE_HOST", "127.0.0.1"),
         port=os.environ.get("CLUSTER_COLLECTOR_SERVICE_PORT_API", "10050"),
@@ -299,17 +321,18 @@ def container_metrics_worker(
     Query cadvisor api, send metrics to cluster collector
     """
 
-    cadvisor_url = (
-        f"http://{os.environ['CADVISOR_SERVICE_HOST']}:"
-        f"{os.environ['CADVISOR_SERVICE_PORT']}"
-    )
+    cadvisor_url = "http://localhost:8080"
 
+    logger.info("Querying cadvisor version")
     cadvisor_version = session.get(f"{cadvisor_url}/api/v2.0/version")
     cadvisor_version.raise_for_status()
+    logger.debug("cadvisor version %s", cadvisor_version.content)
 
+    logger.info("Querying container metrics")
     cadvisor_metrics = session.get(f"{cadvisor_url}/metrics")
     cadvisor_metrics.raise_for_status()
 
+    logger.info("Parsing and sending container metrics")
     cluster_collector_response = session.post(
         f"{cluster_collector_base_url}/update_container_metrics",
         headers=headers,
@@ -329,7 +352,9 @@ def container_metrics_worker(
         ).json(),
         verify=verify,
     )
-    cluster_collector_response.raise_for_status()
+    _verify_and_log_cluster_collector_response(
+        cluster_collector_response, "container metrics"
+    )
 
 
 def machine_sections_worker(
@@ -341,6 +366,7 @@ def machine_sections_worker(
     """
     Call check_mk_agent, send sections to cluster collector
     """
+    logger.info("Querying Checkmk Agent for node data")
     with subprocess.Popen(  # nosec
         ["/usr/local/bin/check_mk_agent"],
         stdout=subprocess.PIPE,
@@ -354,6 +380,7 @@ def machine_sections_worker(
             raise RuntimeError("Could not read agent output")
         sections = process.stdout.read().decode("utf-8")
 
+    logger.info("Parsing and sending machine sections")
     cluster_collector_response = session.post(
         f"{cluster_collector_base_url}/update_machine_sections",
         headers=headers,
@@ -372,7 +399,39 @@ def machine_sections_worker(
         ).json(),
         verify=verify,
     )
-    cluster_collector_response.raise_for_status()
+    _verify_and_log_cluster_collector_response(
+        cluster_collector_response, "machine sections"
+    )
+
+
+def _verify_and_log_cluster_collector_response(
+    cluster_collector_response: requests.Response, component_name: str
+) -> None:  # pragma: no cover
+    if not 200 <= cluster_collector_response.status_code <= 299:
+        logger.critical(
+            "Failed to send %s to cluster collector: %s",
+            component_name,
+            cluster_collector_response.text,
+        )
+        cluster_collector_response.raise_for_status()
+    else:
+        logger.info("Successfully sent %s to cluster collector", component_name)
+
+
+def _setup_logging(verbosity: Literal["info", "debug"]) -> None:  # pragma: no cover
+    if verbosity == "debug":
+        level = logging.DEBUG
+    elif verbosity == "info":
+        level = logging.INFO
+    elif verbosity == "warning":
+        level = logging.WARNING
+    else:
+        level = logging.CRITICAL
+
+    # Format staying as close as possible to the api logging format
+    logging.basicConfig(
+        level=level, format="%(levelname)s:\t %(asctime)s - %(message)s"
+    )
 
 
 def _main(
@@ -381,6 +440,9 @@ def _main(
 ) -> None:  # pragma: no cover
     """Run in infinite loop and execute worker function"""
     args = parse_arguments(argv or sys.argv[1:])
+    _setup_logging(args.log_level)
+    logger.debug("Parsed arguments: %s", args)
+
     protocol = "https" if args.secure_protocol else "http"
 
     verify = args.verify_ssl
@@ -393,6 +455,7 @@ def _main(
         timeout=(args.connect_timeout, args.read_timeout),
     )
     cluster_collector_base_url = Url(f"{protocol}://{args.host}:{args.port}")
+    logger.debug("Cluster collector base url: %s", cluster_collector_base_url)
 
     while True:
         start_time = time.time()
@@ -401,8 +464,10 @@ def _main(
             "Authorization": f"Bearer {read_node_collector_token()}",
         }
         worker(session, cluster_collector_base_url, headers, verify)
+        process_duration = time.time() - start_time
+        logger.info("Worker finished in %.2f seconds", process_duration)
 
-        time.sleep(max(args.polling_interval - int(time.time() - start_time), 0))
+        time.sleep(max(args.polling_interval - int(process_duration), 0))
 
 
 main_container_metrics = partial(_main, container_metrics_worker)

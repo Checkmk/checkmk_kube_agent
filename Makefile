@@ -22,18 +22,26 @@ export PRINT_HELP_PYSCRIPT
 
 define VERSION_BUMP_PYSCRIPT
 import sys
-from semver import bump_major, bump_minor, bump_patch
+from semver import bump_major, bump_minor, bump_patch, bump_prerelease, finalize_version
 
 version = sys.argv[1]
 method = sys.argv[2]
-print({"major": bump_major, "minor": bump_minor, "patch": bump_patch}[method](version))
+print(
+    {
+        "major": bump_major,
+        "minor": bump_minor,
+        "patch": bump_patch,
+        "beta": lambda x: bump_prerelease(x, token="beta"),
+        "finalize_version": finalize_version,
+    }[method](version)
+)
 endef
 export VERSION_BUMP_PYSCRIPT
 
 PYTHON := python3
 BROWSER := $(PYTHON) -c "$$BROWSER_PYSCRIPT"
 PROJECT_NAME := checkmk_kube_agent
-CHECKMK_AGENT_VERSION := 2022.02.01
+CHECKMK_AGENT_VERSION := 2.1.0b1
 PROJECT_VERSION := $(shell $(PYTHON) -c "import src.${PROJECT_NAME};print(src.${PROJECT_NAME}.__version__)")
 PROJECT_PYVERSION := $(shell $(PYTHON) -c "from packaging import version;print(str(version.parse('${PROJECT_VERSION}')))")
 ifdef DOCKER_TAG_PREFIX
@@ -46,6 +54,7 @@ COLLECTOR_IMAGE_NAME := kubernetes-collector
 COLLECTOR_IMAGE := $(DOCKERHUB_PUBLISHER)/${COLLECTOR_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
 CADVISOR_IMAGE_NAME := cadvisor-patched
 CADVISOR_IMAGE := $(DOCKERHUB_PUBLISHER)/${CADVISOR_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
+GIT_HASH := $(shell git rev-parse HEAD)
 
 .PHONY: help
 help:
@@ -179,8 +188,8 @@ lint-yaml/yamllint: ## check yaml formatting with yamllint
 
 .PHONY: release-image
 release-image: dist ## create the node and cluster collector Docker images
-	docker build --rm --no-cache --build-arg PROJECT_PYVERSION="${PROJECT_PYVERSION}" --build-arg CHECKMK_AGENT_VERSION="${CHECKMK_AGENT_VERSION}" -t $(COLLECTOR_IMAGE) -f docker/kubernetes-collector/Dockerfile .
-	docker build --rm --no-cache -t $(CADVISOR_IMAGE) -f docker/cadvisor/Dockerfile .
+	docker build --rm --no-cache --build-arg PROJECT_PYVERSION="${PROJECT_PYVERSION}" --build-arg CHECKMK_AGENT_VERSION="${CHECKMK_AGENT_VERSION}"  --build-arg GIT_HASH="${GIT_HASH}" -t $(COLLECTOR_IMAGE) -f docker/kubernetes-collector/Dockerfile .
+	docker build --rm --no-cache --build-arg GIT_HASH="${GIT_HASH}" -t $(CADVISOR_IMAGE) -f docker/cadvisor/Dockerfile .
 
 .PHONY: servedocs
 servedocs: docs ## compile the docs watching for changes
