@@ -2,18 +2,18 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: {{ include "checkmk.fullname" . }}-node-collector
+  name: {{ include "checkmk.fullname" . }}-node-collector-container-metrics
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "checkmk.labels" . | nindent 4 }}
     component: {{ include "checkmk.fullname" . }}-node-collector
-    app: {{ include "checkmk.fullname" . }}-node-collector
+    app: {{ include "checkmk.fullname" . }}-node-collector-container-metrics
 spec:
   selector:
     matchLabels:
       {{- include "checkmk.selectorLabels" . | nindent 6 }}
       component: {{ include "checkmk.fullname" . }}-node-collector
-      app: {{ include "checkmk.fullname" . }}-node-collector
+      app: {{ include "checkmk.fullname" . }}-node-collector-container-metrics
   template:
     metadata:
       annotations:
@@ -26,13 +26,13 @@ spec:
       labels:
         {{- include "checkmk.selectorLabels" . | nindent 8 }}
         component: {{ include "checkmk.fullname" . }}-node-collector
-        app: {{ include "checkmk.fullname" . }}-node-collector
+        app: {{ include "checkmk.fullname" . }}-node-collector-container-metrics
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "checkmk.fullname" . }}-node-collector
+      serviceAccountName: {{ include "checkmk.fullname" . }}-node-collector-container-metrics
       securityContext:
         {{- toYaml .Values.nodeCollector.podSecurityContext | nindent 8 }}
       automountServiceAccountToken: true
@@ -40,7 +40,7 @@ spec:
         - name: cadvisor
           securityContext:
             {{- toYaml .Values.nodeCollector.cadvisor.securityContext | nindent 12 }}
-          image: "{{ .Values.nodeCollector.cadvisor.image.repository }}:{{ .Values.nodeCollector.cadvisor.image.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.nodeCollector.cadvisor.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.nodeCollector.cadvisor.image.pullPolicy }}
           command:
             - "/usr/bin/cadvisor"
@@ -70,7 +70,7 @@ spec:
         - name: container-metrics-collector
           securityContext:
             {{- toYaml .Values.nodeCollector.containerMetricsCollector.securityContext | nindent 12 }}
-          image: "{{ .Values.nodeCollector.containerMetricsCollector.image.repository }}:{{ .Values.nodeCollector.containerMetricsCollector.image.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.nodeCollector.containerMetricsCollector.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.nodeCollector.containerMetricsCollector.image.pullPolicy }}
           command:
             - "/usr/local/bin/checkmk-container-metrics-collector"
@@ -98,53 +98,8 @@ spec:
               value: "{{ include "checkmk.fullname" . }}-cluster-collector.{{ .Release.Namespace }}"
             - name: CLUSTER_COLLECTOR_SERVICE_PORT_API
               value: "{{ .Values.clusterCollector.service.port }}"
-            # - name: CADVISOR_SERVICE_HOST
-            #   valueFrom:
-            #     fieldRef:
-            #       fieldPath: status.hostIP
-            # - name: CADVISOR_SERVICE_PORT
-            #   value: "9088"
           resources:
             {{- toYaml .Values.nodeCollector.containerMetricsCollector.resources | nindent 12 }}
-        - name: machine-sections-collector
-          securityContext:
-            {{- toYaml .Values.nodeCollector.machineSectionsCollector.securityContext | nindent 12 }}
-          image: "{{ .Values.nodeCollector.machineSectionsCollector.image.repository }}:{{ .Values.nodeCollector.machineSectionsCollector.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.nodeCollector.machineSectionsCollector.image.pullPolicy }}
-          command:
-            - "/usr/local/bin/checkmk-machine-sections-collector"
-          args:
-            - "--log-level={{ .Values.nodeCollector.logLevel }}"
-          {{- if .Values.tlsCommunication.enabled }}
-            - "--secure-protocol"
-          {{- if .Values.tlsCommunication.verifySsl }}
-            - "--verify-ssl"
-          {{- end }}
-          {{- end }}
-          {{- if .Values.tlsCommunication.enabled }}
-          volumeMounts:
-            - name: checkmk-ca-cert
-              mountPath: /etc/ca-certificates/checkmk-ca-cert.pam
-              subPath: checkmk-ca-cert.pam
-              readOnly: true
-          {{- end }}
-          env:
-            - name: NODE_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: spec.nodeName
-            - name: CLUSTER_COLLECTOR_SERVICE_HOST
-              value: "{{ include "checkmk.fullname" . }}-cluster-collector.{{ .Release.Namespace }}"
-            - name: CLUSTER_COLLECTOR_SERVICE_PORT_API
-              value: "{{ .Values.clusterCollector.service.port }}"
-            # - name: CADVISOR_SERVICE_HOST
-            #   valueFrom:
-            #     fieldRef:
-            #       fieldPath: status.hostIP
-            # - name: CADVISOR_SERVICE_PORT
-            #   value: "9088"
-          resources:
-            {{- toYaml .Values.nodeCollector.machineSectionsCollector.resources | nindent 12 }}
       terminationGracePeriodSeconds: 30
       volumes:
         - name: no-api-access

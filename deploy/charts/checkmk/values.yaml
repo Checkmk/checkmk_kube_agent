@@ -22,6 +22,12 @@ tlsCommunication:
   #   -----END CERTIFICATE-----
 
 imagePullSecrets: []
+image:
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "main_2022.03.02" # main_<YYYY.MM.DD>
+
+rbac:
+  pspEnabled: true
 
 ## ref: https://kubernetes.io/docs/concepts/services-networking/network-policies/
 networkPolicy:
@@ -58,8 +64,6 @@ clusterCollector:
   image:
     repository: checkmk/kubernetes-collector
     pullPolicy: IfNotPresent
-    # Overrides the image tag whose default is the chart appVersion.
-    tag: "main_2022.02.25" # main_<YYYY.MM.DD>
 
   # can be: "debug", "info", "warning" (default), "critical"
   logLevel: warning
@@ -80,9 +84,6 @@ clusterCollector:
     runAsGroup: 10001
     runAsNonRoot: true
     runAsUser: 10001
-
-  rbac:
-    pspEnabled: true
 
   service:
     # if required specify "NodePort" here to expose the cluster-collector via the "nodePort" specified below
@@ -131,15 +132,10 @@ nodeCollector:
   podSecurityContext: {}
     # fsGroup: 2000
 
-  rbac:
-    pspEnabled: true
-
   cadvisor:
     image:
       repository: checkmk/cadvisor-patched
       pullPolicy: IfNotPresent
-      # Overrides the image tag whose default is the chart appVersion.
-      tag: "main_2022.02.25" # main_<YYYY.MM.DD>
 
     additionalArgs:
       - "--housekeeping_interval=30s"
@@ -163,9 +159,6 @@ nodeCollector:
         add: ["CAP_SYS_PTRACE"]
       privileged: false
       readOnlyRootFilesystem: true
-      runAsGroup: 10001
-      runAsNonRoot: true
-      runAsUser: 10001
 
     resources:
       limits:
@@ -175,12 +168,10 @@ nodeCollector:
         cpu: 150m
         memory: 200Mi
 
-  machineSectionsCollector:
+  containerMetricsCollector:
     image:
       repository: checkmk/kubernetes-collector
       pullPolicy: IfNotPresent
-      # Overrides the image tag whose default is the chart appVersion.
-      tag: "main_2022.02.25" # main_<YYYY.MM.DD>
 
     securityContext:
       allowPrivilegeEscalation: false
@@ -201,12 +192,10 @@ nodeCollector:
         cpu: 150m
         memory: 200Mi
 
-  containerMetricsCollector:
+  machineSectionsCollector:
     image:
       repository: checkmk/kubernetes-collector
       pullPolicy: IfNotPresent
-      # Overrides the image tag whose default is the chart appVersion.
-      tag: "main_2022.02.25" # main_<YYYY.MM.DD>
 
     securityContext:
       allowPrivilegeEscalation: false

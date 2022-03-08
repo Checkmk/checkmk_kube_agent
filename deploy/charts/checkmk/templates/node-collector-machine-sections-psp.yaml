@@ -1,9 +1,9 @@
-{{- if .Values.nodeCollector.rbac.pspEnabled }}
+{{- if .Values.rbac.pspEnabled }}
 ---
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
-  name: {{ include "checkmk.fullname" . }}-node-collector
+  name: {{ include "checkmk.fullname" . }}-node-collector-machine-sections
   labels:
     {{- include "checkmk.labels" . | nindent 4 }}
   annotations:
@@ -37,7 +37,7 @@ spec:
   allowPrivilegeEscalation: false
   readOnlyRootFilesystem: true
   requiredDropCapabilities: [ALL]
-  allowedCapabilities: [CAP_SYS_PTRACE]
+  allowedCapabilities: []
   privileged: false
   hostIPC: false
   hostPID: false
@@ -45,28 +45,21 @@ spec:
   hostPorts:
     - min: 0
       max: 65535
-  allowedHostPaths:
-    - pathPrefix: "/var/run"
-      readOnly: true
-    - pathPrefix: "/sys"
-      readOnly: true
-    - pathPrefix: "/var/lib/docker"
-      readOnly: true
   volumes:
     - secret
-    - hostPath
+    - emptyDir
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "checkmk.fullname" . }}-node-collector
+  name: {{ include "checkmk.fullname" . }}-node-collector-machine-sections
   labels:
     {{- include "checkmk.labels" . | nindent 4 }}
 rules:
   - apiGroups:
       - policy
     resourceNames:
-      - {{ include "checkmk.fullname" . }}-node-collector
+      - {{ include "checkmk.fullname" . }}-node-collector-machine-sections
     resources:
       - podsecuritypolicies
     verbs:
@@ -75,16 +68,16 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ include "checkmk.fullname" . }}-node-collector
+  name: {{ include "checkmk.fullname" . }}-node-collector-machine-sections
   labels:
     {{- include "checkmk.labels" . | nindent 4 }}
-    app: {{ include "checkmk.fullname" . }}-node-collector
+    app: {{ include "checkmk.fullname" . }}-node-collector-machine-sections
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ include "checkmk.fullname" . }}-node-collector
+  name: {{ include "checkmk.fullname" . }}-node-collector-machine-sections
 subjects:
   - kind: ServiceAccount
-    name: {{ include "checkmk.fullname" . }}-node-collector
+    name: {{ include "checkmk.fullname" . }}-node-collector-machine-sections
     namespace: {{ .Release.Namespace }}
 {{- end }}
