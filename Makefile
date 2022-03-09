@@ -174,7 +174,7 @@ lint-yaml: lint-yaml/yamllint ## check yaml style
 
 .PHONY: lint-yaml/yamllint
 lint-yaml/yamllint: ## check yaml formatting with yamllint
-	yamllint deploy/kubernetes
+	yamllint *.yaml
 
 .PHONY: release-image
 release-image: dist ## create the node and cluster collector Docker images
