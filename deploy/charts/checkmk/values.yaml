@@ -6,8 +6,8 @@ nameOverride: ""
 fullnameOverride: ""
 
 tlsCommunication:
-  enabled: true
-  verifySsl: true
+  enabled: false
+  verifySsl: false 
   # clusterCollectorKey: |-
   #   -----BEGIN EC PRIVATE KEY-----
   #   XYZ
