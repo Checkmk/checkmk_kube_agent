@@ -104,3 +104,6 @@ ENV/
 # IDE settings
 .vscode/
 .idea/
+
+# config file specific to Checkmk werks
+.werks/.last
