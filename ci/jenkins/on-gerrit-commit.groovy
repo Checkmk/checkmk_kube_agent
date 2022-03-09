@@ -61,9 +61,6 @@ def do_it() {
     stage("lint yaml: yamllint") {
         run_target(COLLECTOR_IMAGE, "lint-yaml/yamllint", "--entrypoint=");
     }
-    stage("lint yaml: kubeval") {
-        run_target(COLLECTOR_IMAGE, "lint-yaml/kubeval", "--entrypoint=");
-    }
 }
 
 def run_target(image, target, docker_args) {
