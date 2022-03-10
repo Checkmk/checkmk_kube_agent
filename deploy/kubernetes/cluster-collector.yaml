@@ -86,7 +86,7 @@ spec:
                 - name: status
                   value: available
               # HTTP/HTTPS: Change scheme to HTTP for HTTP
-              scheme: HTTPS
+              scheme: HTTP
             initialDelaySeconds: 3
             periodSeconds: 10
           command:
