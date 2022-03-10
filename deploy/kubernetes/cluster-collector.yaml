@@ -85,7 +85,7 @@ spec:
               httpHeaders:
                 - name: status
                   value: available
-              # HTTP/HTTPS: Change scheme to HTTP for HTTP
+              # HTTP/HTTPS: Change scheme accordingly
               scheme: HTTP
             initialDelaySeconds: 3
             periodSeconds: 10
