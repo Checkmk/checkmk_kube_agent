@@ -334,6 +334,7 @@ def _init_app_state(
         key=metadata_key,
         maxsize=10000,  # Kubernetes clusters can have a max of 5000 nodes.
         # Each node collector daemonset sends their own metadata to this queue
+        ttl=cache_ttl,
     )
     app_.state.metadata = metadata
     app_.state.reader_whitelist = frozenset(reader_whitelist)
