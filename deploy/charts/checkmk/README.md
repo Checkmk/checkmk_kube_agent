@@ -80,6 +80,9 @@ For communication via NodePort:
 
 For communication via Ingress: Adapt the configuration in *clusterCollector.ingress* as needed.
 
+#### Image tags
+You can find possible tags here: https://hub.docker.com/r/checkmk/kubernetes-collector/tags
+
 #### Secure commmunication
 
 Secure communications to and between the *Checkmk Kubernetes Collectors* can be achieved in various ways.
