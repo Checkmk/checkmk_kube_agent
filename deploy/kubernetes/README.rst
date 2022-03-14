@@ -11,6 +11,9 @@ Short installation guide
 
 #. Optional: Download ``network-policy.yaml`` and ``pod-security-policy.yaml``, if this is required in your cluster.
 
+#. Replace the image tags *main_<YYYY.MM.DD>* in ``cluster-collector.yaml``, ``node-collector.yaml``
+   You can find possible tags here: https://hub.docker.com/r/checkmk/kubernetes-collector/tags
+
 #. Define communication method for Cluster Collector
 
    #. NodePort: Enabled by default with NodePort 30035, no change needed.
