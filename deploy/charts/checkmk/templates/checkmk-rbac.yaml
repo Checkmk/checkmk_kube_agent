@@ -10,6 +10,7 @@ rules:
       - ""  # core API group
       - apps
       - batch
+      - autoscaling
     resources:
       - nodes
       - nodes/proxy
@@ -17,9 +18,19 @@ rules:
       - deployments
       - replicasets
       - jobs
-      - cronjobs
       - daemonsets
       - statefulsets
+      - cronjobs
+      - services
+      - endpoints
+      - ingresses
+      - persistentvolumes
+      - persistentvolumeclaims
+      - storageclasses
+      - horizontalpodautoscalers
+      - replicasets
+      - namespaces
+      - resourcequotas
     verbs:
       - "get"
       - "list"
