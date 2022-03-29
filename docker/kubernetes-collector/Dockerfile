@@ -33,6 +33,11 @@ RUN apk add --no-cache make=4.3-r0 && \
     tar -xvzf trivy_0.23.0_Linux-64bit.tar.gz trivy && \
     mv trivy /usr/local/bin && \
     rm trivy_0.23.0_Linux-64bit.tar.gz && \
+    wget -q \
+    "https://get.helm.sh/helm-v3.8.1-linux-amd64.tar.gz" && \
+    tar -xvzf helm-v3.8.1-linux-amd64.tar.gz linux-amd64/helm --strip-components 1 && \
+    mv helm /usr/local/bin && \
+    rm helm-v3.8.1-linux-amd64.tar.gz && \
     pip install --no-cache-dir -r /tmp/requirements_dev.txt && \
     rm -rf /tmp/* && \
     rm -rf /var/cache/apk/*

@@ -61,6 +61,9 @@ def do_it() {
     stage("lint yaml: yamllint") {
         run_target(COLLECTOR_IMAGE, "lint-yaml/yamllint", "--entrypoint=");
     }
+    stage("lint helm chart") {
+        run_target(COLLECTOR_IMAGE, "lint-helm", "--entrypoint=");
+    }
 }
 
 def run_target(image, target, docker_args) {
