@@ -165,6 +165,10 @@ lint-python/format: ## check formatting with black and isort
 	black --check src tests
 	isort --check-only --diff src tests
 
+.PHONY: lint-helm
+lint-helm: ## check helm chart formatting
+	helm lint deploy/charts/checkmk
+
 .PHONY: lint-python/pylint
 lint-python/pylint: ## check style with Pylint
 	pylint --rcfile=.pylintrc src tests
