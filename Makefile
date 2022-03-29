@@ -95,7 +95,7 @@ coverage: ## check code coverage quickly with the default Python
 
 .PHONY: dev-image
 dev-image: dist ## build image to be used to run tests in a Docker container
-	docker build --rm --target=dev --build-arg PROJECT_PYVERSION="${PROJECT_PYVERSION}" --build-arg CHECKMK_AGENT_VERSION="${CHECKMK_AGENT_VERSION}" -t $(COLLECTOR_IMAGE_NAME)-dev -f docker/kubernetes-collector/Dockerfile .
+	docker build --rm --network=host --target=dev --build-arg PROJECT_PYVERSION="${PROJECT_PYVERSION}" --build-arg CHECKMK_AGENT_VERSION="${CHECKMK_AGENT_VERSION}" -t $(COLLECTOR_IMAGE_NAME)-dev -f docker/kubernetes-collector/Dockerfile .
 
 dist: clean ## builds source and wheel package
 	@echo "Building collector in Version: ${PROJECT_VERSION} using checkmk agent in Version: ${CHECKMK_AGENT_VERSION}"
@@ -178,8 +178,8 @@ lint-yaml/yamllint: ## check yaml formatting with yamllint
 
 .PHONY: release-image
 release-image: dist ## create the node and cluster collector Docker images
-	docker build --rm --no-cache --build-arg PROJECT_PYVERSION="${PROJECT_PYVERSION}" --build-arg CHECKMK_AGENT_VERSION="${CHECKMK_AGENT_VERSION}"  --build-arg GIT_HASH="${GIT_HASH}" -t $(COLLECTOR_IMAGE) -f docker/kubernetes-collector/Dockerfile .
-	docker build --rm --no-cache --build-arg GIT_HASH="${GIT_HASH}" -t $(CADVISOR_IMAGE) -f docker/cadvisor/Dockerfile .
+	docker build --rm --no-cache --network=host --build-arg PROJECT_PYVERSION="${PROJECT_PYVERSION}" --build-arg CHECKMK_AGENT_VERSION="${CHECKMK_AGENT_VERSION}"  --build-arg GIT_HASH="${GIT_HASH}" -t $(COLLECTOR_IMAGE) -f docker/kubernetes-collector/Dockerfile .
+	docker build --rm --no-cache --network=host --build-arg GIT_HASH="${GIT_HASH}" -t $(CADVISOR_IMAGE) -f docker/cadvisor/Dockerfile .
 
 .PHONY: servedocs
 servedocs: docs ## compile the docs watching for changes
