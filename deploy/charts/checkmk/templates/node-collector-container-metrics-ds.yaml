@@ -17,6 +17,7 @@ spec:
       {{- include "checkmk.selectorLabels" . | nindent 6 }}
       component: {{ include "checkmk.fullname" . }}-node-collector
       app: {{ include "checkmk.fullname" . }}-node-collector-container-metrics
+  minReadySeconds: {{ .Values.nodeCollector.minReadySeconds }}
   template:
     metadata:
       annotations:

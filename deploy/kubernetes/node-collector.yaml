@@ -89,6 +89,7 @@ spec:
     matchLabels:
       app: node-collector-container-metrics
       name: node-collector-container-metrics
+  minReadySeconds: 15
   template:
     metadata:
       labels:
@@ -216,6 +217,7 @@ spec:
     matchLabels:
       app: node-collector-machine-sections
       name: node-collector-machine-sections
+  minReadySeconds: 15
   template:
     metadata:
       labels:
