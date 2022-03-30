@@ -1,0 +1,14 @@
+Title: Set minReadySeconds for node-collectors
+Class: feature
+Compatible: compat
+Component: helm
+Date: 1649073049
+Edition: cre
+Knowledge: undoc
+Level: 1
+State: unknown
+Version: 1.0.0-alpha.2
+
+The Pods of node-collector-container-metrics and node-collector-machine-sections sometimes report
+being ready for a short amount of time before failing. With this werk, the Pods will no longer
+become available if a failure occurs.
