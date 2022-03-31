@@ -1,7 +1,7 @@
 ARG CHECKMK_AGENT_VERSION
 FROM checkmk/check-mk-raw:"$CHECKMK_AGENT_VERSION" as checkmk
 
-FROM python:3.10.2-alpine3.15 as release
+FROM python:3.10-alpine3.15 as release
 ARG PROJECT_PYVERSION
 ARG CHECKMK_AGENT_VERSION
 ARG GIT_HASH
