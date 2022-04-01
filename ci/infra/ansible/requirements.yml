@@ -1,0 +1,28 @@
+---
+collections:
+- name: community.general
+  version: 4.2.0
+- name: kubernetes.core
+  version: 2.2.2
+
+roles:
+- src: thorian93.common
+  version: 1.2.0
+- src: thorian93.journald
+  versoion: 1.0.3
+- src: thorian93.ntp
+  version: 0.1.0
+- src: thorian93.ssh
+  version: 1.1.0
+- src: thorian93.sudo
+  version: 0.1.0
+- src: thorian93.unattended_upgrade
+  version: 0.1.0
+- src: thorian93.upgrade
+  version: 3.4.0
+- src: geerlingguy.docker
+  version: 4.1.1
+- src: geerlingguy.kubernetes
+  version: 7.1.0
+- src: geerlingguy.containerd
+  version: 1.2.0

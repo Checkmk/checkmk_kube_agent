@@ -1,0 +1,23 @@
+{% for host in groups['kubernetes_master'] %}
+[kubernetes_master]
+kubernetes_version = {{ hostvars[host].kubernetes_version }}
+kubernetes_api_url = https://{{ hostvars[host].inventory_hostname }}:6443
+{% endfor %}
+
+{% for host in groups['kubernetes_nodes'] %}
+[{{ host }}]
+kubernetes_version = {{ hostvars[host].kubernetes_version }}
+kubernetes_api_url = https://{{ hostvars[host].inventory_hostname }}:6443
+
+{% endfor %}
+
+[nodes]
+{% for host in groups['kubernetes_nodes'] %}
+kubernetes_version = {{ hostvars[host].kubernetes_version }}
+kubernetes_api_url = https://{{ hostvars[host].inventory_hostname }}:6443
+{% endfor %}
+
+{# [test]
+{% for host in groups['kubernetes_nodes'] %}
+{{ hostvars[host] | to_nice_yaml }}
+{% endfor %} #}

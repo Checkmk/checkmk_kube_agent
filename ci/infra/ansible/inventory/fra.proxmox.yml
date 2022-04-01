@@ -1,0 +1,21 @@
+# https://docs.ansible.com/ansible/latest/collections/community/general/proxmox_inventory.html
+
+# https://github.com/ansible-collections/community.general/issues/1986
+
+plugin: community.general.proxmox
+url: "https://pve-fra-001.tribe29.com:8006"
+user: "{{ lookup('env','PM_USER') }}"
+password: "{{ lookup('env','PM_PASS') }}"
+validate_certs: true
+want_facts: true
+# Keep this as a reference for the future:
+# keyed_groups:
+#     # proxmox_tags_parsed is an example of a fact only returned when 'want_facts=true'
+#   - key: proxmox_tags_parsed
+#     separator: ""
+#     prefix: group
+# groups:
+#   webservers: "'web' in (proxmox_tags_parsed|list)"
+#   mailservers: "'mail' in (proxmox_tags_parsed|list)"
+# compose:
+#   ansible_port: 2222

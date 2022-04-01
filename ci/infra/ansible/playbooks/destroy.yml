@@ -1,0 +1,26 @@
+---
+- name: "Deploy."
+  hosts: kubernetes
+  gather_facts: 'false'
+  tasks:
+    - name: "Stop VMs."
+      community.general.proxmox_kvm:
+        state: stopped
+        node: pve-fra-001
+        name: "{{ inventory_hostname }}"
+        api_user: "{{ lookup('env', 'PM_USER') }}"
+        api_password: "{{ lookup('env', 'PM_PASS') }}"
+        api_host: pve-fra-001.tribe29.com
+      delegate_to: localhost
+    - name: "Wait for Shutdown."
+      ansible.builtin.pause:
+        seconds: 10
+    - name: "Destroy VMs."
+      community.general.proxmox_kvm:
+        state: absent
+        node: pve-fra-001
+        name: "{{ inventory_hostname }}"
+        api_user: "{{ lookup('env', 'PM_USER') }}"
+        api_password: "{{ lookup('env', 'PM_PASS') }}"
+        api_host: pve-fra-001.tribe29.com
+      delegate_to: localhost

@@ -1,0 +1,78 @@
+---
+- name: "Post Tasks on Master."
+  hosts: kubernetes_master
+  become: 'yes'
+  tags: [always, post]
+  tasks:
+    - name: "Ensure Python libraries are installed."
+      ansible.builtin.pip:
+        name:
+          - kubernetes >= 12.0.0
+          - PyYAML >= 3.11
+          - jsonpatch
+    - name: "Upload Workloads."
+      ansible.builtin.copy:
+        src: "{{checkmk_kube_agent_path}}/deploy/kubernetes/{{ item }}"
+        dest: "/root/{{ item }}"
+      loop: "{{ kubernetes_workloads }}"
+    - name: "Apply Workloads to Cluster."
+      kubernetes.core.k8s:
+        state: present
+        src: "/root/{{ item }}"
+      loop: "{{ kubernetes_workloads }}"
+    - name: "Download Kubernetes Auth Files."
+      ansible.builtin.fetch:
+        src: "/etc/kubernetes/admin.conf"
+        dest: "/tmp/kube-config"
+    - name: "Get token."
+      ansible.builtin.shell:
+        cmd: "kubectl get secret $(kubectl get serviceaccount checkmk -o=jsonpath='{.secrets[*].name}' -n checkmk-monitoring) -n checkmk-monitoring -o=jsonpath='{.data.token}' | base64 --decode"
+      register: shell_token
+    - name: "Write token locally."
+      become: 'no'
+      ansible.builtin.copy:
+        content: '{{shell_token.stdout}}'
+        dest: /tmp/token
+        remote_src: yes
+
+      delegate_to: localhost
+      run_once: 'yes'
+    - name: "Write INI file."
+      become: 'no'
+      community.general.ini_file:
+        path: /tmp/kubernetes.ini
+        section: kubernetes
+        option: kubernetes_api_url
+        value: "https://{{ inventory_hostname }}:6443"
+        state: present
+        create: 'yes'
+      delegate_to: localhost
+      run_once: 'yes'
+
+- name: "Wrapping up."
+  hosts: all
+  tags: [always, post]
+  tasks:
+    - name: "Print information about servers."
+      ansible.builtin.debug:
+        msg:
+          - "Role: {{ kubernetes_role }} | Kubernetes Version: {{ kubernetes_version }}"
+          - "API Connection:"
+          - "https://{{ inventory_hostname }}:6443"
+          - "SSH Connection (from the ansible directory):"
+          - "ssh -i {{ ansible_ssh_private_key_file }} test@{{ inventory_hostname }}"
+    - name: "Write main INI File."
+      ansible.builtin.template:
+        src: kubernetes.ini.j2
+        dest: /tmp/kubernetes-main.ini
+      delegate_to: localhost
+      run_once: 'yes'
+    - name: "Write INI file."
+      community.general.ini_file:
+        path: /tmp/kubernetes-single.ini
+        section: "{{ inventory_hostname }}"
+        option: kubernetes_api_url
+        value: "https://{{ inventory_hostname }}:6443"
+        state: present
+        create: 'yes'
+      delegate_to: localhost

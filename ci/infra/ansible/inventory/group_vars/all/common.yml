@@ -1,0 +1,83 @@
+---
+# Common Management Selections
+# Cleanup Variable Names. These backwards compatibility will be removed in a future version of this role!
+common_configure_crontabs: "false"
+common_configure_disks: "false"
+common_configure_dns: "false"
+common_configure_groups: "false"
+common_configure_zsh: "true"
+common_configure_scripting: "false"
+common_configure_software: "false"
+common_configure_users: "false"
+common_configure_timezone: "true"
+common_configure_vim: "true"
+
+# Host
+common_host_name: "{{ inventory_hostname }}"
+
+# Users
+## Users can be defined on several levels and will be concatenated
+common_global_users_present: []
+# - name: johndoe
+#   password: []
+#   update_password: always
+#   keys: []
+#     - foobar
+#   shell: /bin/bash
+#   user_groups: []
+#   append: yes
+#   system: no
+#   state: present
+#   remove: no
+common_os_users_present: []
+common_system_users_present: []
+common_stage_users_present: []
+common_role_users_present: []
+
+# Optional Apps
+common_optional_apps_install: 'false'
+
+# EPEL for RedHat
+common_epel_enabled: 'false'
+
+# DNS
+common_dns_search: []
+common_dns_servers:
+  - 1.1.1.1
+  - 1.0.0.1
+common_dns_options: []
+# - "timeout:3"
+# - "attempts:2"
+# - "rotate"
+
+# Timezone
+common_timezone: "Europe/Berlin"
+
+# Scripting
+common_scripting_path: /opt/control/scripts
+common_config_path: /opt/control/config
+common_scripting_scripts_global: []
+# - src:
+#   dest:
+#   owner:
+#   group:
+#   mode:
+#   state:
+common_scripting_scripts_os: []
+common_scripting_scripts_system: []
+common_scripting_scripts_stage: []
+common_scripting_scripts_role: []
+
+# Shopt options
+shopt_options:
+  - shopt -s cdspell
+  - shopt -s nocaseglob
+
+# Oh my ZSH
+common_zsh_users: root
+common_zsh_theme: clean
+common_zsh_path: /opt/oh-my-zsh
+common_zsh_plugins:
+  - git
+  - rsync
+  - wd
