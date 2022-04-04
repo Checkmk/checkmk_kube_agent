@@ -79,6 +79,9 @@ metadata:
     seccomp.security.alpha.kubernetes.io/pod: runtime/default
   labels:
     app: node-collector-container-metrics
+    # This label allows checkmk to identify the node-collector. Removing or modifying this label
+    # is supported, but will remove features related to this label.
+    node-collector: "container-metrics"
   name: node-collector-container-metrics
   namespace: checkmk-monitoring
 spec:
@@ -200,6 +203,9 @@ metadata:
     seccomp.security.alpha.kubernetes.io/pod: runtime/default
   labels:
     app: node-collector-machine-sections
+    # This label allows checkmk to identify the node-collector. Removing or modifying this label
+    # is supported, but will remove features related to this label.
+    node-collector: "machine-sections"
   name: node-collector-machine-sections
   namespace: checkmk-monitoring
 spec:

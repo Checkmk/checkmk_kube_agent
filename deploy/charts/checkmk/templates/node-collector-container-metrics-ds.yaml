@@ -8,6 +8,9 @@ metadata:
     {{- include "checkmk.labels" . | nindent 4 }}
     component: {{ include "checkmk.fullname" . }}-node-collector
     app: {{ include "checkmk.fullname" . }}-node-collector-container-metrics
+    # This label allows checkmk to identify the node-collector. Removing or modifying this label
+    # is supported, but will remove features related to this label.
+    node-collector: "container-metrics"
 spec:
   selector:
     matchLabels:

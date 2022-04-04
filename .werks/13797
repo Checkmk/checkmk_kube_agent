@@ -1,0 +1,11 @@
+Title: Add identification label to node-collector and cluster-collector
+Class: feature
+Compatible: compat
+Component: helm
+Date: 1649591099
+Edition: cre
+Knowledge: undoc
+Level: 1
+State: unknown
+Version: 1.0.0-alpha.2
+
