@@ -24,6 +24,7 @@ tlsCommunication:
 imagePullSecrets: []
 image:
   # Overrides the image tag whose default is the chart appVersion.
+  # ref: https://hub.docker.com/r/checkmk/kubernetes-collector/tags
   tag: "main_2022.03.02" # main_<YYYY.MM.DD>
 
 rbac:
