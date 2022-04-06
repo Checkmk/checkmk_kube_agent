@@ -223,6 +223,8 @@ print-bumped-version:
 .PHONY: setversion
 setversion:
 	sed -ri 's/^(__version__[[:space:]]*:?= *).*/\1'\""$(NEW_VERSION)\"/" src/checkmk_kube_agent/__init__.py;
+	sed -ri 's/^(appVersion:[[:space:]]*).*/\1'\""$(NEW_VERSION)\"/" deploy/charts/checkmk/Chart.yaml
+	sed -ri 's/^([[:space:]]*tag:[[:space:]]*).*/\1'\""$(NEW_VERSION)\"/" deploy/charts/checkmk/values.yaml
 
 .PHONY: push-images
 push-images:
