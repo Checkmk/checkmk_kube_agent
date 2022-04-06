@@ -52,6 +52,8 @@
 - name: "Wrapping up."
   hosts: all
   tags: [always, post]
+  vars:
+    ansible_ssh_private_key_file: "{{ lookup('env', 'ANSBILE_SSH_PRIVATE_KEY_FILE') }}"
   tasks:
     - name: "Print information about servers."
       ansible.builtin.debug:

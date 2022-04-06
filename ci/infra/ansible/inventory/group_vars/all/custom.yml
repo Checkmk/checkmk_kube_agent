@@ -2,12 +2,11 @@
 kubernetes_workloads:
   - 00_namespace.yaml
   - pod-security-policy.yaml
-  - secret.yaml
+  #- secret.yaml
   - checkmk-serviceaccount.yaml
-  - network-policy.yaml
+  #- network-policy.yaml
   - service.yaml
   - cluster-collector.yaml
-  - node-collector-cadvisor.yaml
   - node-collector.yaml
  #- ingress.yaml
 
