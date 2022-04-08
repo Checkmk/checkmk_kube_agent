@@ -9,8 +9,8 @@
         state: stopped
         node: pve-fra-001
         name: "{{ inventory_hostname }}"
-        api_user: "{{ lookup('env', 'PM_USER') }}"
-        api_password: "{{ lookup('env', 'PM_PASS') }}"
+        api_user: "{{ proxmox_api_user }}"
+        api_password: "{{ proxmox_api_password }}"
         api_host: pve-fra-001.tribe29.com
       delegate_to: localhost
     - name: "Wait for Shutdown."
@@ -21,7 +21,7 @@
         state: absent
         node: pve-fra-001
         name: "{{ inventory_hostname }}"
-        api_user: "{{ lookup('env', 'PM_USER') }}"
-        api_password: "{{ lookup('env', 'PM_PASS') }}"
+        api_user: "{{ proxmox_api_user }}"
+        api_password: "{{ proxmox_api_password }}"
         api_host: pve-fra-001.tribe29.com
       delegate_to: localhost
