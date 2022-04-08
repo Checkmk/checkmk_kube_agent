@@ -1,6 +1,7 @@
 ---
 - name: "Deploy."
   hosts: kubernetes
+  remote_user: "{{ ansible_ssh_remote_user }}"
   gather_facts: 'false'
   tasks:
     - name: "Stop VMs."

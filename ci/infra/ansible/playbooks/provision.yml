@@ -1,6 +1,7 @@
 ---
 - name: "Provision Base."
   hosts: all
+  remote_user: "{{ ansible_ssh_remote_user }}"
   tags: [full, base, common]
   become: 'true'
   roles:
@@ -9,6 +10,7 @@
 
 - name: "Provision Docker."
   hosts: all
+  remote_user: "{{ ansible_ssh_remote_user }}"
   tags: [never, docker]
   become: 'true'
   roles:
@@ -16,6 +18,7 @@
 
 - name: "Provision containerd."
   hosts: all
+  remote_user: "{{ ansible_ssh_remote_user }}"
   tags: [never, containerd, container]
   become: 'true'
   roles:
@@ -23,6 +26,7 @@
 
 - name: "Provision Kubernetes."
   hosts: all
+  remote_user: "{{ ansible_ssh_remote_user }}"
   tags: [never, docker, container, containerd, kubernetes]
   become: 'true'
   roles:

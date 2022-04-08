@@ -1,2 +1,3 @@
 ---
 ansible_ssh_private_key_file: "{{ lookup('env', 'ANSIBLE_SSH_PRIVATE_KEY_FILE') }}"
+ansible_ssh_remote_user: "{{ lookup('env', 'ANSIBLE_SSH_REMOTE_USER') }}"

@@ -46,7 +46,7 @@ def do_it() {
         run_ansible(IMAGE, """\
                            ansible-playbook \
                            --ssh-extra-args '-o StrictHostKeyChecking=no' \
-                           -u test -i ${ANSIBLE_DIR}/inventory/hosts ${ANSIBLE_DIR}/playbooks/provision.yml \
+                           --inventory ${ANSIBLE_DIR}/inventory/hosts ${ANSIBLE_DIR}/playbooks/provision.yml \
                            --extra-vars 'kubernetes_version=1.23 container_runtime=containerd checkmk_kube_agent_path=${WORKSPACE}' \
                            --tags 'common,containerd'
                            """);
@@ -70,7 +70,7 @@ def run_terraform(image, cmd) {
 
 
 def run_ansible(image, cmd) {
-    withCredentials([sshUserPrivateKey(credentialsId: "ssh_kube_ansible", keyFileVariable: "ANSIBLE_SSH_PRIVATE_KEY_FILE")]) {
+    withCredentials([sshUserPrivateKey(credentialsId: "ssh_kube_ansible", keyFileVariable: "ANSIBLE_SSH_PRIVATE_KEY_FILE", usernameVariable: "ANSIBLE_SSH_REMOTE_USER")]) {
         image.inside() {
             sh("""#!/bin/ash
                ${cmd}"""

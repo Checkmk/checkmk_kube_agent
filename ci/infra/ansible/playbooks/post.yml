@@ -1,6 +1,7 @@
 ---
 - name: "Post Tasks on Master."
   hosts: kubernetes_master
+  remote_user: "{{ ansible_ssh_remote_user }}"
   become: 'yes'
   tags: [always, post]
   tasks:
@@ -51,6 +52,7 @@
 
 - name: "Wrapping up."
   hosts: all
+  remote_user: "{{ ansible_ssh_remote_user }}"
   tags: [always, post]
   vars:
     ansible_ssh_private_key_file: "{{ lookup('env', 'ANSBILE_SSH_PRIVATE_KEY_FILE') }}"
