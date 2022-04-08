@@ -14,7 +14,9 @@ withFolderProperties {
 
 timeout(time: 12, unit: 'HOURS') {
     node(NODE) {
-        do_it();
+        ansiColor("xterm") {
+            do_it();
+        }
     }
 }
 
