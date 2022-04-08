@@ -14,7 +14,9 @@ withFolderProperties {
 
 timeout(time: 12, unit: "HOURS") {
     node(NODE) {
-        do_it();
+        ansiColor("xterm") {
+            do_it();
+        }
     }
 }
 
@@ -41,33 +43,38 @@ def do_it() {
         run_terraform(IMAGE, "apply -auto-approve plan");
     }
     stage("run ansible playbook") {
-        run_ansible(IMAGE, "ansible-playbook --ssh-extra-args '-o StrictHostKeyChecking=no' -u test -i ${ANSIBLE_DIR}/inventory/hosts ${ANSIBLE_DIR}/playbooks/provision.yml --extra-vars 'kubernetes_version=1.23 container_runtime=containerd checkmk_kube_agent_path=${WORKSPACE}' --tags 'common,containerd'");
+        run_ansible(IMAGE, """\
+                           ansible-playbook \
+                           --ssh-extra-args '-o StrictHostKeyChecking=no' \
+                           -u test -i ${ANSIBLE_DIR}/inventory/hosts ${ANSIBLE_DIR}/playbooks/provision.yml \
+                           --extra-vars 'kubernetes_version=1.23 container_runtime=containerd checkmk_kube_agent_path=${WORKSPACE}' \
+                           --tags 'common,containerd'
+                           """);
     }
-    //stage("run ansible playbook") {
-    //    withCredentials([sshUserPrivateKey(credentialsId: "ssh_kube_ansible", keyFileVariable: "ANSIBLE_SSH_PRIVATE_KEY_FILE")]) {
-    //        IMAGE.inside() {
-    //            sh("#!/bin/ash\nansible-playbook --key-file ${ANSIBLE_SSH_PRIVATE_KEY_FILE} --ssh-extra-args '-o StrictHostKeyChecking=no' -u test -i ${ANSIBLE_DIR}/inventory/hosts ${ANSIBLE_DIR}/playbooks/provision.yml --extra-vars 'kubernetes_version=1.23 container_runtime=containerd checkmk_kube_agent_path=${WORKSPACE}' --tags 'common,containerd'");
-    //        }
-    //    }
-    //}
     stage("destroy") {
         run_terraform(IMAGE, "destroy -auto-approve");
     }
 }
 
+
 def run_terraform(image, cmd) {
     def TERRAFORM_DIR = "ci/infra/terraform";
     withCredentials([usernamePassword(credentialsId: "ssh_kube_terraform", passwordVariable: "PM_PASS", usernameVariable: "PM_USER")]) {
         image.inside() {
-            sh("#!/bin/ash\nterraform -chdir=${TERRAFORM_DIR} ${cmd}");
+            sh("""#!/bin/ash
+               terraform -chdir=${TERRAFORM_DIR} ${cmd}"""
+            );
         }
     }
 }
 
+
 def run_ansible(image, cmd) {
     withCredentials([sshUserPrivateKey(credentialsId: "ssh_kube_ansible", keyFileVariable: "ANSIBLE_SSH_PRIVATE_KEY_FILE")]) {
         image.inside() {
-            sh("#!/bin/ash\n${cmd}");
+            sh("""#!/bin/ash
+               ${cmd}"""
+            );
         }
     }
 }
