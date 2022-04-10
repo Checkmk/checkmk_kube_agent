@@ -28,6 +28,7 @@ ARG CHECKMK_AGENT_VERSION
 ARG GIT_HASH
 ENV CHECKMK_AGENT_VERSION="${CHECKMK_AGENT_VERSION}"
 COPY --from=builder /install /usr/local
+COPY --from=checkmk "/opt/omd/versions/${CHECKMK_AGENT_VERSION}.cre/share/check_mk/agents/plugins/mk_inventory.linux" /usr/lib/check_mk_agent/plugins/mk_inventory.linux
 RUN addgroup appgroup -g 10001 && \
     adduser -HD appuser -G appgroup -u 10001
 RUN echo "${GIT_HASH}" > GIT_HASH.txt

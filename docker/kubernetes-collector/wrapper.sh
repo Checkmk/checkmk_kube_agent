@@ -20,3 +20,6 @@ section_cpu
 section_mem
 section_diskstat
 section_df
+set_up_profiling
+section_checkmk_agent_plugins
+run_plugins
