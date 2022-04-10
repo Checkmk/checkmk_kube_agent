@@ -20,6 +20,9 @@ section_cpu
 section_mem
 section_diskstat
 section_df
+set_up_profiling
+section_checkmk_agent_plugins
+run_plugins
 # some sections have non-zero exit codes due to a 'return' without an explicit
 # exit code, which implies that the section is not relevant for the host
 exit 0 # ignore the return code of the last section
