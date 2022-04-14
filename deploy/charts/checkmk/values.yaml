@@ -138,6 +138,19 @@ nodeCollector:
   podSecurityContext: {}
     # fsGroup: 2000
 
+  ## Assign a nodeSelector if operating a hybrid cluster
+  ##
+  nodeSelector: {}
+  #   beta.kubernetes.io/arch: amd64
+  #   beta.kubernetes.io/os: linux
+
+  tolerations: []
+  # - effect: NoSchedule
+  #   operator: Exists
+
+  ## Assign a PriorityClassName to pods if set
+  # priorityClassName: ""
+
   cadvisor:
     image:
       repository: checkmk/cadvisor-patched
