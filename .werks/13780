@@ -1,0 +1,13 @@
+Title: helm chart: broken ingress template due to syntax error
+Class: fix
+Compatible: compat
+Component: helm
+Date: 1650895907
+Knowledge: doc
+Level: 1
+Version: 2.0.0-alpha.1
+
+The ingress template of the helm chart is not working due to a minor syntax
+error affecting the file
+"deploy/charts/checkmk/templates/cluster-collector-ingress.yaml". This has been
+fixed.

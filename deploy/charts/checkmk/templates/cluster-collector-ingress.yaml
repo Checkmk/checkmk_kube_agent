@@ -35,9 +35,9 @@ spec:
             pathType: {{ .pathType }}
             backend:
               service:
-                name: {{ include "checkmk.fullname" . }}-cluster-collector
+                name: {{ include "checkmk.fullname" $ }}-cluster-collector
                 port:
-                  number: {{ .Values.clusterCollector.service.port }}
+                  number: {{ $.Values.clusterCollector.service.port }}
           {{- end }}
     {{- end }}
 {{- end }}
