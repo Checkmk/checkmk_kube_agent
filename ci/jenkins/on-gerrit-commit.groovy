@@ -29,7 +29,7 @@ def do_it() {
         checkout(scm);
     }
     stage("build source and wheel package") {
-        docker.build("checkmk-kube-agent-ci", "-f docker/ci/Dockerfile .");
+        docker.build("checkmk-kube-agent-ci", "--network=host -f docker/ci/Dockerfile .");
         docker.image("checkmk-kube-agent-ci:latest").inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
             PROJECT_PYVERSION = sh(script: "#!/bin/ash\nmake print-project-pyversion", returnStdout: true).toString().trim();
             CHECKMK_AGENT_VERSION = sh(script: "#!/bin/ash\nmake print-checkmk-agent-version", returnStdout: true).toString().trim();
