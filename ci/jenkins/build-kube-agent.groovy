@@ -66,18 +66,6 @@ def validate_parameters_and_branch(method, version, branch) {
 }
 validate_parameters_and_branch(METHOD, VERSION, BRANCH)
 
-timeout(time: 12, unit: 'HOURS') {
-    node(NODE) {
-        withEnv(["GIT_AUTHOR_NAME=Checkmk release system",
-                 "GIT_AUTHOR_EMAIL='feedback@check-mk.org'",
-                 "GIT_SSH_VARIANT=ssh",
-                 "GIT_COMMITTER_NAME=Checkmk release system",
-                 "GIT_COMMITTER_EMAIL=feedback@check-mk.org"]) {
-            main();
-        }
-    }
-}
-
 def main() {
         stage('Checkout Sources') {
             checkout(scm)
@@ -86,6 +74,12 @@ def main() {
         // TODO: at least consolidate in this repo...
         def DOCKER_GROUP_ID = sh(script: "getent group docker | cut -d: -f3", returnStdout: true);
         docker.build(CI_IMAGE, "-f docker/ci/Dockerfile .");
+
+        stage("Build source and wheel package") {
+            docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
+                run_in_ash("make dist")
+            }
+        }
 
         if (RELEASE_BUILD) {
             stage('Calculate Version') {
@@ -111,11 +105,6 @@ def main() {
         }
 
 
-        stage("Build source and wheel package") {
-            docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
-                run_in_ash("make dist")
-            }
-        }
         stage("Build Images") {
             docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
                 run_in_ash("DOCKER_TAG_PREFIX=${DOCKER_TAG_PREFIX} DOCKER_TAG_SUFFIX=${DOCKER_TAG_SUFFIX} make release-image")
@@ -135,6 +124,18 @@ def main() {
             else {
                 Utils.markStageSkippedForConditional(STAGE_PUSH_IMAGES)
             }
+        }
+    }
+}
+
+timeout(time: 12, unit: 'HOURS') {
+    node(NODE) {
+        withEnv(["GIT_AUTHOR_NAME=Checkmk release system",
+                 "GIT_AUTHOR_EMAIL='feedback@check-mk.org'",
+                 "GIT_SSH_VARIANT=ssh",
+                 "GIT_COMMITTER_NAME=Checkmk release system",
+                 "GIT_COMMITTER_EMAIL=feedback@check-mk.org"]) {
+            main();
         }
     }
 }
