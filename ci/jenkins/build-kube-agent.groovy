@@ -68,6 +68,11 @@ validate_parameters_and_branch(METHOD, VERSION, BRANCH)
 
 timeout(time: 12, unit: 'HOURS') {
     node(NODE) {
+        main();
+    }
+}
+
+def main() {
         stage('Checkout Sources') {
             checkout(scm)
         }
