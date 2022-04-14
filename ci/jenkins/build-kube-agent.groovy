@@ -68,7 +68,13 @@ validate_parameters_and_branch(METHOD, VERSION, BRANCH)
 
 timeout(time: 12, unit: 'HOURS') {
     node(NODE) {
-        main();
+        withEnv(["GIT_AUTHOR_NAME=Checkmk release system",
+                 "GIT_AUTHOR_EMAIL='feedback@check-mk.org'",
+                 "GIT_SSH_VARIANT=ssh",
+                 "GIT_COMMITTER_NAME=Checkmk release system",
+                 "GIT_COMMITTER_EMAIL=feedback@check-mk.org"]) {
+            main();
+        }
     }
 }
 
@@ -95,12 +101,7 @@ def main() {
 
             stage("Create or switch to tag") {
                 withCredentials([sshUserPrivateKey(credentialsId: "release", keyFileVariable: 'keyfile')]) {
-                    withEnv(["GIT_AUTHOR_NAME=Checkmk release system",
-                             "GIT_AUTHOR_EMAIL='feedback@check-mk.org'",
-                             "GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile} -l release",
-                             "GIT_SSH_VARIANT=ssh",
-                             "GIT_COMMITTER_NAME=Checkmk release system",
-                             "GIT_COMMITTER_EMAIL=feedback@check-mk.org"]) {
+                    withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile} -l release"]) {
                         docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
                             run_in_ash("./ci/jenkins/scripts/tagging.sh ${VERSION} ${METHOD} ${BRANCH}")
                         }
