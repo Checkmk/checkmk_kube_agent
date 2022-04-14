@@ -1,5 +1,6 @@
 import java.text.SimpleDateFormat
 import org.jenkinsci.plugins.pipeline.modeldefinition.Utils
+import groovy.transform.Field
 
 currentBuild.description = '\nBuilding the Kubernetes Agent\n'
 
@@ -10,8 +11,7 @@ withFolderProperties{
 
 // TODO: Duplicate code from checkmk repo -> move to common repo
 def get_branch(scm) {
-    def BRANCH = scm.branches[0].name.replaceAll("/","-")
-    return BRANCH
+    return scm.branches[0].name
 }
 
 properties([
@@ -29,11 +29,14 @@ properties([
     ])
 ])
 
-def RELEASE_BUILD
-def DOCKER_TAG_PREFIX
-def DOCKER_TAG_SUFFIX
+@Field
+def RELEASE_BUILD=""
+@Field
+def DOCKER_TAG_PREFIX=""
+@Field
+def DOCKER_TAG_SUFFIX=""
 def BRANCH = get_branch(scm)
-def CI_IMAGE = "checkmk-kube-agent-ci"
+@Field
 def STAGE_PUSH_IMAGES = 'Push Images'
 
 switch (METHOD) {
@@ -66,15 +69,23 @@ def validate_parameters_and_branch(method, version, branch) {
 }
 validate_parameters_and_branch(METHOD, VERSION, BRANCH)
 
-timeout(time: 12, unit: 'HOURS') {
-    node(NODE) {
-        stage('Checkout Sources') {
-            checkout(scm)
-        }
-
+def main(BRANCH, METHOD) {
+        def COMMIT_SHA;
         // TODO: at least consolidate in this repo...
         def DOCKER_GROUP_ID = sh(script: "getent group docker | cut -d: -f3", returnStdout: true);
-        docker.build(CI_IMAGE, "-f docker/ci/Dockerfile .");
+        def GITHUB_PAGES_BRANCH = "gh-pages";
+        def KUBE_AGENT_GITHUB_REPO = "tribe29/checkmk_kube_agent";
+        def KUBE_AGENT_GITHUB_URL = "https://github.com/${KUBE_AGENT_GITHUB_REPO}";
+        def CI_IMAGE = "checkmk-kube-agent-ci";
+        def HELM_REPO_INDEX_FILE="index.yaml";
+        def VERSION;
+
+        stage('Checkout Sources') {
+            checkout(scm);
+            sh("git clean -fd");
+            sh("git remote add github git@github.com:${KUBE_AGENT_GITHUB_REPO}.git || true");
+        }
+        docker.build(CI_IMAGE, "--network=host -f docker/ci/Dockerfile .");
 
         if (RELEASE_BUILD) {
             stage('Calculate Version') {
@@ -90,31 +101,39 @@ timeout(time: 12, unit: 'HOURS') {
 
             stage("Create or switch to tag") {
                 withCredentials([sshUserPrivateKey(credentialsId: "release", keyFileVariable: 'keyfile')]) {
-                    withEnv(["GIT_AUTHOR_NAME=Checkmk release system",
-                             "GIT_AUTHOR_EMAIL='feedback@check-mk.org'",
-                             "GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile} -l release",
-                             "GIT_SSH_VARIANT=ssh",
-                             "GIT_COMMITTER_NAME=Checkmk release system",
-                             "GIT_COMMITTER_EMAIL=feedback@check-mk.org"]) {
+                    withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile} -l release"]) {
                         docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
                             run_in_ash("./ci/jenkins/scripts/tagging.sh ${VERSION} ${METHOD} ${BRANCH}")
+                        }
+                    }
+                }
+                COMMIT_SHA = sh(script: "git rev-list -n 1 v${VERSION}", returnStdout: true).toString().trim();
+            }
+            // The tag must exist on github in order to be able to use it to create a github release later
+            // This can be deleted if the push to github can be triggered some other way (see CMK-9584)
+            stage("Push to github") {
+                withCredentials([sshUserPrivateKey(credentialsId: "ssh_private_key_lisa_github", keyFileVariable: 'keyfile')]) {
+                    withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile}"]) {
+                        docker.image(CI_IMAGE).inside("--entrypoint=") {
+                            run_in_ash("git push --tags github ${BRANCH}")
                         }
                     }
                 }
             }
         }
 
-
         stage("Build source and wheel package") {
             docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
                 run_in_ash("make dist")
             }
         }
+
         stage("Build Images") {
             docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
                 run_in_ash("DOCKER_TAG_PREFIX=${DOCKER_TAG_PREFIX} DOCKER_TAG_SUFFIX=${DOCKER_TAG_SUFFIX} make release-image")
             }
-            
+
+        }
         stage(STAGE_PUSH_IMAGES) {
             if (params.PUSH_TO_DOCKERHUB) {
                 withCredentials([
@@ -129,6 +148,73 @@ timeout(time: 12, unit: 'HOURS') {
                 Utils.markStageSkippedForConditional(STAGE_PUSH_IMAGES)
             }
         }
+        if (RELEASE_BUILD) {
+            withCredentials([usernamePassword(credentialsId: "github-token-lisa", passwordVariable: 'GH_TOKEN', usernameVariable: "GH_USER")]) {
+                if (METHOD == "rebuild_version") {
+                    stage("Delete github release") {
+                        docker.image(CI_IMAGE).inside("--entrypoint=") {
+                                run_in_ash("gh release delete --repo ${KUBE_AGENT_GITHUB_REPO} -y v${VERSION}")
+                        }
+                    }
+                }
+                else {
+                    Utils.markStageSkippedForConditional("Delete github release")
+                }
+                stage("Create github release, upload helm chart artifact") {
+                    docker.image(CI_IMAGE).inside("--entrypoint=") {
+                        // Note: see more details on the "gh" tool in the Dockerfile of the CI image.
+                        run_in_ash("gh release create --repo=${KUBE_AGENT_GITHUB_REPO} --target=${COMMIT_SHA} --notes='' --title=v${VERSION} v${VERSION} dist-helm/checkmk-kube-agent-helm-${VERSION}.tgz")
+                    }
+                }
+            }
+            if (METHOD == "rebuild_version") {
+                Utils.markStageSkippedForConditional("Update helm repo index")
+            }
+            else {
+                stage("Update helm repo index") {
+                    sh("git checkout ${GITHUB_PAGES_BRANCH}");
+                    withCredentials([sshUserPrivateKey(credentialsId: "release", keyFileVariable: 'keyfile')]) {
+                        withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile} -l release"]) {
+                            docker.image(CI_IMAGE).inside("--entrypoint=") {
+                                run_in_ash("git pull");
+                                run_in_ash("mv dist-helm/checkmk-kube-agent-helm-${VERSION}.tgz ${WORKSPACE}");
+
+                                if (fileExists("${HELM_REPO_INDEX_FILE}")) {
+                                    merge_index_cmd = "--merge ${HELM_REPO_INDEX_FILE}"
+                                }
+                                else {
+                                    merge_index_cmd = ""
+                                }
+
+                                run_in_ash("helm repo index ${WORKSPACE} ${merge_index_cmd} --url ${KUBE_AGENT_GITHUB_URL}/releases/download/v${VERSION}");
+                                run_in_ash("git add ${HELM_REPO_INDEX_FILE}");
+                                run_in_ash("git commit ${HELM_REPO_INDEX_FILE} -m 'Add helm chart version ${VERSION}'");
+                                run_in_ash("git push origin ${GITHUB_PAGES_BRANCH}");
+                            }
+                        }
+                    }
+                    // This can be deleted if the push to github can be triggered some other way (see CMK-9584)
+                    withCredentials([sshUserPrivateKey(credentialsId: "ssh_private_key_lisa_github", keyFileVariable: 'keyfile')]) {
+                        withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile}"]) {
+                            docker.image(CI_IMAGE).inside("--entrypoint=") {
+                                run_in_ash("git push github ${GITHUB_PAGES_BRANCH}");
+                            }
+                        }
+                    }
+                    sh("git checkout ${BRANCH}");
+            }
+        }
+    }
+}
+
+timeout(time: 12, unit: 'HOURS') {
+    node(NODE) {
+        withEnv(["GIT_AUTHOR_NAME=Checkmk release system",
+                 "GIT_AUTHOR_EMAIL='feedback@check-mk.org'",
+                 "GIT_SSH_VARIANT=ssh",
+                 "GIT_COMMITTER_NAME=Checkmk release system",
+                 "GIT_COMMITTER_EMAIL=feedback@check-mk.org"]) {
+            main(BRANCH, METHOD);
         }
     }
 }
