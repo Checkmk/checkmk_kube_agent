@@ -131,6 +131,7 @@ nodeCollector:
   # problems. The value below ensures, that they don't become available as well.
   minReadySeconds: 15
 
+  # Annotations to be added to node-collector pods
   podAnnotations:
     seccomp.security.alpha.kubernetes.io/pod: runtime/default
 
