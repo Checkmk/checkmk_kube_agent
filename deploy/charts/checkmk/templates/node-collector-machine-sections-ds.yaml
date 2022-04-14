@@ -36,6 +36,17 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .Values.nodeCollector.priorityClassName }}
+      priorityClassName: {{ .Values.nodeCollector.priorityClassName }}
+      {{- end }}
+      {{- if .Values.nodeCollector.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.nodeCollector.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeCollector.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       serviceAccountName: {{ include "checkmk.fullname" . }}-node-collector-machine-sections
       securityContext:
         {{- toYaml .Values.nodeCollector.podSecurityContext | nindent 8 }}
