@@ -12,6 +12,7 @@ env/
 build/
 develop-eggs/
 dist/
+dist-helm/
 downloads/
 eggs/
 .eggs/

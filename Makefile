@@ -67,6 +67,7 @@ clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and 
 clean-build: ## remove build artifacts
 	rm -fr build/
 	rm -fr dist/
+	rm -fr dist-helm/
 	rm -fr .eggs/
 	find . -name '*.egg-info' -exec rm -fr {} +
 	find . -name '*.egg' -exec rm -f {} +
@@ -98,10 +99,14 @@ dev-image: dist ## build image to be used to run tests in a Docker container
 	docker build --rm --network=host --target=dev --build-arg PROJECT_PYVERSION="${PROJECT_PYVERSION}" --build-arg CHECKMK_AGENT_VERSION="${CHECKMK_AGENT_VERSION}" -t $(COLLECTOR_IMAGE_NAME)-dev -f docker/kubernetes-collector/Dockerfile .
 
 dist: clean ## builds source and wheel package
-	@echo "Building collector in Version: ${PROJECT_VERSION} using checkmk agent in Version: ${CHECKMK_AGENT_VERSION}"
+	@echo "Building collector in version: ${PROJECT_VERSION} using checkmk agent in Version: ${CHECKMK_AGENT_VERSION}"
 	$(PYTHON) setup.py sdist
 	$(PYTHON) setup.py bdist_wheel
 	ls -l dist
+	@echo "Building helm chart in version: ${PROJECT_VERSION}"
+	helm package deploy/charts/checkmk --destination dist-helm
+	mv dist-helm/checkmk-${PROJECT_VERSION}.tgz dist-helm/checkmk-kube-agent-helm-${PROJECT_VERSION}.tgz
+	ls -l dist-helm
 
 .PHONY: docs
 docs: ## generate Sphinx HTML documentation, including API docs
