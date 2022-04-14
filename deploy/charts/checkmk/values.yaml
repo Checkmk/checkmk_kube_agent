@@ -127,11 +127,25 @@ nodeCollector:
   # logLevel for container-metrics and machine-sections; can be: "debug", "info", "warning" (default), "critical"
   logLevel: debug
 
+  # Annotations to be added to node-collector pods
   podAnnotations:
     seccomp.security.alpha.kubernetes.io/pod: runtime/default
 
   podSecurityContext: {}
     # fsGroup: 2000
+
+  ## Assign a nodeSelector if operating a hybrid cluster
+  ##
+  nodeSelector: {}
+  #   beta.kubernetes.io/arch: amd64
+  #   beta.kubernetes.io/os: linux
+
+  tolerations: []
+  # - effect: NoSchedule
+  #   operator: Exists
+
+  ## Assign a PriorityClassName to pods if set
+  # priorityClassName: ""
 
   cadvisor:
     image:

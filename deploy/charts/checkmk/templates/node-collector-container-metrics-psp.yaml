@@ -14,6 +14,7 @@ metadata:
     apparmor.security.beta.kubernetes.io/defaultProfileName: >-
       runtime/default
 spec:
+  allowedCapabilities: [CAP_SYS_PTRACE]
   allowedHostPaths:
     - pathPrefix: /var/run
       readOnly: false
@@ -32,8 +33,9 @@ spec:
   supplementalGroups:
     rule: RunAsAny
   volumes:
-    - "hostPath"
-    - "secret"
+    - hostPath
+    - secret
+    - emptyDir
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
