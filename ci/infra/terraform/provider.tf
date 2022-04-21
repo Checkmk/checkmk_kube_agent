@@ -1,5 +1,3 @@
-# https://registry.terraform.io/providers/Telmate/proxmox/latest/docs#pm_user
-
 terraform {
   required_providers {
     proxmox = {
@@ -10,5 +8,5 @@ terraform {
 }
 
 provider "proxmox" {
-  pm_api_url = "https://pve-fra-001.tribe29.com:8006/api2/json"
+  pm_api_url = var.common.proxmox_url
 }
