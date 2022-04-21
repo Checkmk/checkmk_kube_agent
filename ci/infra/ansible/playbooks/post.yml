@@ -1,6 +1,6 @@
 ---
 - name: "Post Tasks on Master."
-  hosts: kubernetes_master
+  hosts: "kubernetes-tests-master*"
   remote_user: "{{ ansible_ssh_remote_user }}"
   become: 'yes'
   tags: [always, post]

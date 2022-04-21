@@ -2,7 +2,7 @@
 - name: "Provision Base."
   hosts: all
   remote_user: "{{ ansible_ssh_remote_user }}"
-  tags: [full, base, common]
+  tags: [never, base]
   become: 'true'
   roles:
     - thorian93.common
@@ -31,7 +31,3 @@
   become: 'true'
   roles:
     - geerlingguy.kubernetes
-
-- name: "Include Post Tasks."
-  tags: [always, post]
-  ansible.builtin.import_playbook: post.yml
