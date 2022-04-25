@@ -1,4 +1,4 @@
-current_version = "1.0.0-alpha.2"
+current_version = "1.0.0-beta.2"
 
 components = [
    ( "cluster-collector",        "Cluster Collector" ),

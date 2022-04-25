@@ -7,7 +7,7 @@ Edition: cre
 Knowledge: doc
 Level: 1
 State: unknown
-Version: 1.0.0-alpha.2
+Version: 1.0.0-beta.2
 
 The previous version caused the cluster collector to keep previous
 metadata information of the colletors even if they were no longer

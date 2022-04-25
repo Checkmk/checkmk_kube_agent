@@ -7,7 +7,7 @@ Edition: cre
 Knowledge: undoc
 Level: 1
 State: unknown
-Version: 1.0.0-alpha.2
+Version: 1.0.0-beta.2
 
 The Pods of node-collector-container-metrics and node-collector-machine-sections sometimes report
 being ready for a short amount of time before failing. With this werk, the Pods will no longer
