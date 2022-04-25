@@ -56,7 +56,7 @@ spec:
         - name: cluster-collector
           # You can find available images on
           # https://hub.docker.com/r/checkmk/kubernetes-collector/tags
-          image: checkmk/kubernetes-collector:main_<YYYY.MM.DD>
+          image: checkmk/kubernetes-collector:main_2022.04.12
           imagePullPolicy: Always
           env:
             - name: NODE_NAME

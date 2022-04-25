@@ -99,7 +99,7 @@ spec:
       containers:
         # You can find available images on
         # https://hub.docker.com/r/checkmk/kubernetes-collector/tags
-        - image: checkmk/kubernetes-collector:main_<YYYY.MM.DD>
+        - image: checkmk/kubernetes-collector:main_2022.04.12
           imagePullPolicy: Always
           name: container-metrics-collector
           # HTTPS: Uncomment volumeMounts checkmk-ca-cert for HTTPS
@@ -141,7 +141,7 @@ spec:
             runAsUser: 10001
         # You can find available images on
         # https://hub.docker.com/r/checkmk/cadvisor-patched/tags
-        - image: checkmk/cadvisor-patched:main_<YYYY.MM.DD>
+        - image: checkmk/cadvisor-patched:main_2022.04.12
           imagePullPolicy: Always
           name: cadvisor
           command:
@@ -227,7 +227,7 @@ spec:
       containers:
         # You can find available images on
         # https://hub.docker.com/r/checkmk/kubernetes-collector/tags
-        - image: checkmk/kubernetes-collector:main_<YYYY.MM.DD>
+        - image: checkmk/kubernetes-collector:main_2022.04.12
           imagePullPolicy: Always
           name: machine-sections-collector
           # HTTPS: Uncomment volumeMounts checkmk-ca-cert for HTTPS
