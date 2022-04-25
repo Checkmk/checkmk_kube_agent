@@ -18,7 +18,7 @@ RUN apk add make git docker terraform openssh && \
     wget -q "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz" && \
     tar -xvzf gh_${GH_VERSION}_linux_amd64.tar.gz gh_${GH_VERSION}_linux_amd64/bin/gh --strip-components 2 -C /usr/local/bin && \
     rm -rf gh_${GH_VERSION}_linux_amd64.tar.gz && \
-    pip3 install --no-cache-dir -r /tmp/requirements_build.txt -r /tmp/requirements.txt && \
+    pip3 install --no-cache-dir -r /tmp/requirements_build.txt -r /tmp/requirements.txt pytest && \
     ansible-galaxy install --roles-path /etc/ansible/roles -r /tmp/requirements.yml && \
     apk del build-deps && \
     rm -rf /tmp/* && \

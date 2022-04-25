@@ -51,6 +51,16 @@ def do_it() {
                            --tags 'common,containerd'
                            """);
     }
+    stage("sleep") {
+        IMAGE.inside() {
+            sh("#!/bin/ash\nsleep 2");
+        }
+    }
+    stage("run integration test") {
+        IMAGE.inside() {
+            sh("#!/bin/ash\npytest tests/integration");
+        }
+    }
     stage("destroy") {
         run_terraform(IMAGE, "destroy -auto-approve");
     }
