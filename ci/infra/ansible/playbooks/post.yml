@@ -40,7 +40,7 @@
         state: present
         create: 'yes'
       with_items:
-        - { section: "kubernetes-master", option: "master_node", value: "{{ inventory_hostname }}" }
+        - { section: "kubernetes-master", option: "master_node", value: "{{ hostvars[inventory_hostname].ansible_host }}" }
         - { section: "kubernetes-master", option: "token", value: "{{ shell_token.stdout }}" }
       delegate_to: localhost
       run_once: 'yes'
@@ -55,7 +55,7 @@
         path: "{{ checkmk_kube_agent_path }}/kubernetes-nodes.ini"
         section: "kubernetes-worker"
         option: "{{ inventory_hostname }}"
-        value: "{{ inventory_hostname }}"
+        value: "{{ hostvars[inventory_hostname].ansible_host }}"
         state: present
         create: 'yes'
       delegate_to: localhost
