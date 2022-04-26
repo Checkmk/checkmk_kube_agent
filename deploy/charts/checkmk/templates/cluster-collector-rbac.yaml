@@ -1,5 +1,19 @@
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "checkmk.fullname" . }}-token-review
+  labels:
+    {{- include "checkmk.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - authentication.k8s.io  # Allows delegated authentication and authorization checks
+    resources:
+      - tokenreviews
+    verbs:
+      - "create"
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: {{ include "checkmk.fullname" . }}-token-review
@@ -9,7 +23,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: system:auth-delegator # Allows delegated authentication and authorization checks
+  name:  {{ include "checkmk.fullname" . }}-token-review
 subjects:
   - kind: ServiceAccount
     name: {{ include "checkmk.fullname" . }}-cluster-collector
