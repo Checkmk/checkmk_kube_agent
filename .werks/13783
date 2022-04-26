@@ -1,0 +1,13 @@
+Title: tighten cluster collector service account permissions
+Class: security
+Compatible: compat
+Component: helm
+Date: 1650963018
+Knowledge: doc
+Level: 1
+Version: 2.0.0-alpha.1
+
+The ServiceAccount of the cluster collector previously had access to the
+cluster role system:auth-delegator, which gave it permissions to both review
+access tokens and their permissions. However, it only needs the former of those
+permissions. A new cluster role is created, which excludes the latter.
