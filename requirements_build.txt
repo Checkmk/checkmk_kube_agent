@@ -1,0 +1,5 @@
+packaging==21.3
+pip==22.0.2
+semver==2.13.0
+setuptools==60.7.0
+wheel==0.37.0
