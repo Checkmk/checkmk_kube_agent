@@ -15,6 +15,7 @@ case $METHOD in
 
   minor | patch | beta | finalize_version)
     # Create set version commit and switch to a new branch
+    git fetch --prune --prune-tags
     git checkout ${BRANCH}
     git pull --rebase
     NEW_VERSION=${VERSION} make setversion;
