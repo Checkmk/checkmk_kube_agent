@@ -69,12 +69,7 @@ def validate_parameters_and_branch(method, version, branch) {
 }
 validate_parameters_and_branch(METHOD, VERSION, BRANCH)
 
-def main(BRANCH) {
-        stage('Checkout Sources') {
-            checkout(scm);
-            sh("git clean -fd");
-        }
-
+def main(BRANCH, METHOD) {
         def COMMIT_SHA;
         // TODO: at least consolidate in this repo...
         def DOCKER_GROUP_ID = sh(script: "getent group docker | cut -d: -f3", returnStdout: true);
@@ -82,13 +77,13 @@ def main(BRANCH) {
         def KUBE_AGENT_GITHUB_REPO = "tribe29/checkmk_kube_agent";
         def KUBE_AGENT_GITHUB_URL = "https://github.com/${KUBE_AGENT_GITHUB_REPO}";
         def CI_IMAGE = "checkmk-kube-agent-ci";
-        docker.build(CI_IMAGE, "--network=host -f docker/ci/Dockerfile .");
+        def VERSION;
 
-        stage("Build source and wheel package") {
-            docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
-                run_in_ash("make dist")
-            }
+        stage('Checkout Sources') {
+            checkout(scm);
+            sh("git clean -fd");
         }
+        docker.build(CI_IMAGE, "--network=host -f docker/ci/Dockerfile .");
 
         if (RELEASE_BUILD) {
             stage('Calculate Version') {
@@ -104,7 +99,7 @@ def main(BRANCH) {
 
             stage("Create or switch to tag") {
                 withCredentials([sshUserPrivateKey(credentialsId: "release", keyFileVariable: 'keyfile')]) {
-                    withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile}"]) {
+                    withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile} -l release"]) {
                         docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
                             run_in_ash("./ci/jenkins/scripts/tagging.sh ${VERSION} ${METHOD} ${BRANCH}")
                         }
@@ -118,13 +113,18 @@ def main(BRANCH) {
                 withCredentials([sshUserPrivateKey(credentialsId: "ssh_private_key_lisa_github", keyFileVariable: 'keyfile')]) {
                     withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile}"]) {
                         docker.image(CI_IMAGE).inside("--entrypoint=") {
-                            run_in_ash("git push --tags ${KUBE_AGENT_GITHUB_URL} ${BRANCH}:${BRANCH}")
+                            run_in_ash("git push --tags github ${BRANCH}")
                         }
                     }
                 }
             }
         }
 
+        stage("Build source and wheel package") {
+            docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
+                run_in_ash("make dist")
+            }
+        }
 
         stage("Build Images") {
             docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
@@ -172,7 +172,7 @@ def main(BRANCH) {
                 stage("Update helm repo index") {
                     sh("git checkout ${GITHUB_PAGES_BRANCH}");
                     withCredentials([sshUserPrivateKey(credentialsId: "release", keyFileVariable: 'keyfile')]) {
-                        withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile}"]) {
+                        withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile} -l release"]) {
                             docker.image(CI_IMAGE).inside("--entrypoint=") {
                                 run_in_ash("cp dist-helm/checkmk-kube-agent-helm-${VERSION}.tgz ${WORKSPACE}");
                                 run_in_ash("helm repo index ${WORKSPACE} --merge --url ${KUBE_AGENT_GITHUB_URL}/releases/download/v${VERSION}");
@@ -202,7 +202,7 @@ timeout(time: 12, unit: 'HOURS') {
                  "GIT_SSH_VARIANT=ssh",
                  "GIT_COMMITTER_NAME=Checkmk release system",
                  "GIT_COMMITTER_EMAIL=feedback@check-mk.org"]) {
-            main(BRANCH);
+            main(BRANCH, METHOD);
         }
     }
 }
