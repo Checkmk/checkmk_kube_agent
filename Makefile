@@ -42,7 +42,7 @@ PYTHON := python3
 BROWSER := $(PYTHON) -c "$$BROWSER_PYSCRIPT"
 PROJECT_NAME := checkmk_kube_agent
 CHECKMK_AGENT_VERSION := 2.1.0b1
-PROJECT_VERSION := $(shell $(PYTHON) -c "import src.${PROJECT_NAME};print(src.${PROJECT_NAME}.__version__)")
+PROJECT_VERSION := $(shell grep __version__ src/${PROJECT_NAME}/__init__.py | sed 's/__version__ = "//g' | sed 's/"//g')
 PROJECT_PYVERSION := $(shell $(PYTHON) -c "from packaging import version;print(str(version.parse('${PROJECT_VERSION}')))")
 ifdef DOCKER_TAG_PREFIX
 DOCKER_IMAGE_TAG := $(DOCKER_TAG_PREFIX)$(DOCKER_TAG_SUFFIX)
