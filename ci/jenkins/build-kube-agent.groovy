@@ -82,6 +82,7 @@ def main(BRANCH, METHOD) {
         stage('Checkout Sources') {
             checkout(scm);
             sh("git clean -fd");
+            sh("git remote add github git@github.com:${KUBE_AGENT_GITHUB_REPO}.git || true");
         }
         docker.build(CI_IMAGE, "--network=host -f docker/ci/Dockerfile .");
 
