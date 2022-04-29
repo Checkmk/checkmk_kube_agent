@@ -15,7 +15,7 @@ Features
 * Officially supports vanilla Kubernetes installations. Unofficially also works on other flavors (e.g. AWS EKS, AKS, GKE).
 * Supports Kubernetes version 1.21 to 1.23
 * Works with *Docker* and *containerd*
-* Uses cAdvisor_ to collect container metrics
+* Uses `cAdvisor`_ to collect container metrics
 * Runs the following objects on your cluster:
    * **node collector**:
         * runs as a DaemonSet on every node that has kubelet configured
@@ -32,8 +32,11 @@ Features
 * Supports PodSecurityPolicy and NetworkPolicy
 
 Installation
---------
+------------
 Please use the Helm charts provided in ``deploy/charts/checkmk`` or the manifests in ``deploy/kubernetes``. You will find detailed installation instructions there.
 
+You can also use our `helm repository`_ to install the collectors from our latest release.
 
-.. _cAdvisor: "https://github.com/google/cadvisor"
+
+.. _cAdvisor: https://github.com/google/cadvisor
+.. _helm repository: https://tribe29.github.io/checkmk_kube_agent/
