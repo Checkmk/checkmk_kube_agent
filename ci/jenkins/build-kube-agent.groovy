@@ -77,6 +77,7 @@ def main(BRANCH, METHOD) {
         def KUBE_AGENT_GITHUB_REPO = "tribe29/checkmk_kube_agent";
         def KUBE_AGENT_GITHUB_URL = "https://github.com/${KUBE_AGENT_GITHUB_REPO}";
         def CI_IMAGE = "checkmk-kube-agent-ci";
+        def HELM_REPO_INDEX_FILE="index.yaml";
         def VERSION;
 
         stage('Checkout Sources') {
@@ -106,7 +107,7 @@ def main(BRANCH, METHOD) {
                         }
                     }
                 }
-                COMMIT_SHA = ("git rev-list -n 1 v${VERSION}");
+                COMMIT_SHA = sh(script: "git rev-list -n 1 v${VERSION}", returnStdout: true).toString().trim();
             }
             // The tag must exist on github in order to be able to use it to create a github release later
             // This can be deleted if the push to github can be triggered some other way (see CMK-9584)
@@ -148,7 +149,7 @@ def main(BRANCH, METHOD) {
             }
         }
         if (RELEASE_BUILD) {
-            withCredentials([usernamePassword(credentialsId: "github-token-lisa", passwordVariable: 'GH_TOKEN')]) {
+            withCredentials([usernamePassword(credentialsId: "github-token-lisa", passwordVariable: 'GH_TOKEN', usernameVariable: "GH_USER")]) {
                 if (METHOD == "rebuild_version") {
                     stage("Delete github release") {
                         docker.image(CI_IMAGE).inside("--entrypoint=") {
@@ -162,7 +163,7 @@ def main(BRANCH, METHOD) {
                 stage("Create github release, upload helm chart artifact") {
                     docker.image(CI_IMAGE).inside("--entrypoint=") {
                         // Note: see more details on the "gh" tool in the Dockerfile of the CI image.
-                        run_in_ash("gh release create --repo ${KUBE_AGENT_GITHUB_REPO} --target ${COMMIT_SHA} --notes '' --title v${VERSION} v${VERSION} dist-helm/checkmk-kube-agent-helm-${VERSION}.tgz")
+                        run_in_ash("gh release create --repo=${KUBE_AGENT_GITHUB_REPO} --target=${COMMIT_SHA} --notes='' --title=v${VERSION} v${VERSION} dist-helm/checkmk-kube-agent-helm-${VERSION}.tgz")
                     }
                 }
             }
@@ -175,9 +176,19 @@ def main(BRANCH, METHOD) {
                     withCredentials([sshUserPrivateKey(credentialsId: "release", keyFileVariable: 'keyfile')]) {
                         withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile} -l release"]) {
                             docker.image(CI_IMAGE).inside("--entrypoint=") {
+                                run_in_ash("git pull");
                                 run_in_ash("cp dist-helm/checkmk-kube-agent-helm-${VERSION}.tgz ${WORKSPACE}");
-                                run_in_ash("helm repo index ${WORKSPACE} --merge --url ${KUBE_AGENT_GITHUB_URL}/releases/download/v${VERSION}");
-                                run_in_ash("git commit index.yaml -m 'Add helm chart version ${VERSION}'");
+
+                                if (fileExists("${HELM_REPO_INDEX_FILE}")) {
+                                    merge_index_cmd = "--merge ${HELM_REPO_INDEX_FILE}"
+                                }
+                                else {
+                                    merge_index_cmd = ""
+                                }
+
+                                run_in_ash("helm repo index ${WORKSPACE} ${merge_index_cmd} --url ${KUBE_AGENT_GITHUB_URL}/releases/download/v${VERSION}");
+                                run_in_ash("git add ${HELM_REPO_INDEX_FILE}");
+                                run_in_ash("git commit ${HELM_REPO_INDEX_FILE} -m 'Add helm chart version ${VERSION}'");
                                 run_in_ash("git push origin ${GITHUB_PAGES_BRANCH}");
                             }
                         }
@@ -186,7 +197,7 @@ def main(BRANCH, METHOD) {
                     withCredentials([sshUserPrivateKey(credentialsId: "ssh_private_key_lisa_github", keyFileVariable: 'keyfile')]) {
                         withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile}"]) {
                             docker.image(CI_IMAGE).inside("--entrypoint=") {
-                                run_in_ash("git push ${KUBE_AGENT_GITHUB_URL} ${GITHUB_PAGES_BRANCH}:${GITHUB_PAGES_BRANCH}");
+                                run_in_ash("git push github ${GITHUB_PAGES_BRANCH}");
                             }
                         }
                     }
