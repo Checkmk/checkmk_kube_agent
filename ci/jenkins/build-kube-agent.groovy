@@ -177,7 +177,7 @@ def main(BRANCH, METHOD) {
                         withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile} -l release"]) {
                             docker.image(CI_IMAGE).inside("--entrypoint=") {
                                 run_in_ash("git pull");
-                                run_in_ash("cp dist-helm/checkmk-kube-agent-helm-${VERSION}.tgz ${WORKSPACE}");
+                                run_in_ash("mv dist-helm/checkmk-kube-agent-helm-${VERSION}.tgz ${WORKSPACE}");
 
                                 if (fileExists("${HELM_REPO_INDEX_FILE}")) {
                                     merge_index_cmd = "--merge ${HELM_REPO_INDEX_FILE}"
