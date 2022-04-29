@@ -50,8 +50,8 @@ spec:
             - "--reader-whitelist={{ .Release.Namespace }}:{{ include "checkmk.fullname" . }}-checkmk"
             - "--writer-whitelist={{ .Release.Namespace }}:{{ include "checkmk.fullname" . }}-node-collector-container-metrics,{{ .Release.Namespace }}:{{ include "checkmk.fullname" . }}-node-collector-machine-sections"
           {{- if .Values.tlsCommunication.enabled }}
-            - "--ssl-keyfile=/etc/ca-certificates/cluster-collector-key.pam"
-            - "--ssl-certfile=/etc/ca-certificates/cluster-collector-cert.pam"
+            - "--ssl-keyfile=/etc/ca-certificates/cluster-collector-key.pem"
+            - "--ssl-certfile=/etc/ca-certificates/cluster-collector-cert.pem"
             - "--secure-protocol"
           {{- end }}
           env:
@@ -84,12 +84,12 @@ spec:
               mountPath: /tmp
           {{- if .Values.tlsCommunication.enabled }}
             - name: cluster-collector-key
-              mountPath: /etc/ca-certificates/cluster-collector-key.pam
-              subPath: cluster-collector-key.pam
+              mountPath: /etc/ca-certificates/cluster-collector-key.pem
+              subPath: cluster-collector-key.pem
               readOnly: true
             - name: cluster-collector-cert
-              mountPath: /etc/ca-certificates/cluster-collector-cert.pam
-              subPath: cluster-collector-cert.pam
+              mountPath: /etc/ca-certificates/cluster-collector-cert.pem
+              subPath: cluster-collector-cert.pem
               readOnly: true
           {{- end }}
       volumes:
@@ -104,13 +104,13 @@ spec:
             secretName: {{ include "checkmk.fullname" . }}-checkmk-tls
             items:
               - key: cluster-collector-key
-                path: cluster-collector-key.pam
+                path: cluster-collector-key.pem
         - name: cluster-collector-cert
           secret:
             secretName: {{ include "checkmk.fullname" . }}-checkmk-tls
             items:
               - key: cluster-collector-cert
-                path: cluster-collector-cert.pam
+                path: cluster-collector-cert.pem
       {{- end }}
       {{- with .Values.clusterCollector.nodeSelector }}
       nodeSelector:

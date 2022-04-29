@@ -67,12 +67,12 @@ spec:
           # cluster-collector-cert HTTPS
           volumeMounts:
             # - name: cluster-collector-key
-            #   mountPath: /etc/ca-certificates/cluster-collector-key.pam
-            #   subPath: cluster-collector-key.pam
+            #   mountPath: /etc/ca-certificates/cluster-collector-key.pem
+            #   subPath: cluster-collector-key.pem
             #   readOnly: true
             # - name: cluster-collector-cert
-            #   mountPath: /etc/ca-certificates/cluster-collector-cert.pam
-            #   subPath: cluster-collector-cert.pam
+            #   mountPath: /etc/ca-certificates/cluster-collector-cert.pem
+            #   subPath: cluster-collector-cert.pem
             #   readOnly: true
             # gunicorn needs a writeable /tmp and runs best with ram backed /tmp
             # https://docs.gunicorn.org/en/latest/faq.html#blocking-os-fchmod
@@ -96,8 +96,8 @@ spec:
             - "--host=0.0.0.0"
             - "--reader-whitelist=checkmk-monitoring:checkmk"
             - "--writer-whitelist=checkmk-monitoring:node-collector-container-metrics,checkmk-monitoring:node-collector-machine-sections"
-            # - "--ssl-keyfile=/etc/ca-certificates/cluster-collector-key.pam"
-            # - "--ssl-certfile=/etc/ca-certificates/cluster-collector-cert.pam"
+            # - "--ssl-keyfile=/etc/ca-certificates/cluster-collector-key.pem"
+            # - "--ssl-certfile=/etc/ca-certificates/cluster-collector-cert.pem"
             # - "--secure-protocol"
           ports:
             - containerPort: 10050
@@ -131,10 +131,10 @@ spec:
         #     secretName: cluster-collector-secret
         #     items:
         #       - key: cluster-collector-key
-        #         path: cluster-collector-key.pam
+        #         path: cluster-collector-key.pem
         # - name: cluster-collector-cert
         #   secret:
         #     secretName: cluster-collector-secret
         #     items:
         #       - key: cluster-collector-cert
-        #         path: cluster-collector-cert.pam
+        #         path: cluster-collector-cert.pem

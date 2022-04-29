@@ -105,8 +105,8 @@ spec:
           # HTTPS: Uncomment volumeMounts checkmk-ca-cert for HTTPS
           # volumeMounts:
           #   - name: checkmk-ca-cert
-          #     mountPath: /etc/ca-certificates/checkmk-ca-cert.pam
-          #     subPath: checkmk-ca-cert.pam
+          #     mountPath: /etc/ca-certificates/checkmk-ca-cert.pem
+          #     subPath: checkmk-ca-cert.pem
           #     readOnly: true
           command:
             - "/usr/local/bin/checkmk-container-metrics-collector"
@@ -189,7 +189,7 @@ spec:
         #     secretName: cluster-collector-secret
         #     items:
         #       - key: checkmk-ca-cert
-        #         path: checkmk-ca-cert.pam
+        #         path: checkmk-ca-cert.pem
         - name: var-run
           hostPath:
             path: /var/run
@@ -233,8 +233,8 @@ spec:
           # HTTPS: Uncomment volumeMounts checkmk-ca-cert for HTTPS
           # volumeMounts:
           #   - name: checkmk-ca-cert
-          #     mountPath: /etc/ca-certificates/checkmk-ca-cert.pam
-          #     subPath: checkmk-ca-cert.pam
+          #     mountPath: /etc/ca-certificates/checkmk-ca-cert.pem
+          #     subPath: checkmk-ca-cert.pem
           #     readOnly: true
           command:
             - "/usr/local/bin/checkmk-machine-sections-collector"
@@ -276,4 +276,4 @@ spec:
       #       secretName: cluster-collector-secret
       #       items:
       #         - key: checkmk-ca-cert
-      #           path: checkmk-ca-cert.pam
+      #           path: checkmk-ca-cert.pem
