@@ -18,14 +18,32 @@ helm repo update
 
 _See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._ -->
 
+## Add repository
+```console
+# Helm
+helm repo add [REPO] https://tribe29.github.io/checkmk_kube_agent
+```
+Use any name for `REPO`, e.g. tribe29.
+
 ## Install & Upgrade Chart
 
 ```console
 # Helm
-helm upgrade --install --create-namespace -n [RELEASE_NAMESPACE] [RELEASE_NAME] [-f values.yaml] .
+helm upgrade --install --create-namespace -n [RELEASE_NAMESPACE] [RELEASE_NAME] [REPO]/checkmk [-f values.yaml]
 ```
 
-Note that the flag `--create-namespace` will create the specified namespace `RELEASE_NAMESPACE` if it does not yet exists.
+The flag `--create-namespace` will create the specified namespace `RELEASE_NAMESPACE` if it does not yet exists.
+
+Freely set `RELEASE_NAME`. Using the name of the chart, in this case *checkmk*, will result in short names of your Kubernetes objects.
+
+Use the same name for `REPO` as in the previous step.
+
+Important note: At the moment, we only have pre-releases of our collectors available. In order to install them, you must explicitly agree to deploy development releases, or specify an explicit version that should be deployed.
+```console
+# Helm
+helm upgrade --install --create-namespace -n [RELEASE_NAMESPACE] [RELEASE_NAME] [REPO]/checkmk --devel
+helm upgrade --install --create-namespace -n [RELEASE_NAMESPACE] [RELEASE_NAME] [REPO]/checkmk --version 1.0.0-beta.2
+```
 
 _See [configuration](#configuration) below._
 
@@ -62,8 +80,6 @@ To render plain Kubernetes manifests from the Helm chart, run:
 helm template -n [RELEASE_NAMESPACE] [RELEASE_NAME] .
 ```
 
-Note that, as also with the other commands (except `helm uninstall`), you can speficy additional helm value files via `-f [MY_CUSTOM_VALUES_FILE]`, which configures the Helm chart using the custom configuration specified.
-
 ## Configuration
 
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments:
@@ -71,6 +87,11 @@ See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_h
 ```console
 helm show values .
 ```
+
+To configure the installation, you can specify additional helm value files via `-f [MY_CUSTOM_VALUES_FILE]`.
+
+We recommend using the `values.yaml` provided in this repository.
+
 ### Configure the Checkmk Kubernetes Collectors
 By default, the *Checkmk Cluster Collector service* is not exposed and communicates using HTTP. Depending on your requirements, either expose the  *Checkmk Cluster Collector service* via NodePort or Ingress.
 
