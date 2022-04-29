@@ -25,7 +25,7 @@ imagePullSecrets: []
 image:
   # Overrides the image tag whose default is the chart appVersion.
   # ref: https://hub.docker.com/r/checkmk/kubernetes-collector/tags
-  tag: "1.0.0-beta.1"
+  tag: "1.0.0-beta.2"
 
 rbac:
   pspEnabled: true
