@@ -305,7 +305,7 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
         port=os.environ.get("CLUSTER_COLLECTOR_SERVICE_PORT_API", "10050"),
         max_retries=10,
         polling_interval=60,
-        ca_cert="/etc/ca-certificates/checkmk-ca-cert.pam",
+        ca_cert="/etc/ca-certificates/checkmk-ca-cert.pem",
     )
 
     return parser.parse_args(argv)

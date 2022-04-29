@@ -100,8 +100,8 @@ spec:
           {{- if .Values.tlsCommunication.enabled }}
           volumeMounts:
             - name: checkmk-ca-cert
-              mountPath: /etc/ca-certificates/checkmk-ca-cert.pam
-              subPath: checkmk-ca-cert.pam
+              mountPath: /etc/ca-certificates/checkmk-ca-cert.pem
+              subPath: checkmk-ca-cert.pem
               readOnly: true
           {{- end }}
           env:
@@ -134,5 +134,5 @@ spec:
             secretName: {{ include "checkmk.fullname" . }}-checkmk-tls
             items:
               - key: checkmk-ca-cert
-                path: checkmk-ca-cert.pam
+                path: checkmk-ca-cert.pem
       {{- end }}
