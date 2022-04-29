@@ -1,8 +1,0 @@
-[bandit]
-# targets: comma separated list of target dirs/files to run bandit on
-# exclude: comma separated list of excluded paths
-# skips  : comma separated list of tests to skip
-# tests  : comma separated list of tests to run
-
-targets = src,tests
-recursive = true
