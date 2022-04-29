@@ -6,8 +6,7 @@ ARG CHECKMK_AGENT_VERSION
 FROM checkmk/check-mk-raw:"$CHECKMK_AGENT_VERSION" as checkmk
 
 FROM python:3.10-alpine3.15 as base
-# updating packages for security reasons
-RUN apk add --no-cache expat=2.4.7-r0 libuuid=2.37.4-r0 coreutils=9.0-r2
+RUN apk update
 
 FROM base as builder
 ARG CHECKMK_AGENT_VERSION
