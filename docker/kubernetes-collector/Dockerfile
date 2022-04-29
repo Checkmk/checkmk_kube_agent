@@ -9,24 +9,28 @@ FROM python:3.10-alpine3.15 as base
 # updating packages for security reasons
 RUN apk add --no-cache expat=2.4.7-r0 libuuid=2.37.4-r0 coreutils=9.0-r2
 
+FROM base as builder
+ARG CHECKMK_AGENT_VERSION
+ARG PROJECT_PYVERSION
+COPY ./requirements_build.txt /tmp
+COPY dist/checkmk_kube_agent-"$PROJECT_PYVERSION".tar.gz /tmp/
+COPY --from=checkmk "/opt/omd/versions/${CHECKMK_AGENT_VERSION}.cre/share/check_mk/agents/check_mk_agent.openwrt" /install/bin/check_mk_agent.openwrt
+COPY docker/kubernetes-collector/wrapper.sh /install/bin/check_mk_agent
+RUN pip3 install --no-cache-dir -r /tmp/requirements_build.txt && \
+    pip3 install --no-cache-dir --prefix=/install /tmp/checkmk_kube_agent-"$PROJECT_PYVERSION".tar.gz && \
+    sed -i "s/VERSION_CMK/$CHECKMK_AGENT_VERSION/" /install/bin/check_mk_agent && \
+    sed -i "s/VERSION_AGENT/$PROJECT_PYVERSION/" /install/bin/check_mk_agent && \
+    chmod +x /install/bin/check_mk_agent && \
+    rm -rf /tmp/* && \
+    rm -rf /var/cache/apk/*
+
 FROM base as release
 ARG CHECKMK_AGENT_VERSION
 ARG GIT_HASH
-ARG PROJECT_PYVERSION
 ENV CHECKMK_AGENT_VERSION="${CHECKMK_AGENT_VERSION}"
-COPY ./requirements_build.txt /tmp
-COPY dist/checkmk_kube_agent-"$PROJECT_PYVERSION".tar.gz /tmp/
-COPY --from=checkmk "/opt/omd/versions/${CHECKMK_AGENT_VERSION}.cre/share/check_mk/agents/check_mk_agent.openwrt" /usr/local/bin/check_mk_agent.openwrt
-COPY docker/kubernetes-collector/wrapper.sh /usr/local/bin/check_mk_agent
-RUN pip3 install --no-cache-dir -r /tmp/requirements_build.txt && \
-    pip3 install --no-cache-dir /tmp/checkmk_kube_agent-"$PROJECT_PYVERSION".tar.gz && \
-    sed -i "s/VERSION_CMK/$CHECKMK_AGENT_VERSION/" /usr/local/bin/check_mk_agent && \
-    sed -i "s/VERSION_AGENT/$PROJECT_PYVERSION/" /usr/local/bin/check_mk_agent && \
-    chmod +x /usr/local/bin/check_mk_agent && \
-    addgroup appgroup -g 10001 && \
-    adduser -HD appuser -G appgroup -u 10001 && \
-    rm -rf /tmp/* && \
-    rm -rf /var/cache/apk/*
+COPY --from=builder /install /usr/local
+RUN addgroup appgroup -g 10001 && \
+    adduser -HD appuser -G appgroup -u 10001
 RUN echo "${GIT_HASH}" > GIT_HASH.txt
 
 FROM release as dev
