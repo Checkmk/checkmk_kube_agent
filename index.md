@@ -24,6 +24,15 @@ Example:
 helm upgrade --install --create-namespace -n checkmk-monitoring checkmk tribe29/checkmk
 ```
 
+## Note
+At the moment, we only have pre-releases of our collectors available. In order to install them, you must explicitly agree to deploy development releases, or specify an explicit version that should be deployed.
+
+Example:
+```sh
+helm upgrade --install --create-namespace -n checkmk-monitoring checkmk tribe29/checkmk --devel
+helm upgrade --install --create-namespace -n checkmk-monitoring checkmk tribe29/checkmk --version 1.0.0-beta.2
+```
+
 For more details on the installation please see the [chart's README](https://github.com/tribe29/checkmk_kube_agent/blob/main/deploy/charts/checkmk/README.md).
 
 ## License
