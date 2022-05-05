@@ -2,28 +2,41 @@
 
 Installs the checkmk Kubernetes agent.
 
-_Note: This chart is relatively young. Please use with care, read the documentation carefully, and file Pull Requests if required._
+_Note: This chart is relatively young. Please use with care, read the documentation carefully, and file Issues or Pull Requests if required._
 
 ## Prerequisites
 
 - Kubernetes 1.19+
 - Helm 3+
 
-<!-- ## Get Repo Info
+## Add the Helm Repository
 
 ```console
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add tribe29 https://tribe29.github.io/checkmk_kube_agent
 helm repo update
 ```
 
-_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._ -->
+_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
-## Install & Upgrade Chart
+## Install or Upgrade Chart
+
+To install or upgrade the Helm chart, use the following command template:
 
 ```console
-# Helm
-helm upgrade --install --create-namespace -n [RELEASE_NAMESPACE] [RELEASE_NAME] [-f values.yaml] .
+helm upgrade --install --create-namespace -n [RELEASE_NAMESPACE] [RELEASE_NAME] [-f values.custom.yaml] tribe29/checkmk
 ```
+
+**At the moment, we only have pre-releases of our collectors available. In order to install them, you must explicitly agree to deploy development releases, or specify an explicit version that should be deployed.**
+
+```console
+# example to deploy development release
+helm upgrade --install --create-namespace -n checkmk-monitoring checkmk tribe29/checkmk --devel
+
+# example to deploy explicit version
+helm upgrade --install --create-namespace -n checkmk-monitoring checkmk tribe29/checkmk --version 1.0.0-beta.2
+```
+
+Optionally, you can pass `-f values.custom.yaml` to overwrite default values of the chart specified in your custom `values.custom.yaml` file.
 
 Note that the flag `--create-namespace` will create the specified namespace `RELEASE_NAMESPACE` if it does not yet exists.
 
@@ -34,7 +47,6 @@ _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documen
 ## Uninstall Chart
 
 ```console
-# Helm
 helm uninstall -n [RELEASE_NAMESPACE] [RELEASE_NAME]
 ```
 
@@ -49,8 +61,8 @@ The [helm-diff](https://github.com/databus23/helm-diff) plugin gives us the poss
 Install it via `helm plugin install https://github.com/databus23/helm-diff`, then you can run the following prior to an install or upgrade command:
 
 ```console
-# Helm (requires helm-diff plugin)
-helm diff upgrade --install -n [RELEASE_NAMESPACE] [RELEASE_NAME] [-f values.yaml] .
+# Helm requires helm-diff plugin
+helm diff upgrade --install -n [RELEASE_NAMESPACE] [RELEASE_NAME] [-f values.yaml] tribe29/checkmk
 ```
 
 ## Render Helm templates
@@ -58,8 +70,7 @@ helm diff upgrade --install -n [RELEASE_NAMESPACE] [RELEASE_NAME] [-f values.yam
 To render plain Kubernetes manifests from the Helm chart, run:
 
 ```console
-# Helm
-helm template -n [RELEASE_NAMESPACE] [RELEASE_NAME] .
+helm template -n [RELEASE_NAMESPACE] [RELEASE_NAME] tribe29/checkmk
 ```
 
 Note that, as also with the other commands (except `helm uninstall`), you can speficy additional helm value files via `-f [MY_CUSTOM_VALUES_FILE]`, which configures the Helm chart using the custom configuration specified.
@@ -69,7 +80,7 @@ Note that, as also with the other commands (except `helm uninstall`), you can sp
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments:
 
 ```console
-helm show values .
+helm show values tribe29/checkmk
 ```
 ### Configure the Checkmk Kubernetes Collectors
 By default, the *Checkmk Cluster Collector service* is not exposed and communicates using HTTP. Depending on your requirements, either expose the  *Checkmk Cluster Collector service* via NodePort or Ingress.
