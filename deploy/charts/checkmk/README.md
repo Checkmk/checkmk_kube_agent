@@ -9,26 +9,17 @@ _Note: This chart is relatively young. Please use with care, read the documentat
 - Kubernetes 1.19+
 - Helm 3+
 
-<!-- ## Get Repo Info
-
-```console
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-```
-
-_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._ -->
-
 ## Add repository
 ```console
-# Helm
 helm repo add [REPO] https://tribe29.github.io/checkmk_kube_agent
+helm repo update
 ```
 Use any name for `REPO`, e.g. tribe29.
+_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
-## Install & Upgrade Chart
+## Install or upgrade chart
 
 ```console
-# Helm
 helm upgrade --install --create-namespace -n [RELEASE_NAMESPACE] [RELEASE_NAME] [REPO]/checkmk [-f values.yaml]
 ```
 
@@ -38,10 +29,15 @@ Freely set `RELEASE_NAME`. Using the name of the chart, in this case *checkmk*, 
 
 Use the same name for `REPO` as in the previous step.
 
-Important note: At the moment, we only have pre-releases of our collectors available. In order to install them, you must explicitly agree to deploy development releases, or specify an explicit version that should be deployed.
+Optionally, you can pass `-f values.yaml` to overwrite default values of the chart specified in your custom `values.yaml` file.
+
+**At the moment, we only have pre-releases of our collectors available. In order to install them, you must explicitly agree to deploy development releases, or specify an explicit version that should be deployed.**
+
 ```console
-# Helm
+# example to deploy development release
 helm upgrade --install --create-namespace -n [RELEASE_NAMESPACE] [RELEASE_NAME] [REPO]/checkmk --devel
+
+# example to deploy explicit version
 helm upgrade --install --create-namespace -n [RELEASE_NAMESPACE] [RELEASE_NAME] [REPO]/checkmk --version 1.0.0-beta.2
 ```
 
@@ -49,10 +45,9 @@ _See [configuration](#configuration) below._
 
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
-## Uninstall Chart
+## Uninstall chart
 
 ```console
-# Helm
 helm uninstall -n [RELEASE_NAMESPACE] [RELEASE_NAME]
 ```
 
@@ -68,7 +63,7 @@ Install it via `helm plugin install https://github.com/databus23/helm-diff`, the
 
 ```console
 # Helm (requires helm-diff plugin)
-helm diff upgrade --install -n [RELEASE_NAMESPACE] [RELEASE_NAME] [-f values.yaml] .
+helm diff upgrade --install -n [RELEASE_NAMESPACE] [RELEASE_NAME] [-f values.yaml] [REPO]/checkmk
 ```
 
 ## Render Helm templates
@@ -76,8 +71,7 @@ helm diff upgrade --install -n [RELEASE_NAMESPACE] [RELEASE_NAME] [-f values.yam
 To render plain Kubernetes manifests from the Helm chart, run:
 
 ```console
-# Helm
-helm template -n [RELEASE_NAMESPACE] [RELEASE_NAME] .
+helm template -n [RELEASE_NAMESPACE] [RELEASE_NAME] [REPO]/checkmk
 ```
 
 ## Configuration
@@ -85,7 +79,7 @@ helm template -n [RELEASE_NAMESPACE] [RELEASE_NAME] .
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments:
 
 ```console
-helm show values .
+helm show values [REPO]/checkmk
 ```
 
 To configure the installation, you can specify additional helm value files via `-f [MY_CUSTOM_VALUES_FILE]`.
