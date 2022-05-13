@@ -15,7 +15,7 @@ ARG CHECKMK_AGENT_VERSION
 ARG PROJECT_PYVERSION
 COPY ./requirements_build.txt /tmp
 COPY dist/checkmk_kube_agent-"$PROJECT_PYVERSION".tar.gz /tmp/
-COPY --from=checkmk "/opt/omd/versions/${CHECKMK_AGENT_VERSION}.cre/share/check_mk/agents/check_mk_agent.openwrt" /install/bin/check_mk_agent.openwrt
+COPY --from=checkmk "/opt/omd/versions/default/share/check_mk/agents/check_mk_agent.openwrt" /install/bin/check_mk_agent.openwrt
 COPY docker/kubernetes-collector/wrapper.sh /install/bin/check_mk_agent
 RUN pip3 install --no-cache-dir -r /tmp/requirements_build.txt && \
     pip3 install --no-cache-dir --prefix=/install /tmp/checkmk_kube_agent-"$PROJECT_PYVERSION".tar.gz && \
@@ -30,7 +30,7 @@ ARG CHECKMK_AGENT_VERSION
 ARG GIT_HASH
 ENV CHECKMK_AGENT_VERSION="${CHECKMK_AGENT_VERSION}"
 COPY --from=builder /install /usr/local
-COPY --from=checkmk "/opt/omd/versions/${CHECKMK_AGENT_VERSION}.cre/share/check_mk/agents/plugins/mk_inventory.linux" /usr/lib/check_mk_agent/plugins/mk_inventory.linux
+COPY --from=checkmk "/opt/omd/versions/default/share/check_mk/agents/plugins/mk_inventory.linux" /usr/lib/check_mk_agent/plugins/mk_inventory.linux
 RUN addgroup appgroup -g 10001 && \
     adduser -HD appuser -G appgroup -u 10001
 RUN echo "${GIT_HASH}" > GIT_HASH.txt
