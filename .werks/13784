@@ -1,0 +1,12 @@
+Title: customise liveness probe
+Class: feature
+Compatible: compat
+Component: helm
+Date: 1652694041
+Knowledge: undoc
+Level: 1
+Version: 2.0.0-alpha.1
+
+It is now possible to customise the cluster collector's liveness probe: modify
+values set for the liveness probe's initialDelaySeconds, periodSeconds,
+timeoutSeconds, and failureThreshold.
