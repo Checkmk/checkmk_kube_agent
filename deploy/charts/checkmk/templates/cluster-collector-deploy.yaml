@@ -71,8 +71,10 @@ spec:
               {{- else }}
               scheme: HTTP
               {{- end }}
-            initialDelaySeconds: 3
-            periodSeconds: 10
+            initialDelaySeconds: {{ .Values.clusterCollector.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.clusterCollector.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.clusterCollector.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.clusterCollector.livenessProbe.failureThreshold }}
           resources:
             {{- toYaml .Values.clusterCollector.resources | nindent 12 }}
           ports:
