@@ -1,0 +1,15 @@
+---
+- name: "Snapshot."
+  hosts: "{{ run_hosts }}"
+  gather_facts: 'false'
+  tasks:
+    - name: "Snapshot VMs: {{ snap_state }}."
+      community.general.proxmox_snap:
+        api_user: "{{ proxmox_api_user }}"
+        api_password: "{{ proxmox_api_password }}"
+        api_host: pve-fra-001.tribe29.com
+        snapname: "{{ snap_name }}"
+        state: "{{ snap_state }}"
+        vmid: "{{ pve_id }}"
+        hostname: "{{ inventory_hostname }}"
+      delegate_to: localhost
