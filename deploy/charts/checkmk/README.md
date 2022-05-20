@@ -31,16 +31,6 @@ Use the same name for `REPO` as in the previous step.
 
 Optionally, you can pass `-f values.yaml` to overwrite default values of the chart specified in your custom `values.yaml` file.
 
-**At the moment, we only have pre-releases of our collectors available. In order to install them, you must explicitly agree to deploy development releases, or specify an explicit version that should be deployed.**
-
-```console
-# example to deploy development release
-helm upgrade --install --create-namespace -n [RELEASE_NAMESPACE] [RELEASE_NAME] [REPO]/checkmk --devel
-
-# example to deploy explicit version
-helm upgrade --install --create-namespace -n [RELEASE_NAMESPACE] [RELEASE_NAME] [REPO]/checkmk --version 1.0.0-beta.2
-```
-
 _See [configuration](#configuration) below._
 
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
