@@ -1,4 +1,6 @@
 ---
+checkmk_kube_agent_path: "{{ lookup('env', 'CHECKMK_KUBE_AGENT_PATH') }}"
+
 kubernetes_workloads:
   - 00_namespace.yaml
   - pod-security-policy.yaml
@@ -9,6 +11,3 @@ kubernetes_workloads:
   - cluster-collector.yaml
   - node-collector.yaml
  #- ingress.yaml
-
-# Default value, should be overwritten at playbook execution
-container_runtime: docker

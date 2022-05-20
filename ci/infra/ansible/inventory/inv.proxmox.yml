@@ -8,6 +8,15 @@ user: "{{ lookup('env','PM_USER') }}"
 password: "{{ lookup('env','PM_PASS') }}"
 validate_certs: true
 want_facts: true
+keyed_groups:
+    # proxmox_tags_parsed is an example of a fact only returned when 'want_facts=true'
+  - key: proxmox_tags_parsed
+    separator: "_"
+    prefix: group
+groups:
+  kubernetes_master: "'master' in (proxmox_tags_parsed|list)"
+  kubernetes_nodes: "'node' in (proxmox_tags_parsed|list)"
+
 # Keep this as a reference for the future:
 # keyed_groups:
 #     # proxmox_tags_parsed is an example of a fact only returned when 'want_facts=true'
