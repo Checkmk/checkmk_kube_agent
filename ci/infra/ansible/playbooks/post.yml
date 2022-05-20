@@ -1,52 +1,65 @@
 ---
 - name: "Post Tasks on Master."
-  hosts: "kubernetes-tests-master*"
+  hosts: "{{ run_hosts }}"
   remote_user: "{{ ansible_ssh_remote_user }}"
   become: 'yes'
   tags: [always, post]
   tasks:
-    - name: "Ensure Python libraries are installed."
-      ansible.builtin.pip:
-        name:
-          - kubernetes >= 12.0.0
-          - PyYAML >= 3.11
-          - jsonpatch
-    - name: "Upload Workloads."
-      ansible.builtin.copy:
-        src: "{{checkmk_kube_agent_path}}/deploy/kubernetes/{{ item }}"
-        dest: "/root/{{ item }}"
-      loop: "{{ kubernetes_workloads }}"
-    - name: "Apply Workloads to Cluster."
-      kubernetes.core.k8s:
-        state: present
-        src: "/root/{{ item }}"
-      loop: "{{ kubernetes_workloads }}"
-    - name: "Download Kubernetes Auth Files."
-      ansible.builtin.fetch:
-        src: "/etc/kubernetes/admin.conf"
-        dest: "/tmp/kube-config"
-    - name: "Get token."
-      ansible.builtin.shell:
-        cmd: "kubectl get secret $(kubectl get serviceaccount checkmk -o=jsonpath='{.secrets[*].name}' -n checkmk-monitoring) -n checkmk-monitoring -o=jsonpath='{.data.token}' | base64 --decode"
-      register: shell_token
+    - name: "Run Tasks on Masters."
+      block:
+      - name: "Ensure Python PIP is installed."
+        ansible.builtin.package:
+          name: python3-pip
+          state: present 
 
-    - name: "Write INI file."
-      become: 'no'
-      community.general.ini_file:
-        path: "{{ checkmk_kube_agent_path }}/kubernetes-master.ini"
-        section: "{{ item.section }}"
-        option: "{{ item.option }}"
-        value: "{{ item.value }}"
-        state: present
-        create: 'yes'
-      with_items:
-        - { section: "kubernetes-master", option: "master_node", value: "{{ hostvars[inventory_hostname].ansible_host }}" }
-        - { section: "kubernetes-master", option: "token", value: "{{ shell_token.stdout }}" }
-      delegate_to: localhost
-      run_once: 'yes'
+      - name: "Ensure Python libraries are installed."
+        ansible.builtin.pip:
+          name:
+            - kubernetes >= 12.0.0
+            - PyYAML >= 3.11
+            - jsonpatch
+      - name: "Upload Workloads."
+        ansible.builtin.copy:
+          src: "{{ checkmk_kube_agent_path }}/deploy/kubernetes/{{ item }}"
+          dest: "/root/{{ item }}"
+        loop: "{{ kubernetes_workloads }}"
+      
+      # Could be done with helm module
+      # https://docs.ansible.com/ansible/latest/collections/kubernetes/core/helm_module.html
+      - name: "Apply Workloads to Cluster."
+        kubernetes.core.k8s:
+          state: present
+          src: "/root/{{ item }}"
+        loop: "{{ kubernetes_workloads }}"
+
+      - name: "Download Kubernetes Auth Files."
+        ansible.builtin.fetch:
+          src: "/etc/kubernetes/admin.conf"
+          dest: "/tmp/kube-config"
+
+      - name: "Get token."
+        ansible.builtin.shell:
+          cmd: "kubectl get secret $(kubectl get serviceaccount checkmk -o=jsonpath='{.secrets[*].name}' -n checkmk-monitoring) -n checkmk-monitoring -o=jsonpath='{.data.token}' | base64 --decode"
+        register: shell_token
+
+      - name: "Write INI file."
+        become: 'no'
+        community.general.ini_file:
+          path: "{{ checkmk_kube_agent_path }}/kubernetes-master.ini"
+          section: "{{ item.section }}"
+          option: "{{ item.option }}"
+          value: "{{ item.value }}"
+          state: present
+          create: 'yes'
+        with_items:
+          - { section: "kubernetes-master", option: "master_node", value: "{{ hostvars[inventory_hostname].ansible_host }}" }
+          - { section: "kubernetes-master", option: "token", value: "{{ shell_token.stdout }}" }
+        delegate_to: localhost
+        run_once: 'yes'
+      when: ('master' in kubernetes_role)
 
 - name: "Writing nodes INI file."
-  hosts: kubernetes_nodes
+  hosts: "{{ run_hosts }}"
   remote_user: "{{ ansible_ssh_remote_user }}"
   tags: [always, post]
   tasks:
@@ -59,9 +72,10 @@
         state: present
         create: 'yes'
       delegate_to: localhost
+      when: ('node' in kubernetes_role)
 
 - name: "Wrapping up."
-  hosts: all
+  hosts: "{{ run_hosts }}"
   remote_user: "{{ ansible_ssh_remote_user }}"
   tags: [always, post]
   tasks:

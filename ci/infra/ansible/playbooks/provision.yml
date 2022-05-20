@@ -1,33 +1,57 @@
 ---
-- name: "Provision Base."
-  hosts: all
+- name: "Prepare Provisioning."
+  hosts: "{{ run_hosts }}"
   remote_user: "{{ ansible_ssh_remote_user }}"
-  tags: [never, base]
-  become: 'true'
-  roles:
-    - thorian93.common
-    - thorian93.upgrade
+  tasks:
+    - name: "Get Provisioning State."
+      ansible.builtin.stat:
+        path: /k8s-provisioned
+      register: provisioned
+
+## Roles do not support OS yet
+# - name: "Provision Base."
+#   hosts: "{{ run_hosts }}"
+#   remote_user: "{{ ansible_ssh_remote_user }}"
+#   become: 'true'
+#   roles:
+#     - thorian93.common
+#     - thorian93.upgrade
 
 - name: "Provision Docker."
-  hosts: all
+  hosts: "{{ run_hosts }}"
   remote_user: "{{ ansible_ssh_remote_user }}"
-  tags: [never, docker]
   become: 'true'
-  roles:
-    - geerlingguy.docker
+  tasks:
+    - name: "Run docker role."
+      ansible.builtin.include_role:
+        name: geerlingguy.docker
+      when: ("docker" in container_runtime) and not provisioned.stat.exists
 
 - name: "Provision containerd."
-  hosts: all
+  hosts: "{{ run_hosts }}"
   remote_user: "{{ ansible_ssh_remote_user }}"
-  tags: [never, containerd, container]
   become: 'true'
-  roles:
-    - geerlingguy.containerd
+  tasks:
+    - name: "Run containerd role."
+      ansible.builtin.include_role:
+        name: geerlingguy.containerd
+      when: ("containerd" in container_runtime) and not provisioned.stat.exists
 
 - name: "Provision Kubernetes."
-  hosts: all
+  hosts: "{{ run_hosts }}"
   remote_user: "{{ ansible_ssh_remote_user }}"
-  tags: [never, docker, container, containerd, kubernetes]
   become: 'true'
-  roles:
-    - geerlingguy.kubernetes
+  tasks:
+    - name: "Run kubernetes role."
+      ansible.builtin.include_role:
+        name: geerlingguy.kubernetes
+      when: not provisioned.stat.exists
+
+- name: "Finish Provisioning."
+  hosts: "{{ run_hosts }}"
+  remote_user: "{{ ansible_ssh_remote_user }}"
+  tasks:
+    - name: "Set Provisioning Flag."
+      ansible.builtin.file:
+        path: /k8s-provisioned
+        state: touch
