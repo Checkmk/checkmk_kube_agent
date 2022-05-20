@@ -1,46 +1,45 @@
 ---
 - name: "Deploy."
-  hosts: kubernetes
-  remote_user: "{{ ansible_ssh_remote_user }}"
+  hosts: "{{ run_hosts }}"
   gather_facts: 'false'
   tasks:
     - name: "Deploy VMs."
       community.general.proxmox_kvm:
-        state: present
-        node: pve-fra-001
-        clone: kube-ubuntu2004
-        full: 'yes'
-        name: "{{ inventory_hostname }}"
-        storage: nvme1
-        agent: 'yes'
         api_user: "{{ proxmox_api_user }}"
         api_password: "{{ proxmox_api_password }}"
         api_host: pve-fra-001.tribe29.com
+        state: present
+        node: pve-fra-001
+        clone: kube-ubuntu2204
+        full: 'no'
+        name: "{{ inventory_hostname }}"
+        newid: "{{ pve_id }}"
+        pool: "Kubernetes-Test-VM"
+      delegate_to: localhost
+
+    - name: "Wait for deployment to finish."
+      ansible.builtin.pause:
+        seconds: 5
+
+    - name: "Configure VMs."
+      community.general.proxmox_kvm:
+        api_user: "{{ proxmox_api_user }}"
+        api_password: "{{ proxmox_api_password }}"
+        api_host: pve-fra-001.tribe29.com
+        state: present
+        node: pve-fra-001
+        name: "{{ inventory_hostname }}"
+        newid: "{{ pve_id }}"
+        pool: "Kubernetes-Test-VM"
+        update: 'yes'
         ciuser: "test"
         cipassword: "test"
         sshkeys: "ecdsa-sha2-nistp521 AAAAE2VjZHNhLXNoYTItbmlzdHA1MjEAAAAIbmlzdHA1MjEAAACFBAFkUaZ+ONeO8+8ukLr9LbY8xsMSKzKgoBo2i7Nly4Sy2TTAOjYdMsml9GEP6lC28+hvzRZxPgSc5y3cFlTxwnEQ1AAXpeJgFgbkINsAm6ZOhhiZo+6MK0LQY2DmvEmwglvR7UD2VaSQiheF/+Zmq3ozYNkgnyse57W+K23vk+enwhSo5A== robin@tribe29"
-        searchdomains: 'dev.tribe29.com'
+        searchdomains: 'lan.tribe29.com'
         nameservers: "{{ kubernetes_vms_dns }}"
-        cores: 2
-        memory: 2048
-        ide:
-          ide2: 'local:cloudinit'
-        net:
-          net0: 'virtio,bridge=vmbr1'
+        cores: 4
+        memory: 4096
+        tags: "{{ proxmox_tags }}"
         ipconfig:
           ipconfig0: 'ip={{ ansible_host }}/24,gw={{ kubernetes_vms_gateway }}'
-      throttle: 1  # Proxmox seems to dislike parallel clones
-      delegate_to: localhost
-
-    # - debug:
-    #     msg: 'ipconfig0: ip={{ ansible_host }}/24,gw={{ kubernetes_vms_gateway }}'
-
-    - name: "Start VMs."
-      community.general.proxmox_kvm:
-        state: started
-        node: pve-fra-001
-        name: "{{ inventory_hostname }}"
-        api_user: "{{ proxmox_api_user }}"
-        api_password: "{{ proxmox_api_password }}"
-        api_host: pve-fra-001.tribe29.com
       delegate_to: localhost

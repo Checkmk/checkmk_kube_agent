@@ -1,27 +1,15 @@
 ---
-- name: "Deploy."
-  hosts: kubernetes
-  remote_user: "{{ ansible_ssh_remote_user }}"
+- name: "Destroy."
+  hosts: "{{ run_hosts }}"
   gather_facts: 'false'
   tasks:
-    - name: "Stop VMs."
-      community.general.proxmox_kvm:
-        state: stopped
-        node: pve-fra-001
-        name: "{{ inventory_hostname }}"
-        api_user: "{{ proxmox_api_user }}"
-        api_password: "{{ proxmox_api_password }}"
-        api_host: pve-fra-001.tribe29.com
-      delegate_to: localhost
-    - name: "Wait for Shutdown."
-      ansible.builtin.pause:
-        seconds: 10
     - name: "Destroy VMs."
       community.general.proxmox_kvm:
-        state: absent
-        node: pve-fra-001
-        name: "{{ inventory_hostname }}"
         api_user: "{{ proxmox_api_user }}"
         api_password: "{{ proxmox_api_password }}"
         api_host: pve-fra-001.tribe29.com
+        state: absent
+        node: pve-fra-001
+        vmid: "{{ pve_id }}"
+        force: 'yes'
       delegate_to: localhost
