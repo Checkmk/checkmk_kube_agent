@@ -9,6 +9,11 @@ _Note: This chart is relatively young. Please use with care, read the documentat
 - Kubernetes 1.19+
 - Helm 3+
 
+## Tutorials
+Watch our tutorials to help you get started with our Kubernetes monitoring!
+* [How to set up Checkmk monitoring for Kubernetes clusters](https://www.youtube.com/watch?v=H9AlO98afUE)
+* [How to detect issues on Kubernetes clusters](https://www.youtube.com/watch?v=2H-cLhyfYbc)
+
 ## Add repository
 ```console
 helm repo add [REPO] https://tribe29.github.io/checkmk_kube_agent
