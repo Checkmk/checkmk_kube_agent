@@ -6,7 +6,9 @@ ARG CHECKMK_AGENT_VERSION
 FROM checkmk/check-mk-raw:"$CHECKMK_AGENT_VERSION" as checkmk
 
 FROM python:3.10-alpine3.15 as base
-RUN apk update
+# coreutils is needed for the Checkmk agent to run properly
+# hadolint ignore=DL3018
+RUN apk update && apk add --no-cache coreutils
 
 FROM base as builder
 ARG CHECKMK_AGENT_VERSION

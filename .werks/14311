@@ -1,0 +1,14 @@
+Title: high number of zombie processes on worker nodes
+Class: fix
+Compatible: compat
+Component: node-collector
+Date: 1653487942
+Edition: cre
+Knowledge: doc
+Level: 1
+State: unknown
+Version: 1.0.1
+
+The Checkmk agent running in the machine sections node collector container
+caused a high number of zombie processes on the worker nodes. This has been
+fixed.
