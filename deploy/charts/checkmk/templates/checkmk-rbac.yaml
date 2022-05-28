@@ -47,5 +47,5 @@ roleRef:
   name: {{ include "checkmk.fullname" . }}-checkmk-metrics-reader
 subjects:
   - kind: ServiceAccount
-    name: {{ include "checkmk.fullname" . }}-checkmk
+    name: {{ template "checkmk.serviceAccountName.checkmk" . }}
     namespace: {{ .Release.Namespace }}

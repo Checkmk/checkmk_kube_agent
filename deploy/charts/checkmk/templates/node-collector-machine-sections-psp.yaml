@@ -78,6 +78,6 @@ roleRef:
   name: {{ include "checkmk.fullname" . }}-node-collector-machine-sections
 subjects:
   - kind: ServiceAccount
-    name: {{ include "checkmk.fullname" . }}-node-collector-machine-sections
+    name: {{ template "checkmk.serviceAccountName.nodeCollector.machineSectionsCollector" . }}
     namespace: {{ .Release.Namespace }}
 {{- end }}

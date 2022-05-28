@@ -1,0 +1,14 @@
+Title: customise service account creation
+Class: feature
+Compatible: compat
+Component: helm
+Date: 1655199423
+Knowledge: undoc
+Level: 1
+Version: 2.0.0-alpha.1
+
+A ServiceAccount is required to access the cluster collector API externally,
+i.e. from the Checkmk monitoring server. Our helm chart now has an additional
+option, 'serviceAccount', which allows you to configure the name of this
+ServiceAccount and whether it should be created. This can be useful when
+set-ups are managed automatically via scripts (Ansible, Terraform, ...).

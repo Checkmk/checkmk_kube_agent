@@ -47,7 +47,7 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "checkmk.fullname" . }}-node-collector-container-metrics
+      serviceAccountName: {{ template "checkmk.serviceAccountName.nodeCollector.containerMetricsCollector" . }}
       securityContext:
         {{- toYaml .Values.nodeCollector.podSecurityContext | nindent 8 }}
       automountServiceAccountToken: true

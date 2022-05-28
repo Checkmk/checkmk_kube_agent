@@ -30,6 +30,13 @@ image:
 rbac:
   pspEnabled: true
 
+serviceAccount:
+  ## Specifies whether a service account should be created
+  create: true
+  ## The name of the service account to use.
+  ## If not set, service account name is using the fullname template: "[fullname]-checkmk"
+  # name: ""
+
 ## ref: https://kubernetes.io/docs/concepts/services-networking/network-policies/
 networkPolicy:
   # keep in mind: your cluster network plugin has to support NetworkPolicies, otherwise they won't have any effect
