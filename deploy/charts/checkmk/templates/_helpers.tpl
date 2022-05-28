@@ -49,3 +49,38 @@ Selector labels
 app.kubernetes.io/name: {{ include "checkmk.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{/*
+Create the name of the service accounts
+*/}}
+{{- define "checkmk.serviceAccountName.checkmk" -}}
+{{- if .Values.serviceAccount.create -}}
+    {{ default (print (include "checkmk.fullname" .) "-checkmk") .Values.serviceAccount.name }}
+{{- else -}}
+    {{ default "default" .Values.serviceAccount.name }}
+{{- end -}}
+{{- end -}}
+
+{{- define "checkmk.serviceAccountName.clusterCollector" -}}
+{{- if .Values.clusterCollector.serviceAccount.create -}}
+    {{ default (print (include "checkmk.fullname" .) "-cluster-collector") .Values.clusterCollector.serviceAccount.name }}
+{{- else -}}
+    {{ default "default" .Values.clusterCollector.serviceAccount.name }}
+{{- end -}}
+{{- end -}}
+
+{{- define "checkmk.serviceAccountName.nodeCollector.containerMetricsCollector" -}}
+{{- if .Values.nodeCollector.containerMetricsCollector.serviceAccount.create -}}
+    {{ default (print (include "checkmk.fullname" .) "-node-collector-container-metrics") .Values.nodeCollector.containerMetricsCollector.serviceAccount.name }}
+{{- else -}}
+    {{ default "default" .Values.nodeCollector.containerMetricsCollector.serviceAccount.name }}
+{{- end -}}
+{{- end -}}
+
+{{- define "checkmk.serviceAccountName.nodeCollector.machineSectionsCollector" -}}
+{{- if .Values.nodeCollector.machineSectionsCollector.serviceAccount.create -}}
+    {{ default (print (include "checkmk.fullname" .) "-node-collector-machine-sections") .Values.nodeCollector.machineSectionsCollector.serviceAccount.name }}
+{{- else -}}
+    {{ default "default" .Values.nodeCollector.machineSectionsCollector.serviceAccount.name }}
+{{- end -}}
+{{- end -}}

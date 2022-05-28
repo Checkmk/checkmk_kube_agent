@@ -26,5 +26,5 @@ roleRef:
   name:  {{ include "checkmk.fullname" . }}-token-review
 subjects:
   - kind: ServiceAccount
-    name: {{ include "checkmk.fullname" . }}-cluster-collector
+    name: {{ template "checkmk.serviceAccountName.clusterCollector" . }}
     namespace: {{ .Release.Namespace }}
