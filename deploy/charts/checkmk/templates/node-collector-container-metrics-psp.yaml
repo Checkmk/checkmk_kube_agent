@@ -66,6 +66,6 @@ roleRef:
   name: {{ include "checkmk.fullname" . }}-node-collector-container-metrics
 subjects:
   - kind: ServiceAccount
-    name: {{ include "checkmk.fullname" . }}-node-collector-container-metrics
+    name: {{ template "checkmk.serviceAccountName.nodeCollector.containerMetricsCollector" . }}
     namespace: {{ .Release.Namespace }}
 {{- end }}

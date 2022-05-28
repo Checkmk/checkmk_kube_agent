@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ include "checkmk.fullname" . }}-node-collector-container-metrics
+  name: {{ template "checkmk.serviceAccountName.nodeCollector.containerMetricsCollector" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "checkmk.labels" . | nindent 4 }}

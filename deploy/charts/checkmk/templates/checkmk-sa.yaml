@@ -1,9 +1,11 @@
+{{- if .Values.serviceAccount.create }}
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ include "checkmk.fullname" . }}-checkmk
+  name: {{ template "checkmk.serviceAccountName.checkmk" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "checkmk.labels" . | nindent 4 }}
     app: {{ include "checkmk.fullname" . }}-cluster-collector
+{{- end }}

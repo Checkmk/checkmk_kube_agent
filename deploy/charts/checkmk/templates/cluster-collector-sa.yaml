@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ include "checkmk.fullname" . }}-cluster-collector
+  name: {{ template "checkmk.serviceAccountName.clusterCollector" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "checkmk.labels" . | nindent 4 }}
