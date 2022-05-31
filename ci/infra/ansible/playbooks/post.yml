@@ -86,4 +86,4 @@
           - "API Connection:"
           - "https://{{ inventory_hostname }}:6443"
           - "SSH Connection (from the ansible directory):"
-          - "ssh -i {{ ansible_ssh_private_key_file }} {{ ansible_ssh_remote_user }}@{{ inventory_hostname }}"
+          - "ssh -i {{ ansible_ssh_private_key_file }} {{ ansible_ssh_remote_user | default('root') }}@{{ inventory_hostname }}"

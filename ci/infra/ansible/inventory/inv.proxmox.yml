@@ -3,7 +3,7 @@
 # https://github.com/ansible-collections/community.general/issues/1986
 
 plugin: community.general.proxmox
-url: "https://pve-fra-001.tribe29.com:8006"
+url: "{{ proxmox_api_url }}"
 user: "{{ lookup('env','PM_USER') }}"
 password: "{{ lookup('env','PM_PASS') }}"
 validate_certs: true

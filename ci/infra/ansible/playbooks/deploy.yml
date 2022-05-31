@@ -7,9 +7,9 @@
       community.general.proxmox_kvm:
         api_user: "{{ proxmox_api_user }}"
         api_password: "{{ proxmox_api_password }}"
-        api_host: pve-fra-001.tribe29.com
+        api_host: "{{ proxmox_api_host }}"
         state: present
-        node: pve-fra-001
+        node: "{{ proxmox_api_node }}"
         clone: kube-ubuntu2204
         full: 'no'
         name: "{{ inventory_hostname }}"
@@ -25,9 +25,9 @@
       community.general.proxmox_kvm:
         api_user: "{{ proxmox_api_user }}"
         api_password: "{{ proxmox_api_password }}"
-        api_host: pve-fra-001.tribe29.com
+        api_host: "{{ proxmox_api_host }}"
         state: present
-        node: pve-fra-001
+        node: "{{ proxmox_api_node }}"
         name: "{{ inventory_hostname }}"
         newid: "{{ pve_id }}"
         pool: "Kubernetes-Test-VM"
@@ -38,8 +38,8 @@
         searchdomains: 'lan.tribe29.com'
         nameservers: "{{ kubernetes_vms_dns }}"
         cores: 4
+        sockets: 1
         memory: 4096
-        tags: "{{ proxmox_tags }}"
         ipconfig:
           ipconfig0: 'ip={{ ansible_host }}/24,gw={{ kubernetes_vms_gateway }}'
       delegate_to: localhost

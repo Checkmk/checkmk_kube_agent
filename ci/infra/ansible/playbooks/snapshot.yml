@@ -7,7 +7,7 @@
       community.general.proxmox_snap:
         api_user: "{{ proxmox_api_user }}"
         api_password: "{{ proxmox_api_password }}"
-        api_host: pve-fra-001.tribe29.com
+        api_host: "{{ proxmox_api_host }}"
         snapname: "{{ snap_name }}"
         state: "{{ snap_state }}"
         vmid: "{{ pve_id }}"

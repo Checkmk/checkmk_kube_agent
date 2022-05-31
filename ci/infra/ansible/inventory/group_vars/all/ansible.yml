@@ -4,3 +4,6 @@ ansible_ssh_remote_user: "{{ lookup('env', 'ANSIBLE_SSH_REMOTE_USER') }}"
 ansible_ssh_extra_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
 proxmox_api_user: "{{ lookup('env', 'PM_USER') }}"
 proxmox_api_password: "{{ lookup('env', 'PM_PASS') }}"
+proxmox_api_node: "{{ lookup('env', 'PM_NODE') }}"
+proxmox_api_host: "{{ lookup('env', 'PM_HOST') }}"
+proxmox_api_url: "{{ lookup('env', 'PM_URL') }}"
