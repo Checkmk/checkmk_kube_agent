@@ -1,5 +1,5 @@
 ---
-kubernetes_version: '1.21'
+kubernetes_version: '1.23'
 # kubernetes_version_rhel_package: '1.20.4'
 
 kubernetes_role: master
