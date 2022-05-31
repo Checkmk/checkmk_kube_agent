@@ -18,19 +18,36 @@
             - kubernetes >= 12.0.0
             - PyYAML >= 3.11
             - jsonpatch
-      - name: "Upload Workloads."
-        ansible.builtin.copy:
-          src: "{{ checkmk_kube_agent_path }}/deploy/kubernetes/{{ item }}"
-          dest: "/root/{{ item }}"
-        loop: "{{ kubernetes_workloads }}"
+
+      # - name: "Upload Workloads."
+      #   ansible.builtin.copy:
+      #     src: "{{ checkmk_kube_agent_path }}/deploy/kubernetes/{{ item }}"
+      #     dest: "/root/{{ item }}"
+      #   loop: "{{ kubernetes_workloads }}"
       
-      # Could be done with helm module
-      # https://docs.ansible.com/ansible/latest/collections/kubernetes/core/helm_module.html
+      # # Could be done with helm module
+      # # https://docs.ansible.com/ansible/latest/collections/kubernetes/core/helm_module.html
+      # - name: "Apply Workloads to Cluster."
+      #   kubernetes.core.k8s:
+      #     state: present
+      #     src: "/root/{{ item }}"
+      #   loop: "{{ kubernetes_workloads }}"
+
+      - name: "Download helm Installation Script."
+        ansible.builtin.get_url:
+          url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+          dest: /tmp/
+          mode: 0750
+      
+      - name: "Run Installation Script."
+        ansible.builtin.shell: /tmp/get-helm-3
+
       - name: "Apply Workloads to Cluster."
-        kubernetes.core.k8s:
-          state: present
-          src: "/root/{{ item }}"
-        loop: "{{ kubernetes_workloads }}"
+        kubernetes.core.helm:
+          name: checkmk
+          chart_ref: "https://github.com/tribe29/checkmk_kube_agent/releases/download/v1.0.1/checkmk-kube-agent-helm-1.0.1.tgz"
+          release_namespace: monitoring
+          create_namespace: 'yes'
 
       - name: "Download Kubernetes Auth Files."
         ansible.builtin.fetch:
