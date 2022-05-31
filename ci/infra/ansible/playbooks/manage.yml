@@ -17,4 +17,4 @@
     - name: "Wait for VMs to be booted."
       ansible.builtin.wait_for_connection:
         timeout: 60
-      when: ("started" in target_state)
+      when: ("started" in target_state | default('started'))

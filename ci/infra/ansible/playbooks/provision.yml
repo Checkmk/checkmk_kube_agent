@@ -8,14 +8,13 @@
         path: /k8s-provisioned
       register: provisioned
 
-## Roles do not support OS yet
-# - name: "Provision Base."
-#   hosts: "{{ run_hosts }}"
-#   remote_user: "{{ ansible_ssh_remote_user }}"
-#   become: 'true'
-#   roles:
-#     - thorian93.common
-#     - thorian93.upgrade
+    - name: "Run preparations."
+      become: 'true'
+      ansible.builtin.shell: |
+        modprobe br_netfilter
+        echo br_netfilter >> /etc/modules
+        echo 1 > /proc/sys/net/ipv4/ip_forward
+        echo net.ipv4.ip_forward = 1 > /etc/sysctl.d/50-kubernetes_ip_forward.conf
 
 - name: "Provision Docker."
   hosts: "{{ run_hosts }}"
