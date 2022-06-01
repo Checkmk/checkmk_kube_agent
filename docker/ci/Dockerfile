@@ -19,9 +19,10 @@ RUN apk add make git docker terraform openssh && \
     tar -xvzf gh_${GH_VERSION}_linux_amd64.tar.gz gh_${GH_VERSION}_linux_amd64/bin/gh --strip-components 2 -C /usr/local/bin && \
     rm -rf gh_${GH_VERSION}_linux_amd64.tar.gz && \
     pip3 install --no-cache-dir -r /tmp/requirements_build.txt -r /tmp/requirements.txt pytest && \
-    ansible-galaxy install --roles-path /etc/ansible/roles -r /tmp/requirements.yml && \
+    mkdir -p /etc/ansible/roles && mkdir -p /etc/ansible/collections && \
     apk del build-deps && \
-    rm -rf /tmp/* && \
     rm -rf /var/cache/apk/*
-
-RUN addgroup -g 1000 jenkins && adduser -u 1001 -G jenkins -s /bin/ash jenkins -D
+COPY ci/infra/ansible/ansible.cfg /etc/ansible/ansible.cfg
+RUN ansible-galaxy install --roles-path /etc/ansible/roles -r /tmp/requirements.yml && \
+    rm -rf /tmp/* && \
+    addgroup -g 1000 jenkins && adduser -u 1001 -G jenkins -s /bin/ash jenkins -D
