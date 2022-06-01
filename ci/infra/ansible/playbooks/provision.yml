@@ -54,3 +54,5 @@
       ansible.builtin.file:
         path: /k8s-provisioned
         state: touch
+      args:
+        creates: /k8s-provisioned
