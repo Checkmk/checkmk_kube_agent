@@ -32,9 +32,9 @@
         newid: "{{ pve_id }}"
         pool: "Kubernetes-Test-VM"
         update: 'yes'
-        ciuser: "test"
-        cipassword: "test"
-        sshkeys: "ecdsa-sha2-nistp521 AAAAE2VjZHNhLXNoYTItbmlzdHA1MjEAAAAIbmlzdHA1MjEAAACFBAFkUaZ+ONeO8+8ukLr9LbY8xsMSKzKgoBo2i7Nly4Sy2TTAOjYdMsml9GEP6lC28+hvzRZxPgSc5y3cFlTxwnEQ1AAXpeJgFgbkINsAm6ZOhhiZo+6MK0LQY2DmvEmwglvR7UD2VaSQiheF/+Zmq3ozYNkgnyse57W+K23vk+enwhSo5A== robin@tribe29"
+        sshkeys: |
+          ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFV9pmmJdhNeYCbH+sAtW2UjZc5kip1ruxZ1E1xQ27VTSaxEquIz6SAIvljDKPHLlUHPqJBdTTanOrE7ibqSARk= root@pve-provisioning
+          {{ ansible_ssh_public_key }}
         searchdomains: 'lan.tribe29.com'
         nameservers: "{{ kubernetes_vms_dns }}"
         cores: 4
