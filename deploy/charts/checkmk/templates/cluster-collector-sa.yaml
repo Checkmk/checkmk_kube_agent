@@ -1,4 +1,3 @@
-{{- if .Values.clusterCollector.serviceAccount.create }}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -8,4 +7,3 @@ metadata:
   labels:
     {{- include "checkmk.labels" . | nindent 4 }}
     app: {{ include "checkmk.fullname" . }}-cluster-collector
-{{- end }}
