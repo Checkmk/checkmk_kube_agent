@@ -82,13 +82,6 @@ clusterCollector:
   podSecurityContext: {}
     # fsGroup: 2000
 
-  serviceAccount:
-    ## Specifies whether a service account should be created
-    create: true
-    ## The name of the service account to use.
-    ## If not set, service account name is using the fullname template: "[fullname]-cluster-collector"
-    # name: ""
-
   securityContext:
     allowPrivilegeEscalation: false
     capabilities:
@@ -212,13 +205,6 @@ nodeCollector:
       repository: checkmk/kubernetes-collector
       pullPolicy: IfNotPresent
 
-    serviceAccount:
-      ## Specifies whether a service account should be created
-      create: true
-      ## The name of the service account to use.
-      ## If not set, service account name is using the fullname template: "[fullname]-node-collector-container-metrics"
-      # name: ""
-
     securityContext:
       allowPrivilegeEscalation: false
       capabilities:
@@ -242,13 +228,6 @@ nodeCollector:
     image:
       repository: checkmk/kubernetes-collector
       pullPolicy: IfNotPresent
-
-    serviceAccount:
-      ## Specifies whether a service account should be created
-      create: true
-      ## The name of the service account to use.
-      ## If not set, service account name is using the fullname template: "[fullname]-node-collector-machine-sections"
-      # name: ""
 
     securityContext:
       allowPrivilegeEscalation: false
