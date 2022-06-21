@@ -6,7 +6,7 @@ _Note: This chart is relatively young. Please use with care, read the documentat
 
 ## Prerequisites
 
-- Kubernetes 1.19+
+- Kubernetes 1.21+
 - Helm 3+
 
 ## Tutorials
