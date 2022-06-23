@@ -6,9 +6,10 @@ ARG CHECKMK_AGENT_VERSION
 FROM checkmk/check-mk-raw:"$CHECKMK_AGENT_VERSION" as checkmk
 
 FROM python:3.10-alpine3.15 as base
+# pciutils is used by mk_inventory.linux
 # coreutils is needed for the Checkmk agent to run properly
 # hadolint ignore=DL3018
-RUN apk update && apk add --no-cache coreutils
+RUN apk update && apk add --no-cache coreutils pciutils
 
 FROM base as builder
 ARG CHECKMK_AGENT_VERSION
@@ -16,6 +17,7 @@ ARG PROJECT_PYVERSION
 COPY ./requirements_build.txt /tmp
 COPY dist/checkmk_kube_agent-"$PROJECT_PYVERSION".tar.gz /tmp/
 COPY --from=checkmk "/opt/omd/versions/default/share/check_mk/agents/check_mk_agent.openwrt" /install/bin/check_mk_agent.openwrt
+COPY --from=checkmk "/opt/omd/versions/default/share/check_mk/agents/plugins/mk_inventory.linux" /install/bin/mk_inventory.linux
 COPY docker/kubernetes-collector/wrapper.sh /install/bin/check_mk_agent
 RUN pip3 install --no-cache-dir -r /tmp/requirements_build.txt && \
     pip3 install --no-cache-dir --prefix=/install /tmp/checkmk_kube_agent-"$PROJECT_PYVERSION".tar.gz && \

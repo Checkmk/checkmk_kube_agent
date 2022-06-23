@@ -1,0 +1,20 @@
+Title: Addition of mk_inventory sections via node collector
+Class: feature
+Compatible: compat
+Component: node-collector
+Date: 1652422629
+Edition: cre
+Knowledge: undoc
+Level: 1
+State: unknown
+Version: 1.3.1
+
+Node hosts in a Checkmk site now have the HW/SW inventory entries of a
+Linux system (in addition to the standard Kubernetes entries).
+Specifically, the following sections have been added:
+<ul>
+<li>lnx_cpuinfo<\li>
+<li>lnx_uname<\li>
+<li>lnx_video<\li>
+<li>lnx_block_devices<\li>
+<\ul>
