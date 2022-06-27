@@ -39,23 +39,6 @@ def BRANCH = get_branch(scm)
 @Field
 def STAGE_PUSH_IMAGES = 'Push Images'
 
-switch (METHOD) {
-    case "daily":
-        // A daily job
-        RELEASE_BUILD = false
-        def DATE_FORMAT = new SimpleDateFormat("yyyy.MM.dd")
-        def DATE = new Date()
-        DOCKER_TAG_SUFFIX = "_" + DATE_FORMAT.format(DATE)
-        DOCKER_TAG_PREFIX = BRANCH
-        break
-    default:
-        // A release job
-        RELEASE_BUILD = true
-        DOCKER_TAG_SUFFIX = ""
-        DOCKER_TAG_PREFIX = ""
-        break
-}
-
 def run_in_ash(command, get_stdout=false) {
     ash_command = "#!/bin/ash\n" + command
     return sh(script: "${ash_command}", returnStdout: get_stdout)
@@ -67,7 +50,6 @@ def validate_parameters_and_branch(method, version, branch) {
     if (method == "major") error "We currently only do major releases manually by creating a new branch!"
     if (branch == "main" && method != "daily") error "We currently only create daily builds from branch main!"
 }
-validate_parameters_and_branch(METHOD, VERSION, BRANCH)
 
 def main(BRANCH, METHOD) {
         def COMMIT_SHA;
@@ -206,6 +188,25 @@ def main(BRANCH, METHOD) {
         }
     }
 }
+
+switch (METHOD) {
+    case "daily":
+        // A daily job
+        RELEASE_BUILD = false
+        def DATE_FORMAT = new SimpleDateFormat("yyyy.MM.dd")
+        def DATE = new Date()
+        DOCKER_TAG_SUFFIX = "_" + DATE_FORMAT.format(DATE)
+        DOCKER_TAG_PREFIX = BRANCH
+        break
+    default:
+        // A release job
+        RELEASE_BUILD = true
+        DOCKER_TAG_SUFFIX = ""
+        DOCKER_TAG_PREFIX = ""
+        break
+}
+
+validate_parameters_and_branch(METHOD, VERSION, BRANCH)
 
 timeout(time: 12, unit: 'HOURS') {
     node(NODE) {
