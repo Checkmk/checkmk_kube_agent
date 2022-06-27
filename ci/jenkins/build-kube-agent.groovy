@@ -90,7 +90,7 @@ def main(BRANCH, METHOD) {
         if (RELEASE_BUILD) {
             stage('Calculate Version') {
                 if (METHOD != "rebuild_version") {
-                    docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
+                    docker.image(CI_IMAGE).inside("--entrypoint=") {
                         VERSION = run_in_ash("METHOD=${METHOD} make print-bumped-version", true).toString().trim();
                     }
                 }
@@ -102,7 +102,7 @@ def main(BRANCH, METHOD) {
             stage("Create or switch to tag") {
                 withCredentials([sshUserPrivateKey(credentialsId: "release", keyFileVariable: 'keyfile')]) {
                     withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile} -l release"]) {
-                        docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
+                        docker.image(CI_IMAGE).inside("--entrypoint=") {
                             run_in_ash("./ci/jenkins/scripts/tagging.sh ${VERSION} ${METHOD} ${BRANCH}")
                         }
                     }
@@ -123,7 +123,7 @@ def main(BRANCH, METHOD) {
         }
 
         stage("Build source and wheel package") {
-            docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
+            docker.image(CI_IMAGE).inside("--entrypoint=") {
                 run_in_ash("make dist")
             }
         }
