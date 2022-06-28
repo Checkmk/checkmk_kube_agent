@@ -30,11 +30,7 @@ properties([
 ])
 
 @Field
-def RELEASE_BUILD=""
-@Field
-def DOCKER_TAG_PREFIX=""
-@Field
-def DOCKER_TAG_SUFFIX=""
+def IS_RELEASE_BUILD=""
 def BRANCH = get_branch(scm)
 @Field
 def STAGE_PUSH_IMAGES = 'Push Images'
@@ -51,7 +47,19 @@ def validate_parameters_and_branch(method, version, branch) {
     if (branch == "main" && method != "daily") error "We currently only create daily builds from branch main!"
 }
 
-def main(BRANCH, METHOD) {
+def determine_docker_tag(is_release_build, version) {
+    if (is_release_build) {
+        DOCKER_TAG = VERSION;
+    }
+    else {
+        DATE_STRING = SimpleDateFormat("yyyy.MM.dd").format(Date());
+        DOCKER_TAG = "main_${DATE_STRING}";
+
+    }
+    return DOCKER_TAG
+}
+
+def main(BRANCH, METHOD, IS_RELEASE_BUILD) {
         def COMMIT_SHA;
         // TODO: at least consolidate in this repo...
         def DOCKER_GROUP_ID = sh(script: "getent group docker | cut -d: -f3", returnStdout: true);
@@ -69,7 +77,7 @@ def main(BRANCH, METHOD) {
         }
         docker.build(CI_IMAGE, "--network=host -f docker/ci/Dockerfile .");
 
-        if (RELEASE_BUILD) {
+        if (IS_RELEASE_BUILD) {
             stage('Calculate Version') {
                 if (METHOD != "rebuild_version") {
                     docker.image(CI_IMAGE).inside("--entrypoint=") {
@@ -111,8 +119,9 @@ def main(BRANCH, METHOD) {
         }
 
         stage("Build Images") {
+            DOCKER_IMAGE_TAG = determine_docker_tag(IS_RELEASE_BUILD, VERSION);
             docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
-                run_in_ash("DOCKER_TAG_PREFIX=${DOCKER_TAG_PREFIX} DOCKER_TAG_SUFFIX=${DOCKER_TAG_SUFFIX} make release-image")
+                run_in_ash("DOCKER_IMAGE_TAG=${DOCKER_TAG} make release-image")
             }
 
         }
@@ -130,7 +139,7 @@ def main(BRANCH, METHOD) {
                 Utils.markStageSkippedForConditional(STAGE_PUSH_IMAGES)
             }
         }
-        if (RELEASE_BUILD) {
+        if (IS_RELEASE_BUILD) {
             withCredentials([usernamePassword(credentialsId: "github-token-lisa", passwordVariable: 'GH_TOKEN', usernameVariable: "GH_USER")]) {
                 if (METHOD == "rebuild_version") {
                     stage("Delete github release") {
@@ -191,18 +200,10 @@ def main(BRANCH, METHOD) {
 
 switch (METHOD) {
     case "daily":
-        // A daily job
-        RELEASE_BUILD = false
-        def DATE_FORMAT = new SimpleDateFormat("yyyy.MM.dd")
-        def DATE = new Date()
-        DOCKER_TAG_SUFFIX = "_" + DATE_FORMAT.format(DATE)
-        DOCKER_TAG_PREFIX = BRANCH
+        IS_RELEASE_BUILD = false
         break
     default:
-        // A release job
-        RELEASE_BUILD = true
-        DOCKER_TAG_SUFFIX = ""
-        DOCKER_TAG_PREFIX = ""
+        IS_RELEASE_BUILD = true
         break
 }
 
@@ -215,7 +216,7 @@ timeout(time: 12, unit: 'HOURS') {
                  "GIT_SSH_VARIANT=ssh",
                  "GIT_COMMITTER_NAME=Checkmk release system",
                  "GIT_COMMITTER_EMAIL=feedback@check-mk.org"]) {
-            main(BRANCH, METHOD);
+            main(BRANCH, METHOD, IS_RELEASE_BUILD);
         }
     }
 }
