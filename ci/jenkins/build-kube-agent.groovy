@@ -131,7 +131,7 @@ def main(BRANCH, METHOD, IS_RELEASE_BUILD) {
                         usernamePassword(credentialsId: '11fb3d5f-e44e-4f33-a651-274227cc48ab', passwordVariable: 'DOCKER_PASSPHRASE', usernameVariable: 'DOCKER_USERNAME')]) {
                     docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
                         run_in_ash('echo \"${DOCKER_PASSPHRASE}\" | docker login -u ${DOCKER_USERNAME} --password-stdin')
-                        run_in_ash("DOCKER_TAG_PREFIX=${DOCKER_TAG_PREFIX} DOCKER_TAG_SUFFIX=${DOCKER_TAG_SUFFIX} make push-images")
+                        run_in_ash("DOCKER_IMAGE_TAG=${DOCKER_TAG} make push-images")
                         }
                     }
                 }
