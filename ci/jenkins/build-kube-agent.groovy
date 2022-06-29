@@ -29,12 +29,6 @@ properties([
     ])
 ])
 
-@Field
-def IS_RELEASE_BUILD=""
-def BRANCH = get_branch(scm)
-@Field
-def STAGE_PUSH_IMAGES = 'Push Images'
-
 def run_in_ash(command, get_stdout=false) {
     ash_command = "#!/bin/ash\n" + command
     return sh(script: "${ash_command}", returnStdout: get_stdout)
@@ -69,6 +63,7 @@ def main(BRANCH, METHOD, IS_RELEASE_BUILD) {
         def CI_IMAGE = "checkmk-kube-agent-ci";
         def HELM_REPO_INDEX_FILE="index.yaml";
         def VERSION;
+        def STAGE_PUSH_IMAGES = 'Push Images'
 
         stage('Checkout Sources') {
             checkout(scm);
@@ -207,6 +202,8 @@ switch (METHOD) {
         break
 }
 
+def BRANCH = get_branch(scm);
+
 validate_parameters_and_branch(METHOD, VERSION, BRANCH)
 
 timeout(time: 12, unit: 'HOURS') {
@@ -217,6 +214,7 @@ timeout(time: 12, unit: 'HOURS') {
                  "GIT_COMMITTER_NAME=Checkmk release system",
                  "GIT_COMMITTER_EMAIL=feedback@check-mk.org"]) {
             main(BRANCH, METHOD, IS_RELEASE_BUILD);
+
         }
     }
 }
