@@ -162,20 +162,7 @@ def main(BRANCH, METHOD, IS_RELEASE_BUILD) {
                     withCredentials([sshUserPrivateKey(credentialsId: "release", keyFileVariable: 'keyfile')]) {
                         withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile} -l release"]) {
                             docker.image(CI_IMAGE).inside("--entrypoint=") {
-                                run_in_ash("git pull");
-                                run_in_ash("mv dist-helm/checkmk-kube-agent-helm-${VERSION}.tgz ${WORKSPACE}");
-
-                                if (fileExists("${HELM_REPO_INDEX_FILE}")) {
-                                    merge_index_cmd = "--merge ${HELM_REPO_INDEX_FILE}"
-                                }
-                                else {
-                                    merge_index_cmd = ""
-                                }
-
-                                run_in_ash("helm repo index ${WORKSPACE} ${merge_index_cmd} --url ${KUBE_AGENT_GITHUB_URL}/releases/download/v${VERSION}");
-                                run_in_ash("git add ${HELM_REPO_INDEX_FILE}");
-                                run_in_ash("git commit ${HELM_REPO_INDEX_FILE} -m 'Add helm chart version ${VERSION}'");
-                                run_in_ash("git push origin ${GITHUB_PAGES_BRANCH}");
+                                run_in_ash("scripts/update-helm-repo.sh --github-pages ${GITHUB_PAGES_BRANCH} --helm-repo-index ${HELM_REPO_INDEX_FILE} --url ${KUBE_AGENT_GITHUB_URL} --version ${VERSION}");
                             }
                         }
                     }
@@ -183,11 +170,12 @@ def main(BRANCH, METHOD, IS_RELEASE_BUILD) {
                     withCredentials([sshUserPrivateKey(credentialsId: "ssh_private_key_lisa_github", keyFileVariable: 'keyfile')]) {
                         withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile}"]) {
                             docker.image(CI_IMAGE).inside("--entrypoint=") {
+                                run_in_ash("git checkout ${GITHUB_PAGES_BRANCH}");
                                 run_in_ash("git push github ${GITHUB_PAGES_BRANCH}");
+                                sh("git checkout ${BRANCH}");
                             }
                         }
                     }
-                    sh("git checkout ${BRANCH}");
             }
         }
     }
