@@ -1,0 +1,13 @@
+Title: Unknown capability to add: "CAP_CAP_SYS_PTRACE"
+Class: fix
+Compatible: compat
+Component: helm
+Date: 1659105397
+Knowledge: doc
+Level: 1
+Version: 2.0.0-alpha.1
+
+When deploying the helm chart on Kubernetes clusters which run with docker
+version <= 19.02 or containerd version <= 1.4.4, the deployment would fail with
+an error message reading '[...] Unknown capability to add:
+"CAP_CAP_SYS_PTRACE"'. This has been fixed.
