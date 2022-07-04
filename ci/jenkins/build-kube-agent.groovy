@@ -46,7 +46,9 @@ def determine_docker_tag(is_release_build, version) {
         DOCKER_TAG = VERSION;
     }
     else {
-        DATE_STRING = SimpleDateFormat("yyyy.MM.dd").format(Date());
+        DATE = new Date();
+        DATE_FORMAT = new SimpleDateFormat("yyyy.MM.dd");
+        DATE_STRING = DATE_FORMAT.format(DATE);
         DOCKER_TAG = "main_${DATE_STRING}";
 
     }
