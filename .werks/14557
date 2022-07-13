@@ -1,0 +1,13 @@
+Title: Add creation of tokens for k8s 1.24 to helm installation notes
+Class: feature
+Compatible: compat
+Component: helm
+Date: 1662370375
+Knowledge: undoc
+Level: 1
+Version: 2.0.0-alpha.1
+
+Previously, the installation notes assumed that the secrets created via the helm command always have
+tokens associated with them. This is no longer the case, since ServiceAccount tokens are no longer
+generated automatically from Kubernetes version 1.24.0. With this werk, The installation notes
+detail the required steps to obtain the token.
