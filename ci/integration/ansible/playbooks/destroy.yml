@@ -1,0 +1,15 @@
+---
+- name: "Destroy."
+  hosts: "{{ run_hosts }}"
+  gather_facts: 'false'
+  tasks:
+    - name: "Destroy VMs."
+      community.general.proxmox_kvm:
+        api_user: "{{ proxmox_api_user }}"
+        api_password: "{{ proxmox_api_password }}"
+        api_host: "{{ proxmox_api_host }}"
+        state: absent
+        node: "{{ proxmox_api_node }}"
+        vmid: "{{ pve_id }}"
+        force: 'yes'
+      delegate_to: localhost

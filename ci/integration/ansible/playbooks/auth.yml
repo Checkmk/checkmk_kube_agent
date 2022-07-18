@@ -1,0 +1,11 @@
+---
+- name: "Collect Auth Config from Masters."
+  hosts: "{{ run_hosts }}"
+  remote_user: "{{ ansible_ssh_remote_user }}"
+  become: 'yes'
+  tags: [always, auth]
+  tasks:
+  - name: "Download Kube Conf File."
+    ansible.builtin.fetch:
+      src: "/etc/kubernetes/admin.conf"
+      dest: "/tmp/kube-config"
