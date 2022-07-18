@@ -1,0 +1,20 @@
+---
+- name: "Manage VM State."
+  hosts: "{{ run_hosts }}"
+  remote_user: "{{ ansible_ssh_remote_user }}"
+  gather_facts: 'false'
+  tasks:
+    - name: "Ensure VMs are {{ target_state | default('started') }}."
+      community.general.proxmox_kvm:
+        state: "{{ target_state | default('started') }}"
+        node: "{{ proxmox_api_node }}"
+        name: "{{ inventory_hostname }}"
+        api_user: "{{ proxmox_api_user }}"
+        api_password: "{{ proxmox_api_password }}"
+        api_host: "{{ proxmox_api_host }}"
+      delegate_to: localhost
+
+    - name: "Wait for VMs to be booted."
+      ansible.builtin.wait_for_connection:
+        timeout: 60
+      when: ("started" in target_state | default('started'))

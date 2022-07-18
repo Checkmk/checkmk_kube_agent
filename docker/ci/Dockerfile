@@ -26,4 +26,18 @@ RUN apk add docker=~20.10 && \
     rm -rf /tmp/* && \
     rm -rf /var/cache/apk/*
 
+FROM common as integration-tester
+COPY ci/integration/ansible/requirements.* /tmp/
+COPY ci/integration/ansible/ansible.cfg /etc/ansible/ansible.cfg
+# hadolint ignore=DL3018
+RUN apk add --no-cache openssh && \
+    apk add --no-cache gcc libffi-dev musl-dev -t build-deps && \
+    pip3 install --no-cache-dir -r /tmp/requirements.txt pytest && \
+    apk del build-deps && \
+    mkdir -p /etc/ansible/roles && mkdir -p /etc/ansible/collections && \
+    ansible-galaxy install --roles-path /etc/ansible/roles -r /tmp/requirements.yml && \
+    ansible-galaxy collection install -r /tmp/requirements.yml && \
+    rm -rf /tmp/* && \
+    rm -rf /var/cache/apk/*
+
 FROM releaser
