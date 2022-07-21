@@ -67,8 +67,13 @@ spec:
             - "--verify-ssl"
           {{- end }}
           {{- end }}
-          {{- if .Values.tlsCommunication.enabled }}
           volumeMounts:
+          {{- if .Values.nodeCollector.machineSectionsCollector.networkInterfaceMonitoring.enabled }}
+            - name: sys
+              mountPath: /host/sys
+              readOnly: true
+          {{- end }}
+          {{- if .Values.tlsCommunication.enabled }}
             - name: checkmk-ca-cert
               mountPath: /etc/ca-certificates/checkmk-ca-cert.pem
               subPath: checkmk-ca-cert.pem
@@ -86,8 +91,13 @@ spec:
           resources:
             {{- toYaml .Values.nodeCollector.machineSectionsCollector.resources | nindent 12 }}
       terminationGracePeriodSeconds: 30
-      {{- if .Values.tlsCommunication.enabled }}
       volumes:
+      {{- if .Values.nodeCollector.machineSectionsCollector.networkInterfaceMonitoring.enabled }}
+        - name: sys
+          hostPath:
+            path: /sys
+      {{- end }}
+      {{- if .Values.tlsCommunication.enabled }}
         - name: checkmk-ca-cert
           secret:
             secretName: {{ include "checkmk.fullname" . }}-checkmk-tls

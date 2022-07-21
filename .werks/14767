@@ -1,0 +1,13 @@
+Title: Addition of node network interface monitoring
+Class: feature
+Compatible: compat
+Component: node-collector
+Date: 1662038847
+Edition: cre
+Knowledge: undoc
+Level: 1
+State: unknown
+Version: 1.3.1
+
+The machine sections collector is now able to provide monitoring for network
+interfaces on nodes.
