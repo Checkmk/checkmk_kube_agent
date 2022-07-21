@@ -14,15 +14,18 @@ RUN apk update && apk add --no-cache coreutils pciutils
 FROM base as builder
 ARG CHECKMK_AGENT_VERSION
 ARG PROJECT_PYVERSION
+ARG CHECKMK_AGENT_DIR="/opt/omd/versions/default/share/check_mk/agents"
+ARG CHECKMK_AGENT_PLUGIN_DIR="${CHECKMK_AGENT_DIR}/plugins"
 COPY ./requirements_build.txt /tmp
-COPY dist/checkmk_kube_agent-"$PROJECT_PYVERSION".tar.gz /tmp/
-COPY --from=checkmk "/opt/omd/versions/default/share/check_mk/agents/check_mk_agent.openwrt" /install/bin/check_mk_agent.openwrt
-COPY --from=checkmk "/opt/omd/versions/default/share/check_mk/agents/plugins/mk_inventory.linux" /install/bin/mk_inventory.linux
+COPY dist/checkmk_kube_agent-"${PROJECT_PYVERSION}".tar.gz /tmp/
+COPY --from=checkmk "${CHECKMK_AGENT_DIR}/check_mk_agent.openwrt" /install/bin/check_mk_agent.openwrt
+COPY --from=checkmk "${CHECKMK_AGENT_PLUGIN_DIR}/mk_inventory.linux" /install/bin/mk_inventory.linux
+COPY --from=checkmk "${CHECKMK_AGENT_PLUGIN_DIR}/lnx_container_host_if.linux" /install/bin/lnx_container_host_if.linux
 COPY docker/kubernetes-collector/wrapper.sh /install/bin/check_mk_agent
 RUN pip3 install --no-cache-dir -r /tmp/requirements_build.txt && \
     pip3 install --no-cache-dir --prefix=/install /tmp/checkmk_kube_agent-"$PROJECT_PYVERSION".tar.gz && \
-    sed -i "s/VERSION_CMK/$CHECKMK_AGENT_VERSION/" /install/bin/check_mk_agent && \
-    sed -i "s/VERSION_AGENT/$PROJECT_PYVERSION/" /install/bin/check_mk_agent && \
+    sed -i "s/VERSION_CMK/${CHECKMK_AGENT_VERSION}/" /install/bin/check_mk_agent && \
+    sed -i "s/VERSION_AGENT/${PROJECT_PYVERSION}/" /install/bin/check_mk_agent && \
     chmod +x /install/bin/check_mk_agent && \
     rm -rf /tmp/* && \
     rm -rf /var/cache/apk/*

@@ -9,6 +9,10 @@
 MK_SOURCE_AGENT=1
 . /usr/local/bin/check_mk_agent.openwrt
 . /usr/local/bin/mk_inventory.linux
+. /usr/local/bin/lnx_container_host_if.linux
+
+# needed by lnx_container_host_if
+HOST_PATH_PREFIX="/host"
 
 echo "<<<check_mk>>>"
 echo "Version: VERSION_CMK"
@@ -31,6 +35,8 @@ section_lnx_cpuinfo
 section_lnx_uname
 section_lnx_block_devices
 section_lnx_video
+# sections from lnx_container_host_if
+section_lnx_container_host_if
 # some sections have non-zero exit codes due to a 'return' without an explicit
 # exit code, which implies that the section is not relevant for the host
 exit 0 # ignore the return code of the last section
