@@ -55,7 +55,7 @@ def determine_docker_tag(is_release_build, version) {
     return DOCKER_TAG
 }
 
-def main(BRANCH, METHOD, IS_RELEASE_BUILD) {
+def main(BRANCH, METHOD, VERSION, IS_RELEASE_BUILD) {
         def COMMIT_SHA;
         // TODO: at least consolidate in this repo...
         def DOCKER_GROUP_ID = sh(script: "getent group docker | cut -d: -f3", returnStdout: true);
@@ -64,7 +64,6 @@ def main(BRANCH, METHOD, IS_RELEASE_BUILD) {
         def KUBE_AGENT_GITHUB_URL = "https://github.com/${KUBE_AGENT_GITHUB_REPO}";
         def CI_IMAGE = "checkmk-kube-agent-ci";
         def HELM_REPO_INDEX_FILE="index.yaml";
-        def VERSION;
         def STAGE_PUSH_IMAGES = 'Push Images'
 
         stage('Checkout Sources') {
@@ -82,7 +81,7 @@ def main(BRANCH, METHOD, IS_RELEASE_BUILD) {
                     }
                 }
                 else {
-                    VERSION = VERSION
+                    VERSION = VERSION;
                 }
             }
 
@@ -203,8 +202,7 @@ timeout(time: 12, unit: 'HOURS') {
                  "GIT_SSH_VARIANT=ssh",
                  "GIT_COMMITTER_NAME=Checkmk release system",
                  "GIT_COMMITTER_EMAIL=feedback@check-mk.org"]) {
-            main(BRANCH, METHOD, IS_RELEASE_BUILD);
-
+            main(BRANCH, METHOD, VERSION, IS_RELEASE_BUILD);
         }
     }
 }
