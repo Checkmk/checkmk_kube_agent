@@ -2,8 +2,12 @@ FROM python:3.10-alpine3.15 as base
 
 FROM base as common
 ARG HELM_VERSION="3.8.2"
+# make: run targets that build Python source/wheel packages
+# git: ensure a clean repo state
+# openssh: release: ssh to push to git/github
+#          integratin test: ssh to connect to VMs via ansible
 # hadolint ignore=DL3018
-RUN apk add make git openssh && \
+RUN apk add --no-cache make git openssh && \
     wget -q "https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz" && \
     tar -xvzf helm-v${HELM_VERSION}-linux-amd64.tar.gz linux-amd64/helm --strip-components 1 -C /usr/local/bin && \
     rm -rf helm-v${HELM_VERSION}-linux-amd64.tar.gz && \
@@ -14,7 +18,8 @@ RUN addgroup -g 1000 jenkins && adduser -u 1001 -G jenkins -s /bin/ash jenkins -
 FROM common as releaser
 ARG GH_VERSION="2.8.0"
 COPY requirements_build.txt /tmp/
-RUN apk add docker=~20.10 && \
+# docker: build release image
+RUN apk add --no-cache docker=~20.10 && \
     # Notes on "gh" tool in combination with the "gh release create" command:
     # --target: in theory it should be possible to use a tag instead of a commit sha, but this does not work currently
     # --notes: must be set (even if it's left blank), otherwise it does not work properly
@@ -29,6 +34,7 @@ RUN apk add docker=~20.10 && \
 FROM common as integration-tester
 COPY ci/integration/ansible/requirements.* /tmp/
 COPY ci/integration/ansible/ansible.cfg /etc/ansible/ansible.cfg
+# build-deps: build dependencies of ansible
 # hadolint ignore=DL3018
 RUN apk add --no-cache gcc libffi-dev musl-dev -t build-deps && \
     pip3 install --no-cache-dir -r /tmp/requirements.txt pytest && \
