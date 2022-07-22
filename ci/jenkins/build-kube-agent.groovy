@@ -69,7 +69,7 @@ def validate_parameters_and_branch(method, version, branch) {
 }
 validate_parameters_and_branch(METHOD, VERSION, BRANCH)
 
-def main(BRANCH, METHOD) {
+def main(BRANCH, METHOD, VERSION) {
         def COMMIT_SHA;
         // TODO: at least consolidate in this repo...
         def DOCKER_GROUP_ID = sh(script: "getent group docker | cut -d: -f3", returnStdout: true);
@@ -78,7 +78,6 @@ def main(BRANCH, METHOD) {
         def KUBE_AGENT_GITHUB_URL = "https://github.com/${KUBE_AGENT_GITHUB_REPO}";
         def CI_IMAGE = "checkmk-kube-agent-ci";
         def HELM_REPO_INDEX_FILE="index.yaml";
-        def VERSION;
 
         stage('Checkout Sources') {
             checkout(scm);
@@ -95,7 +94,7 @@ def main(BRANCH, METHOD) {
                     }
                 }
                 else {
-                    VERSION = VERSION
+                    VERSION = VERSION;
                 }
             }
 
@@ -214,7 +213,7 @@ timeout(time: 12, unit: 'HOURS') {
                  "GIT_SSH_VARIANT=ssh",
                  "GIT_COMMITTER_NAME=Checkmk release system",
                  "GIT_COMMITTER_EMAIL=feedback@check-mk.org"]) {
-            main(BRANCH, METHOD);
+            main(BRANCH, METHOD, VERSION);
         }
     }
 }
