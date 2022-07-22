@@ -3,7 +3,7 @@ FROM python:3.10-alpine3.15 as base
 FROM base as common
 ARG HELM_VERSION="3.8.2"
 # hadolint ignore=DL3018
-RUN apk add make git && \
+RUN apk add make git openssh && \
     wget -q "https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz" && \
     tar -xvzf helm-v${HELM_VERSION}-linux-amd64.tar.gz linux-amd64/helm --strip-components 1 -C /usr/local/bin && \
     rm -rf helm-v${HELM_VERSION}-linux-amd64.tar.gz && \
@@ -30,8 +30,7 @@ FROM common as integration-tester
 COPY ci/integration/ansible/requirements.* /tmp/
 COPY ci/integration/ansible/ansible.cfg /etc/ansible/ansible.cfg
 # hadolint ignore=DL3018
-RUN apk add --no-cache openssh && \
-    apk add --no-cache gcc libffi-dev musl-dev -t build-deps && \
+RUN apk add --no-cache gcc libffi-dev musl-dev -t build-deps && \
     pip3 install --no-cache-dir -r /tmp/requirements.txt pytest && \
     apk del build-deps && \
     mkdir -p /etc/ansible/roles && mkdir -p /etc/ansible/collections && \
