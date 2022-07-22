@@ -97,14 +97,19 @@ def main(BRANCH, METHOD, VERSION, IS_RELEASE_BUILD) {
             }
             // The tag must exist on github in order to be able to use it to create a github release later
             // This can be deleted if the push to github can be triggered some other way (see CMK-9584)
-            stage("Push to github") {
-                withCredentials([sshUserPrivateKey(credentialsId: "ssh_private_key_lisa_github", keyFileVariable: 'keyfile')]) {
-                    withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile}"]) {
-                        docker.image(CI_IMAGE).inside("--entrypoint=") {
-                            run_in_ash("git push --tags github ${BRANCH}")
+            if (METHOD != "rebuild_version") {
+                stage("Push to github") {
+                    withCredentials([sshUserPrivateKey(credentialsId: "ssh_private_key_lisa_github", keyFileVariable: 'keyfile')]) {
+                        withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile}"]) {
+                            docker.image(CI_IMAGE).inside("--entrypoint=") {
+                                run_in_ash("git push --tags github ${BRANCH}")
+                            }
                         }
                     }
                 }
+            }
+            else {
+                Utils.markStageSkippedForConditional("rebuild_version")
             }
         }
 
