@@ -35,10 +35,16 @@ def do_it() {
     def ANSIBLE_DIR = "ci/integration/ansible";
     def ANSIBLE_HOSTS_FILE = "${ANSIBLE_DIR}/inventory/hosts.ini";
     def ANSIBLE_PLAYBOOKS_DIR = "${ANSIBLE_DIR}/playbooks";
+    def CADVISOR_IMAGE_NAME = "cadvisor-integration";
+    def COLLECTOR_IMAGE_NAME = "kubernetes-collector-integration";
+    def DOCKER_GROUP_ID = sh(script: "getent group docker | cut -d: -f3", returnStdout: true);
+    def DOCKER_IMAGE_TAG = env.GIT_COMMIT;
+    def DOCKERHUB_PUBLISHER = "checkmk";
     def IMAGE;
     def KUBERNETES_VERSION_STR = KUBERNETES_VERSION.replace(".", "");
     def PM_URL = "https://${PM_HOST}:8006";
     def RUN_HOSTS = "k8s_${KUBERNETES_VERSION_STR}_${CONTAINER_RUNTIME}";
+    def RELEASER_IMAGE;
     def SNAPSHOT_NAME = "hello_world";
 
     stage("check out") {
@@ -47,7 +53,22 @@ def do_it() {
         sh("git clean -fd");
     }
     stage("build CI image") {
+        RELEASER_IMAGE = docker.build("checkmk-kube-agent-ci", "--network=host -f docker/ci/Dockerfile .");
         IMAGE = docker.build("checkmk-kube-agent-integration", "--network=host --target=integration-tester -f docker/ci/Dockerfile .");
+    }
+    stage("build release image") {
+        RELEASER_IMAGE.inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID}") {
+            ash("make DOCKERHUB_PUBLISHER=${DOCKERHUB_PUBLISHER} COLLECTOR_IMAGE_NAME=${COLLECTOR_IMAGE_NAME} CADVISOR_IMAGE_NAME=${CADVISOR_IMAGE_NAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG} release-image");
+        }
+    }
+    stage("push image to Dockerhub") {
+        withCredentials([usernamePassword(credentialsId: '11fb3d5f-e44e-4f33-a651-274227cc48ab', passwordVariable: 'DOCKER_PASSPHRASE', usernameVariable: 'DOCKER_USERNAME')]) {
+            RELEASER_IMAGE.inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID}") {
+                ash('echo \"${DOCKER_PASSPHRASE}\" | docker login -u ${DOCKER_USERNAME} --password-stdin');
+                ash("docker push ${DOCKERHUB_PUBLISHER}/${COLLECTOR_IMAGE_NAME}:${DOCKER_IMAGE_TAG}");
+                ash("docker push ${DOCKERHUB_PUBLISHER}/${CADVISOR_IMAGE_NAME}:${DOCKER_IMAGE_TAG}");
+            }
+        }
     }
     stage("roll VMs back to snapshot") {
         withCredentials([usernamePassword(credentialsId: "kube_at_proxmox", passwordVariable: "PM_PASS", usernameVariable: "PM_USER")]) {
