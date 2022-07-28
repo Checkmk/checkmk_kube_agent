@@ -1,0 +1,17 @@
+Title: irrelevant sections cause machine sections collector to CrashLoopBackOff
+Class: fix
+Compatible: compat
+Component: node-collector
+Date: 1659022474
+Edition: cre
+Knowledge: doc
+Level: 1
+State: unknown
+Version: 1.1.0
+
+The machine sections node collector runs into a CrashLoopBackOff without any
+helpful error message, other than "RuntimeError: Agent execution failed". This
+has been fixed.
+
+The reason for this was that some sections, which were not relevant for the
+host, returned a non-zero exit code.
