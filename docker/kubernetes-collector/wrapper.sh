@@ -31,3 +31,6 @@ section_lnx_cpuinfo
 section_lnx_uname
 section_lnx_block_devices
 section_lnx_video
+# some sections have non-zero exit codes due to a 'return' without an explicit
+# exit code, which implies that the section is not relevant for the host
+exit 0 # ignore the return code of the last section
