@@ -36,6 +36,7 @@ timeout(time: 12, unit: "HOURS") {
 def do_it() {
     def IMAGE;
     def SNAPSHOT_NAME = "hello_world";
+    def NEXUS_URL = DOCKER_REGISTRY_K8S; // DOCKER_REGISTRY_K8S is a global variable that magically appears
 
     stage("check out") {
         checkout(scm);
@@ -61,6 +62,13 @@ def do_it() {
     }
     stage("provision container runtime/kubernetes cluster") {
         run_ansible(IMAGE, "provision");
+    }
+    withEnv(["NEXUS_URL=${NEXUS_URL}/v2"]) {
+        withCredentials([usernamePassword(credentialsId: "k8s-read-only-nexus-docker", passwordVariable: "NEXUS_PASSWORD", usernameVariable: "NEXUS_USER")]) {
+            stage("provide private registry credentials") {
+                run_ansible(IMAGE, "post");
+            }
+        }
     }
     stage("stop VMs") {
         run_ansible(IMAGE, "manage", "target_state=stopped");

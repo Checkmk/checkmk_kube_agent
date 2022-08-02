@@ -1,0 +1,16 @@
+---
+- name: "Include authentication"
+  ansible.builtin.import_playbook: auth.yml
+
+- name: "Provide registry credentials."
+  hosts: "localhost"
+  tasks:
+    - name: "Docker login."
+      command: docker login --username "{{ nexus_user }}" --password-stdin "{{ container_image_registry_url }}"
+      args:
+        stdin: "{{ nexus_password }}"
+        creates: /home/jenkins/.docker/config.json
+      when: (container_image_registry_url != "docker.io")
+    - name: "Create image pull secret from Docker config."
+      command: kubectl create secret generic registry-auth --from-file=.dockerconfigjson=/home/jenkins/.docker/config.json --type=kubernetes.io/dockerconfigjson
+      when: (container_image_registry_url != "docker.io")
