@@ -39,7 +39,7 @@ def do_it() {
     def COLLECTOR_IMAGE_NAME = "kubernetes-collector-integration";
     def DOCKER_GROUP_ID = sh(script: "getent group docker | cut -d: -f3", returnStdout: true);
     def DOCKER_IMAGE_TAG = env.GIT_COMMIT;
-    def DOCKERHUB_PUBLISHER = "checkmk";
+    def DOCKERHUB_PUBLISHER = DOCKER_REGISTRY_K8S.replace("https://", "");  // DOCKER_REGISTRY_K8S is a global variable that magically appears
     def IMAGE;
     def KUBERNETES_VERSION_STR = KUBERNETES_VERSION.replace(".", "");
     def PM_URL = "https://${PM_HOST}:8006";
@@ -61,10 +61,9 @@ def do_it() {
             ash("make DOCKERHUB_PUBLISHER=${DOCKERHUB_PUBLISHER} COLLECTOR_IMAGE_NAME=${COLLECTOR_IMAGE_NAME} CADVISOR_IMAGE_NAME=${CADVISOR_IMAGE_NAME} DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG} release-image");
         }
     }
-    stage("push image to Dockerhub") {
-        withCredentials([usernamePassword(credentialsId: '11fb3d5f-e44e-4f33-a651-274227cc48ab', passwordVariable: 'DOCKER_PASSPHRASE', usernameVariable: 'DOCKER_USERNAME')]) {
+    stage("push image to Nexus") {
+        docker.withRegistry(DOCKER_REGISTRY_K8S, "nexus") {
             RELEASER_IMAGE.inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID}") {
-                ash('echo \"${DOCKER_PASSPHRASE}\" | docker login -u ${DOCKER_USERNAME} --password-stdin');
                 ash("docker push ${DOCKERHUB_PUBLISHER}/${COLLECTOR_IMAGE_NAME}:${DOCKER_IMAGE_TAG}");
                 ash("docker push ${DOCKERHUB_PUBLISHER}/${CADVISOR_IMAGE_NAME}:${DOCKER_IMAGE_TAG}");
             }
