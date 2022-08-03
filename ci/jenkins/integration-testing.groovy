@@ -9,10 +9,6 @@ properties([
                 description: '<b>Choose the container runtime that will be installed.</b>'),
         choice(choices: ['1.21', '1.22', '1.23'], name: 'KUBERNETES_VERSION',
                 description: '<b>Choose the Kubernetes version that will be installed.</b>'),
-        string(name: 'PM_NODE', defaultValue: '', description: 'Proxmox node' ),
-        string(name: 'PM_DOMAIN', defaultValue: '', description: 'Proxmox domain' ),
-        string(name: 'PM_SEARCHDOMAIN', defaultValue: '', description: 'Proxmox searchdomain' ),
-        string(name: 'PM_HOST', defaultValue: '', description: 'Proxmox host address' ),
     ])
 ])
 
@@ -32,6 +28,8 @@ timeout(time: 12, unit: "HOURS") {
 
 
 def do_it() {
+    def API_TOKEN;
+    def KUBERNETES_ENDPOINT;
     def ANSIBLE_DIR = "ci/integration/ansible";
     def ANSIBLE_HOSTS_FILE = "${ANSIBLE_DIR}/inventory/hosts.ini";
     def ANSIBLE_PLAYBOOKS_DIR = "${ANSIBLE_DIR}/playbooks";
@@ -42,7 +40,7 @@ def do_it() {
     def DOCKERHUB_PUBLISHER = DOCKER_REGISTRY_K8S.replace("https://", "");  // DOCKER_REGISTRY_K8S is a global variable that magically appears
     def IMAGE;
     def KUBERNETES_VERSION_STR = KUBERNETES_VERSION.replace(".", "");
-    def PM_URL = "https://${PM_HOST}:8006";
+    def PM_URL = "https://${env.PROXMOX_HOST}:8006";
     def RUN_HOSTS = "k8s_${KUBERNETES_VERSION_STR}_${CONTAINER_RUNTIME}";
     def RELEASER_IMAGE;
     def SNAPSHOT_NAME = "hello_world";
@@ -71,7 +69,7 @@ def do_it() {
     }
     stage("roll VMs back to snapshot") {
         withCredentials([usernamePassword(credentialsId: "kube_at_proxmox", passwordVariable: "PM_PASS", usernameVariable: "PM_USER")]) {
-            withEnv(["PM_NODE=${PM_NODE}", "PM_HOST=${PM_HOST}", "PM_URL=${PM_URL}"]) {
+            withEnv(["PM_NODE=${env.PROXMOX_NODE}", "PM_HOST=${env.PROXMOX_HOST}", "PM_URL=${PM_URL}"]) {
                 IMAGE.inside() {
                     ash("ansible-playbook --inventory ${ANSIBLE_HOSTS_FILE} ${ANSIBLE_PLAYBOOKS_DIR}/snapshot.yml --extra-vars 'run_hosts=${RUN_HOSTS} snap_state=rollback snap_name=${SNAPSHOT_NAME}'");
                 }
@@ -80,7 +78,7 @@ def do_it() {
     }
     stage("start VMs") {
         withCredentials([usernamePassword(credentialsId: "kube_at_proxmox", passwordVariable: "PM_PASS", usernameVariable: "PM_USER"), sshUserPrivateKey(credentialsId: "ssh_kube_ansible", keyFileVariable: "ANSIBLE_SSH_PRIVATE_KEY_FILE", usernameVariable: "ANSIBLE_SSH_REMOTE_USER")]) {
-            withEnv(["PM_NODE=${PM_NODE}", "PM_HOST=${PM_HOST}", "PM_URL=${PM_URL}"]) {
+            withEnv(["PM_NODE=${env.PROXMOX_NODE}", "PM_HOST=${env.PROXMOX_HOST}", "PM_URL=${PM_URL}"]) {
                 IMAGE.inside() {
                     ash("ansible-playbook --inventory ${ANSIBLE_HOSTS_FILE} ${ANSIBLE_PLAYBOOKS_DIR}/manage.yml --extra-vars 'run_hosts=${RUN_HOSTS} target_state=started'");
                 }
@@ -97,11 +95,24 @@ def do_it() {
             ash("ls /home/jenkins/.kube");
             ash("kubectl get nodes");
         }
-        // integration tests go here
+        stage("get Kubernetes cluster endpoint") {
+            KUBERNETES_ENDPOINT = sh(script: "#!/bin/ash\nkubectl config view --minify | grep server | cut -f 2- -d ':' | tr -d ' '", returnStdout: true).toString().trim();
+            println(KUBERNETES_ENDPOINT);
+        }
+        stage("get token from deployed serviceaccount") {
+//             ash("helm upgrade --install -n default deploy/charts/checkmk")
+            ash("kubectl get serviceaccounts -A");
+            API_TOKEN = sh(script: "#!/bin/ash\nkubectl get secret \$(kubectl get serviceaccount supervisor -o=jsonpath='{.secrets[*].name}' -n checkmk-integration) -n checkmk-integration -o=jsonpath='{.data.token}' | base64 -d", returnStdout: true).toString().trim();
+            println(API_TOKEN);
+        }
+        stage("execute integration tests"){
+            ash("ls")
+            ash("#!/bin/ash\npytest tests/integration --cluster-endpoint=${KUBERNETES_ENDPOINT} --cluster-token=${API_TOKEN} --cluster-workers=2")
+        }
     }
     stage("roll VMs back to snapshot") {
         withCredentials([usernamePassword(credentialsId: "kube_at_proxmox", passwordVariable: "PM_PASS", usernameVariable: "PM_USER")]) {
-            withEnv(["PM_NODE=${PM_NODE}", "PM_HOST=${PM_HOST}", "PM_URL=${PM_URL}"]) {
+            withEnv(["PM_NODE=${env.PROXMOX_NODE}", "PM_HOST=${env.PROXMOX_HOST}", "PM_URL=${PM_URL}"]) {
                 IMAGE.inside() {
                     ash("ansible-playbook --inventory ${ANSIBLE_HOSTS_FILE} ${ANSIBLE_PLAYBOOKS_DIR}/snapshot.yml --extra-vars 'run_hosts=${RUN_HOSTS} snap_state=rollback snap_name=${SNAPSHOT_NAME}'");
                 }
