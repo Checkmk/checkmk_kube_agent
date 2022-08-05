@@ -1,0 +1,11 @@
+---
+ansible_ssh_private_key_file: "{{ lookup('env', 'ANSIBLE_SSH_PRIVATE_KEY_FILE') }}"
+ansible_ssh_public_key: "{{ lookup('pipe', 'ssh-keygen -y -f $ANSIBLE_SSH_PRIVATE_KEY_FILE') }}"
+ansible_ssh_remote_user: 'root'
+ansible_ssh_extra_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+proxmox_api_user: "{{ lookup('env', 'PM_USER') }}"
+proxmox_api_password: "{{ lookup('env', 'PM_PASS') }}"
+proxmox_api_node: "{{ lookup('env', 'PM_NODE') }}"
+proxmox_api_host: "{{ lookup('env', 'PM_HOST') }}"
+proxmox_api_url: "{{ lookup('env', 'PM_URL') }}"
+proxmox_api_searchdomain: "{{ lookup('env', 'PM_SEARCHDOMAIN') }}"

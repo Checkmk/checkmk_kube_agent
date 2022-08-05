@@ -1,0 +1,57 @@
+---
+- name: "Prepare Provisioning."
+  hosts: "{{ run_hosts }}"
+  remote_user: "{{ ansible_ssh_remote_user }}"
+  tasks:
+    - name: "Get Provisioning State."
+      ansible.builtin.stat:
+        path: /k8s-provisioned
+      register: provisioned
+
+    - name: "Run preparations."
+      become: 'true'
+      ansible.builtin.shell: |
+        modprobe br_netfilter
+        echo br_netfilter >> /etc/modules
+        echo 1 > /proc/sys/net/ipv4/ip_forward
+        echo net.ipv4.ip_forward = 1 > /etc/sysctl.d/50-kubernetes_ip_forward.conf
+
+- name: "Provision Docker."
+  hosts: "{{ run_hosts }}"
+  remote_user: "{{ ansible_ssh_remote_user }}"
+  become: 'true'
+  tasks:
+    - name: "Run docker role."
+      ansible.builtin.include_role:
+        name: geerlingguy.docker
+      when: ("docker" in container_runtime) and not provisioned.stat.exists
+
+- name: "Provision containerd."
+  hosts: "{{ run_hosts }}"
+  remote_user: "{{ ansible_ssh_remote_user }}"
+  become: 'true'
+  tasks:
+    - name: "Run containerd role."
+      ansible.builtin.include_role:
+        name: geerlingguy.containerd
+      when: ("containerd" in container_runtime) and not provisioned.stat.exists
+
+- name: "Provision Kubernetes."
+  hosts: "{{ run_hosts }}"
+  remote_user: "{{ ansible_ssh_remote_user }}"
+  become: 'true'
+  tasks:
+    - name: "Run kubernetes role."
+      ansible.builtin.include_role:
+        name: geerlingguy.kubernetes
+      when: not provisioned.stat.exists
+
+- name: "Finish Provisioning."
+  hosts: "{{ run_hosts }}"
+  remote_user: "{{ ansible_ssh_remote_user }}"
+  tasks:
+    - name: "Set Provisioning Flag."
+      ansible.builtin.file:
+        path: /k8s-provisioned
+        state: touch
+      when: not provisioned.stat.exists

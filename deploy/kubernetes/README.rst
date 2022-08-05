@@ -3,6 +3,7 @@ Checkmk Kubernetes Cluster and Node Collectors
 ==============================================
 
 You can deploy the Checkmk Kubernetes Cluster and Node Collectors using the manifests here.
+Note: We recommend using Helm charts as they are less error-prone. We do not provide support for installation via manifests.
 
 Short installation guide
 ------------------------

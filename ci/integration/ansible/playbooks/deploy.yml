@@ -1,0 +1,44 @@
+---
+- name: "Deploy."
+  hosts: "{{ run_hosts }}"
+  gather_facts: 'false'
+  tasks:
+    - name: "Deploy VMs."
+      community.general.proxmox_kvm:
+        api_user: "{{ proxmox_api_user }}"
+        api_password: "{{ proxmox_api_password }}"
+        api_host: "{{ proxmox_api_host }}"
+        state: present
+        node: "{{ proxmox_api_node }}"
+        clone: kube-ubuntu2204
+        full: 'no'
+        name: "{{ inventory_hostname }}"
+        newid: "{{ pve_id }}"
+        pool: "Kubernetes-Test-VM"
+      delegate_to: localhost
+
+    - name: "Wait for deployment to finish."
+      ansible.builtin.pause:
+        seconds: 5
+
+    - name: "Configure VMs."
+      community.general.proxmox_kvm:
+        api_user: "{{ proxmox_api_user }}"
+        api_password: "{{ proxmox_api_password }}"
+        api_host: "{{ proxmox_api_host }}"
+        state: present
+        node: "{{ proxmox_api_node }}"
+        name: "{{ inventory_hostname }}"
+        newid: "{{ pve_id }}"
+        pool: "Kubernetes-Test-VM"
+        update: 'yes'
+        sshkeys: |
+          {{ ansible_ssh_public_key }}
+        searchdomains: "{{ proxmox_api_searchdomain }}"
+        nameservers: "{{ kubernetes_vms_dns }}"
+        cores: 4
+        sockets: 1
+        memory: 4096
+        ipconfig:
+          ipconfig0: 'ip={{ ansible_host }}/24,gw={{ kubernetes_vms_gateway }}'
+      delegate_to: localhost
