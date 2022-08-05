@@ -6,13 +6,10 @@ metadata:
   name: {{ include "checkmk.fullname" . }}-node-collector-machine-sections
   labels:
     {{- include "checkmk.labels" . | nindent 4 }}
+{{- if .Values.rbac.pspAnnotations }}
   annotations:
-    seccomp.security.alpha.kubernetes.io/allowedProfileNames: >-
-      docker/default,runtime/default
-    apparmor.security.beta.kubernetes.io/allowedProfileNames: >-
-      runtime/default
-    apparmor.security.beta.kubernetes.io/defaultProfileName: >-
-      runtime/default
+    {{ toYaml .Values.rbac.pspAnnotations | nindent 4 }}
+{{- end }}
 spec:
   runAsUser:
     rule: 'MustRunAsNonRoot'
