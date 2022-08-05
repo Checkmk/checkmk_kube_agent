@@ -1,0 +1,13 @@
+Title: Allow custom annotations for Pod Security Policies
+Class: feature
+Compatible: compat
+Component: helm
+Date: 1660643634
+Edition: cre
+Knowledge: undoc
+Level: 1
+State: unknown
+Version: 1.1.0
+
+It is now possible to customise annotations for Pod Security Policies, as they
+may differ between different Kubernetes implementations.
