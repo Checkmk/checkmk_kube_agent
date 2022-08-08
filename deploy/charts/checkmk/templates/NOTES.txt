@@ -27,10 +27,11 @@ ClusterIP:
   # Cluster-internal DNS of `cluster-collector`: {{ include "checkmk.fullname" . }}-cluster-collector.{{ .Release.Namespace }}
 With the token of the service account named `{{ template "checkmk.serviceAccountName.checkmk" . }}` in the namespace `{{ .Release.Namespace }}` you can now issue queries against the `cluster-collector`.
 {{- if semverCompare ">= 1.24-0" (include "checkmk.kubeVersion" .) }}
-Run the following to create a token:
-  export TOKEN=$(kubectl create token -n {{ .Release.Namespace }} {{ template "checkmk.serviceAccountName.checkmk" . }});
+Run the following to create a token and fetch the ca-certificate of the cluster from your local kubectl config:
+  export TOKEN=$(kubectl create token --duration=0s -n {{ .Release.Namespace }} {{ template "checkmk.serviceAccountName.checkmk" . }});
+  export CA_CRT="$(kubectl config view --minify --raw --output 'jsonpath={..cluster.certificate-authority-data}' | base64 -d)";
 {{- else }}
-Run the following to fetch its token, resp. ca-certificate:
+Run the following to fetch its token and the ca-certificate of the cluster:
   export TOKEN=$(kubectl get secret $(kubectl get serviceaccount {{ template "checkmk.serviceAccountName.checkmk" . }} -o=jsonpath='{.secrets[*].name}' -n {{ .Release.Namespace }}) -n {{ .Release.Namespace }} -o=jsonpath='{.data.token}' | base64 --decode);
   export CA_CRT="$(kubectl get secret $(kubectl get serviceaccount {{ template "checkmk.serviceAccountName.checkmk" . }} -o=jsonpath='{.secrets[*].name}' -n {{ .Release.Namespace }}) -n {{ .Release.Namespace }} -o=jsonpath='{.data.ca\.crt}' | base64 --decode)";
   # Note: Quote the variable when echo'ing to preserve proper line breaks: `echo "$CA_CRT"`
