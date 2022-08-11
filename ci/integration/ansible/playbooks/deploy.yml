@@ -42,3 +42,5 @@
         ipconfig:
           ipconfig0: 'ip={{ ansible_host }}/24,gw={{ kubernetes_vms_gateway }}'
       delegate_to: localhost
+      retries: 3
+      delay: 3
