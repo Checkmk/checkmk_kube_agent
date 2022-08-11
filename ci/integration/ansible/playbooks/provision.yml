@@ -1,4 +1,16 @@
 ---
+- name: "Wait for dpkg lock to be released"
+  hosts: "{{ run_hosts }}"
+  remote_user: "{{ ansible_ssh_remote_user }}"
+  tasks:
+    - name: "Wait for dpkg lock."
+      # solutions such as using lsof to check for the lock do not seem to resolve this problem
+      # checking ps only for dpkg is also not valid as apt-get also takes the lock
+      shell: ps -C apt-get,dpkg >/dev/null && exit 1 || exit 0
+      register: isLocked
+      until: isLocked.rc == 0
+      retries: 3
+      delay: 30
 - name: "Prepare Provisioning."
   hosts: "{{ run_hosts }}"
   remote_user: "{{ ansible_ssh_remote_user }}"

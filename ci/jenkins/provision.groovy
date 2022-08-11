@@ -55,11 +55,6 @@ def do_it() {
     stage("start VMs") {
         run_ansible(IMAGE, "manage", "target_state=started");
     }
-    stage("waiting for initialisation to finish") {
-        if (!DRY_RUN) {
-            sleep(time: 60, unit: "SECONDS");
-        }
-    }
     stage("provision container runtime/kubernetes cluster") {
         run_ansible(IMAGE, "provision");
     }
