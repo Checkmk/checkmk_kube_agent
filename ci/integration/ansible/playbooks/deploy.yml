@@ -17,10 +17,6 @@
         pool: "Kubernetes-Test-VM"
       delegate_to: localhost
 
-    - name: "Wait for deployment to finish."
-      ansible.builtin.pause:
-        seconds: 5
-
     - name: "Configure VMs."
       community.general.proxmox_kvm:
         api_user: "{{ proxmox_api_user }}"
