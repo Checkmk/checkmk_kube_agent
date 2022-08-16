@@ -2,6 +2,23 @@
 - name: "Include authentication"
   ansible.builtin.import_playbook: auth.yml
 
+# Ansible should wait for the control-plane pods to appear otherwise the kubectl secret command
+# will fail in the next task
+- name: "Wait for Kubernetes"
+  hosts: "localhost"
+  tasks:
+    - name: "Wait for control-plane pods to appear"
+      command: kubectl get pod --namespace=kube-system --selector tier=control-plane --output=jsonpath='{.items[*].metadata.name}'
+      register: control_plane_pods
+      until: item in control_plane_pods.stdout
+      retries: 3
+      delay: 20
+      with_items:
+          - etcd
+          - kube-apiserver
+          - kube-controller-manager
+          - kube-scheduler
+
 - name: "Provide registry credentials."
   hosts: "localhost"
   tasks:
