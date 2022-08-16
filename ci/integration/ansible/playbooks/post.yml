@@ -28,6 +28,8 @@
         stdin: "{{ nexus_password }}"
         creates: /home/jenkins/.docker/config.json
       when: (container_image_registry_url != "docker.io")
+    - name: "Clean up a potentially existing secret"
+      command: "kubectl delete secret registry-auth --ignore-not-found=true"
     - name: "Create image pull secret from Docker config."
       command: kubectl create secret generic registry-auth --from-file=.dockerconfigjson=/home/jenkins/.docker/config.json --type=kubernetes.io/dockerconfigjson
       when: (container_image_registry_url != "docker.io")
