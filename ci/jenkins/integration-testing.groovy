@@ -48,6 +48,7 @@ def do_it() {
     def SNAPSHOT_NAME = "hello_world";
 
     stage("check out") {
+        println("hello")
         checkout(scm);
         // delete any untracked files, such as kube config from any previous integration runs
         sh("git clean -fd");
