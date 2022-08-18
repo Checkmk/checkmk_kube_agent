@@ -9,10 +9,6 @@ properties([
                 description: '<b>Choose the container runtime that will be installed.</b>'),
         choice(choices: ['1.21', '1.22', '1.23'], name: 'KUBERNETES_VERSION',
                 description: '<b>Choose the Kubernetes version that will be installed.</b>'),
-        string(name: 'PM_NODE', defaultValue: '', description: 'Proxmox node' ),
-        string(name: 'PM_DOMAIN', defaultValue: '', description: 'Proxmox domain' ),
-        string(name: 'PM_SEARCHDOMAIN', defaultValue: '', description: 'Proxmox searchdomain' ),
-        string(name: 'PM_HOST', defaultValue: '', description: 'Proxmox host address' ),
         booleanParam(name: 'DRY_RUN', defaultValue: false, description: 'Set to true if you want to print the actions to stdout, rather than execute them (e.g. for debugging).'),
     ])
 ])
@@ -40,7 +36,7 @@ def do_it() {
 
     stage("check out") {
         checkout(scm);
-        println "Provisioning Kubernetes v${KUBERNETES_VERSION} running with ${CONTAINER_RUNTIME} to node ${PM_NODE}.${PM_DOMAIN}";
+        println "Provisioning Kubernetes v${KUBERNETES_VERSION} running with ${CONTAINER_RUNTIME} to node ${env.PROXMOX_NODE}.${env.PROXMOX_DOMAIN}";
         println "Dry run: ${DRY_RUN}";
     }
     stage("build CI image") {
@@ -78,16 +74,16 @@ def run_ansible(image, operation, extra_vars="") {
     def ANSIBLE_HOSTS_FILE = "${ANSIBLE_DIR}/inventory/hosts.ini";
     def ANSIBLE_PLAYBOOKS_DIR = "${ANSIBLE_DIR}/playbooks";
     def KUBERNETES_VERSION_STR = KUBERNETES_VERSION.replace(".", "");
-    def PM_URL = "https://${PM_HOST}:8006";
+    def PM_URL = "https://${env.PROXMOX_HOST}:8006";
     def RUN_HOSTS = "k8s_${KUBERNETES_VERSION_STR}_${CONTAINER_RUNTIME}";
     def COMMAND = "ansible-playbook --inventory ${ANSIBLE_HOSTS_FILE} ${ANSIBLE_PLAYBOOKS_DIR}/${operation}.yml --extra-vars 'run_hosts=${RUN_HOSTS} ${extra_vars}'";
 
     withCredentials([sshUserPrivateKey(credentialsId: "ssh_kube_ansible", keyFileVariable: "ANSIBLE_SSH_PRIVATE_KEY_FILE", usernameVariable: "ANSIBLE_SSH_REMOTE_USER"),
                      usernamePassword(credentialsId: "kube_at_proxmox", passwordVariable: "PM_PASS", usernameVariable: "PM_USER")]) {
-        withEnv(["PM_NODE=${PM_NODE}", "PM_HOST=${PM_HOST}", "PM_URL=${PM_URL}"]) {
+        withEnv(["PM_NODE=${env.PROXMOX_NODE}", "PM_HOST=${env.PROXMOX_HOST}", "PM_URL=${PM_URL}"]) {
             println "Running ${operation}"
             println "Using credentials: ssh_kube_ansible, kube_at_proxmox";
-            println "Using environment variables: PM_NODE=${PM_NODE}, PM_HOST=${PM_HOST}, PM_URL=${PM_URL}, PM_SEARCHDOMAIN=${PM_SEARCHDOMAIN}";
+            println "Using environment variables: PM_NODE=${env.PROXMOX_NODE}, PM_HOST=${env.PROXMOX_HOST_HOST}, PM_URL=${PM_URL}, PM_SEARCHDOMAIN=${env.PROXMOX_SEARCHDOMAIN}";
             println COMMAND;
             if (!DRY_RUN) {
                 image.inside() {
