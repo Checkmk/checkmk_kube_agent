@@ -33,6 +33,7 @@
         pool: "Kubernetes-Test-VM"
         update: 'yes'
         sshkeys: |
+          ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOYOiEYp7ezLvhkNN7ZmfI1JCf0VgAqoqA5gxfV2wTPv deploy@pve-provisioning
           {{ ansible_ssh_public_key }}
         searchdomains: "{{ proxmox_api_searchdomain }}"
         nameservers: "{{ kubernetes_vms_dns }}"
