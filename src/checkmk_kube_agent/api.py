@@ -11,9 +11,10 @@ import json
 import logging
 import os
 import sys
-from typing import FrozenSet, NewType, Optional, Sequence
+from typing import FrozenSet, NewType, NoReturn, Optional, Sequence
 
 import gunicorn.app.base  # type: ignore[import]
+import pydantic
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -35,6 +36,9 @@ from checkmk_kube_agent.type_defs import (
     MetricCollection,
     NodeCollectorMetadata,
     NodeName,
+    RaiseFromError,
+    TokenError,
+    TokenReview,
 )
 
 app = FastAPI()
@@ -69,13 +73,21 @@ def read_api_token() -> str:  # pragma: no cover
         return token_file.read()
 
 
-def _log_token_review(
-    token_review_response: bytes, token: str, logger: logging.Logger
-) -> None:
+def _raise_from_token_error(
+    token_review_response: bytes,
+    token: str,
+    token_error: TokenError,
+    logger: logging.Logger = LOGGER,
+) -> NoReturn:
     redacted_token_review_response = token_review_response.replace(
         token.encode("utf-8"), b"***token***"
     )
     logger.error(redacted_token_review_response)
+    raise HTTPException(
+        status_code=token_error.status_code,
+        detail=f"{token_error.message} See logs for TokenReview.",
+        headers={"WWW-Authenticate": "Bearer"},
+    ) from token_error.exception
 
 
 def authenticate(
@@ -85,7 +97,7 @@ def authenticate(
     kubernetes_service_port_https: Optional[str],
     session: Session,
     serviceaccount_whitelist: FrozenSet[str],
-    logger: logging.Logger = LOGGER,
+    raise_from_token_error: RaiseFromError = _raise_from_token_error,
 ) -> HTTPAuthorizationCredentials:
     """Verify whether the Service Account has access to GET/POST from/to the
     cluster collector API.
@@ -128,32 +140,74 @@ def authenticate(
         token_review_response.status_code < 200
         or token_review_response.status_code > 299
     ):
-        _log_token_review(token_review_response.content, token.credentials, logger)
-        raise HTTPException(
-            status_code=token_review_response.status_code,
-            detail="See logs for token_review_response.",
-            headers={"WWW-Authenticate": "Bearer"},
+        raise_from_token_error(
+            token_review_response.content,
+            token.credentials,
+            TokenError(
+                status_code=token_review_response.status_code,
+                message="HTTP status code indicates error.",
+            ),
         )
 
-    token_review_response_status = json.loads(token_review_response.content)["status"]
-
-    if not token_review_response_status.get("authenticated"):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"},
+    try:
+        token_review_response_status = TokenReview.parse_obj(
+            json.loads(token_review_response.content)
+        ).status
+    except (json.JSONDecodeError, pydantic.ValidationError) as exception:
+        raise_from_token_error(
+            token_review_response.content,
+            token.credentials,
+            TokenError(
+                status_code=status.HTTP_501_NOT_IMPLEMENTED,
+                message="Error while parsing TokenReview!",
+                exception=exception,
+            ),
         )
 
-    namespace, serviceaccount = token_review_response_status["user"]["username"].split(
-        ":"
-    )[-2:]
+    if not token_review_response_status.authenticated:
+        raise_from_token_error(
+            token_review_response.content,
+            token.credentials,
+            TokenError(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                message="Invalid authentication credentials!",
+            ),
+        )
+
+    if token_review_response_status.user is None:
+        raise_from_token_error(
+            token_review_response.content,
+            token.credentials,
+            TokenError(
+                status_code=status.HTTP_501_NOT_IMPLEMENTED,
+                message="No user in token_review_response!",
+            ),
+        )
+
+    try:
+        namespace, serviceaccount = token_review_response_status.user.username.split(
+            ":"
+        )[-2:]
+    except ValueError as exception:
+        raise_from_token_error(
+            token_review_response.content,
+            token.credentials,
+            TokenError(
+                status_code=status.HTTP_501_NOT_IMPLEMENTED,
+                message="Username has unexpected format!",
+                exception=exception,
+            ),
+        )
 
     if f"{namespace}:{serviceaccount}" not in serviceaccount_whitelist:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Access denied for Service Account {serviceaccount} in "
-            f"Namespace {namespace}.",
-            headers={"WWW-Authenticate": "Bearer"},
+        raise_from_token_error(
+            token_review_response.content,
+            token.credentials,
+            TokenError(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                message=f"Access denied for Service Account {serviceaccount} "
+                f"in Namespace {namespace}!",
+            ),
         )
 
     return token

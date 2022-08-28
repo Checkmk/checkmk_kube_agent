@@ -1,0 +1,8 @@
+Title: Extend logging during authentication
+Class: feature
+Compatible: compat
+Component: cluster-collector
+Date: 1661753206
+Knowledge: undoc
+Level: 1
+Version: 2.0.0-alpha.1
