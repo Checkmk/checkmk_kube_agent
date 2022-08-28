@@ -7,8 +7,9 @@
 
 """Cluster collector API data type definitions."""
 
+import logging
 from enum import Enum
-from typing import NewType, Optional, Sequence
+from typing import NamedTuple, NewType, NoReturn, Optional, Protocol, Sequence
 
 from pydantic import BaseModel, root_validator
 
@@ -133,3 +134,33 @@ class MetricCollection(BaseModel):
 class MachineSectionsCollection(BaseModel):
     sections: MachineSections
     metadata: NodeCollectorMetadata
+
+
+class UserInfo(BaseModel):
+    username: str = ""  # username might be missing, so we avoid `None` value
+
+
+class TokenReviewStatus(BaseModel):
+    user: Optional[UserInfo]
+    authenticated: bool = False
+
+
+class TokenReview(BaseModel):
+    status: TokenReviewStatus
+
+
+class TokenError(NamedTuple):
+    status_code: int
+    message: str
+    exception: Optional[Exception] = None
+
+
+class RaiseFromError(Protocol):
+    def __call__(
+        self,
+        token_review_response: bytes,
+        token: str,
+        token_error: TokenError,
+        logger: logging.Logger = logging.getLogger("UnusedLogger"),
+    ) -> NoReturn:  # pragma: no cover
+        ...

@@ -8,9 +8,10 @@
 """Tests for cluster collector API endpoints."""
 
 import json
+import logging
 from inspect import signature
 from threading import Thread
-from typing import NamedTuple, Sequence, Union
+from typing import NamedTuple, NoReturn, Optional, Sequence, Union
 from unittest.mock import Mock
 
 import pytest
@@ -22,7 +23,9 @@ from fastapi.testclient import TestClient
 import checkmk_kube_agent.api
 from checkmk_kube_agent.api import (
     StandaloneApplication,
+    TokenError,
     _init_app_state,
+    _raise_from_token_error,
     app,
     authenticate,
     authenticate_get,
@@ -74,6 +77,27 @@ class MockLogger:
     def error(self, msg: Union[str, bytes]) -> None:
         """Persists error message instead of causing side effects."""
         self.error_called_with.append(msg)
+
+
+class MockException(Exception):
+    """An exception, to indicate calling a NoReturn function in a test context."""
+
+
+class MockRaiseFromError:
+    # pylint: disable=missing-class-docstring, too-few-public-methods
+    called_with: Optional[
+        tuple[bytes, str, TokenError, Optional[logging.Logger]]
+    ] = None
+
+    def __call__(
+        self,
+        token_review_response: bytes,
+        token: str,
+        token_error: TokenError,
+        logger: logging.Logger = None,
+    ) -> NoReturn:
+        self.called_with = (token_review_response, token, token_error, logger)
+        raise MockException()
 
 
 @pytest.fixture
@@ -425,7 +449,8 @@ async def test_authenticate_get_denied(cluster_collector_client) -> None:
     assert exception.value.status_code == status.HTTP_401_UNAUTHORIZED
     assert (
         exception.value.detail
-        == "Access denied for Service Account node-collector in Namespace checkmk-monitoring."
+        == "Access denied for Service Account node-collector in Namespace checkmk-monitoring!"
+        " See logs for TokenReview."
     )
 
 
@@ -510,7 +535,8 @@ async def test_authenticate_post_denied(cluster_collector_client) -> None:
     assert exception.value.status_code == status.HTTP_401_UNAUTHORIZED
     assert (
         exception.value.detail
-        == "Access denied for Service Account checkmk-server in Namespace checkmk-monitoring."
+        == "Access denied for Service Account checkmk-server in Namespace checkmk-monitoring!"
+        " See logs for TokenReview."
     )
 
 
@@ -561,6 +587,7 @@ def test_kubernetes_api_port_missing() -> None:
 def test_authenticate_token_invalid() -> None:
     """Invalid Kubernetes `token` is denied access."""
 
+    token = "superdupertoken"  # nosec
     response = Response(
         status_code=201,
         content=json.dumps(
@@ -576,26 +603,152 @@ def test_authenticate_token_invalid() -> None:
         ).encode("utf-8"),
     )
 
-    with pytest.raises(HTTPException) as exception:
+    raise_from_token_error = MockRaiseFromError()
+    with pytest.raises(MockException):
         authenticate(
             HTTPAuthorizationCredentials(
                 scheme="Bearer",
-                credentials="superdupertoken",
+                credentials=token,
             ),
             kubernetes_service_host="127.0.0.1",
             kubernetes_service_port_https="6443",
             session=MockSession(response),
             serviceaccount_whitelist=frozenset({}),
+            raise_from_token_error=raise_from_token_error,
         )
 
-    assert exception.type is HTTPException
-    assert exception.value.status_code == status.HTTP_401_UNAUTHORIZED
-    assert exception.value.detail == "Invalid authentication credentials"
+    assert raise_from_token_error.called_with is not None
+    used_content, used_token, token_error, logger = raise_from_token_error.called_with
+    assert used_content == response.content
+    assert used_token == token
+    assert logger is None
+    assert token_error.message == "Invalid authentication credentials!"
+    assert token_error.status_code == status.HTTP_401_UNAUTHORIZED
+    assert token_error.exception is None
+
+
+def test_authenticate_token_response_invalid_username() -> None:
+    """A token response, where the username does not match the expected format.
+
+    This occurs in Rancher for example.
+    """
+
+    token = "superdupertoken"  # nosec
+    token_response = json.dumps(
+        {
+            "kind": "TokenReview",
+            "apiVersion": "authentication.k8s.io/v1",
+            "metadata": {},
+            "status": {
+                "authenticated": True,
+                "user": {"username": "unknown"},
+                "error": [],
+            },
+        }
+    ).encode("utf-8")
+
+    response = Response(status_code=201, content=token_response)
+
+    raise_from_token_error = MockRaiseFromError()
+    with pytest.raises(MockException):
+        authenticate(
+            HTTPAuthorizationCredentials(
+                scheme="Bearer",
+                credentials=token,
+            ),
+            kubernetes_service_host="127.0.0.1",
+            kubernetes_service_port_https="6443",
+            session=MockSession(response),
+            serviceaccount_whitelist=frozenset({}),
+            raise_from_token_error=raise_from_token_error,
+        )
+
+    assert raise_from_token_error.called_with is not None
+    used_content, used_token, token_error, logger = raise_from_token_error.called_with
+    assert used_content == response.content
+    assert used_token == token
+    assert logger is None
+    assert token_error.message == "Username has unexpected format!"
+    assert token_error.status_code == status.HTTP_501_NOT_IMPLEMENTED
+    assert token_error.exception is not None
+
+
+def test_authenticate_token_response_invalid_user() -> None:
+    """A token response, where the user is missing.
+
+    It's unclear whether such responses exist in reality.
+    """
+
+    token = "superdupertoken"  # nosec
+    token_response = json.dumps(
+        {
+            "status": {
+                "authenticated": True,
+            }
+        }
+    ).encode("utf-8")
+
+    response = Response(status_code=201, content=token_response)
+
+    raise_from_token_error = MockRaiseFromError()
+    with pytest.raises(MockException):
+        authenticate(
+            HTTPAuthorizationCredentials(
+                scheme="Bearer",
+                credentials=token,
+            ),
+            kubernetes_service_host="127.0.0.1",
+            kubernetes_service_port_https="6443",
+            session=MockSession(response),
+            serviceaccount_whitelist=frozenset({}),
+            raise_from_token_error=raise_from_token_error,
+        )
+
+    assert raise_from_token_error.called_with == (
+        response.content,
+        token,
+        TokenError(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            message="No user in token_review_response!",
+            exception=None,
+        ),
+        None,
+    )
+
+
+def test_authenticate_token_response_is_not_json() -> None:
+    """A token response, which can't be parsed as json."""
+
+    token = "superdupertoken"  # nosec
+    response = Response(status_code=201, content=f"ERROR {token}".encode("utf-8"))
+
+    raise_from_token_error = MockRaiseFromError()
+    with pytest.raises(MockException):
+        authenticate(
+            HTTPAuthorizationCredentials(
+                scheme="Bearer",
+                credentials=token,
+            ),
+            kubernetes_service_host="127.0.0.1",
+            kubernetes_service_port_https="6443",
+            session=MockSession(response),
+            serviceaccount_whitelist=frozenset({}),
+            raise_from_token_error=raise_from_token_error,
+        )
+
+    assert raise_from_token_error.called_with is not None
+    used_content, used_token, token_error, logger = raise_from_token_error.called_with
+    assert used_content == response.content
+    assert used_token == token
+    assert logger is None
+    assert token_error.message == "Error while parsing TokenReview!"
+    assert token_error.status_code == status.HTTP_501_NOT_IMPLEMENTED
 
 
 def test_authenticate_invalid_token_review_request() -> None:
     """Bad requests to the Kubernetes Review API are propagated."""
 
+    token = "superdupertoken"  # nosec
     response = Response(
         status_code=400,
         content=json.dumps(
@@ -618,24 +771,54 @@ def test_authenticate_invalid_token_review_request() -> None:
         ).encode("utf-8"),
     )
 
-    logger = MockLogger()
-    with pytest.raises(HTTPException) as exception:
+    raise_from_token_error = MockRaiseFromError()
+    with pytest.raises(MockException):
         authenticate(
             HTTPAuthorizationCredentials(
                 scheme="Bearer",
-                credentials="superdupertoken",
+                credentials=token,
             ),
             kubernetes_service_host="127.0.0.1",
             kubernetes_service_port_https="6443",
             session=MockSession(response),
             serviceaccount_whitelist=frozenset({}),
-            #  We don't real logging here.
+            raise_from_token_error=raise_from_token_error,
+        )
+
+    assert raise_from_token_error.called_with == (
+        response.content,
+        token,
+        TokenError(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="HTTP status code indicates error.",
+            exception=None,
+        ),
+        None,
+    )
+
+
+def test__raise_token_error() -> None:
+    """Verifies that TokenReview is logged and that token is stripped from it."""
+
+    token = "superdupertoken"  # nosec
+    logger = MockLogger()
+    with pytest.raises(HTTPException):
+        _raise_from_token_error(
+            f"ERROR {token}".encode("utf-8"),
+            token,
+            TokenError(
+                status.HTTP_501_NOT_IMPLEMENTED,
+                "Error while parsing TokenReview!",
+                MockException(),
+            ),
             logger=logger,  # type: ignore
         )
 
-    assert exception.type is HTTPException
-    assert exception.value.status_code == status.HTTP_400_BAD_REQUEST
-    assert logger.error_called_with == [response.content]
+    assert len(logger.error_called_with) == 1
+    error_called_with = logger.error_called_with[0]
+    assert isinstance(error_called_with, bytes)
+    assert "ERROR ".encode("utf-8") in error_called_with
+    assert token.encode("utf-8") not in error_called_with
 
 
 def test_machine_sections(
