@@ -8,6 +8,7 @@
 
 import argparse
 import json
+import logging
 import os
 import sys
 from typing import FrozenSet, NewType, Optional, Sequence
@@ -37,6 +38,7 @@ from checkmk_kube_agent.type_defs import (
 )
 
 app = FastAPI()
+LOGGER = logging.getLogger(__name__)
 
 http_bearer_scheme = HTTPBearer()
 
@@ -67,6 +69,15 @@ def read_api_token() -> str:  # pragma: no cover
         return token_file.read()
 
 
+def _log_token_review(
+    token_review_response: bytes, token: str, logger: logging.Logger
+) -> None:
+    redacted_token_review_response = token_review_response.replace(
+        token.encode("utf-8"), b"***token***"
+    )
+    logger.error(redacted_token_review_response)
+
+
 def authenticate(
     token: HTTPAuthorizationCredentials,
     *,
@@ -74,6 +85,7 @@ def authenticate(
     kubernetes_service_port_https: Optional[str],
     session: Session,
     serviceaccount_whitelist: FrozenSet[str],
+    logger: logging.Logger = LOGGER,
 ) -> HTTPAuthorizationCredentials:
     """Verify whether the Service Account has access to GET/POST from/to the
     cluster collector API.
@@ -116,9 +128,10 @@ def authenticate(
         token_review_response.status_code < 200
         or token_review_response.status_code > 299
     ):
+        _log_token_review(token_review_response.content, token.credentials, logger)
         raise HTTPException(
             status_code=token_review_response.status_code,
-            detail=json.loads(token_review_response.content),
+            detail="See logs for token_review_response.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
