@@ -53,13 +53,13 @@ from checkmk_kube_agent.type_defs import (
 
 class Response(NamedTuple):  # pylint: disable=missing-class-docstring
     status_code: int
-    content: str
+    content: bytes
 
 
 class Session(
     requests.Session
 ):  # pylint: disable=missing-class-docstring,super-init-not-called
-    def __init__(self, response: Response = Response(status_code=200, content="")):
+    def __init__(self, response: Response = Response(status_code=200, content=b"")):
         self.response = response
 
     def post(self, *args, **kwargs):  # pylint: disable=unused-argument
@@ -356,7 +356,7 @@ async def test_authenticate_get_success(cluster_collector_client) -> None:
                     },
                 },
             }
-        ),
+        ).encode("utf-8"),
     )
 
     cluster_collector_client.app.state.tcp_session = Session(response)
@@ -396,7 +396,7 @@ async def test_authenticate_get_denied(cluster_collector_client) -> None:
                     },
                 },
             }
-        ),
+        ).encode("utf-8"),
     )
 
     cluster_collector_client.app.state.tcp_session = Session(response)
@@ -441,7 +441,7 @@ async def test_authenticate_post_success(cluster_collector_client) -> None:
                     },
                 },
             }
-        ),
+        ).encode("utf-8"),
     )
 
     cluster_collector_client.app.state.tcp_session = Session(response)
@@ -481,7 +481,7 @@ async def test_authenticate_post_denied(cluster_collector_client) -> None:
                     },
                 },
             }
-        ),
+        ).encode("utf-8"),
     )
 
     cluster_collector_client.app.state.tcp_session = Session(response)
@@ -563,7 +563,7 @@ def test_authenticate_token_invalid() -> None:
                     "error": ["invalid bearer token, Token has expired."],
                 },
             }
-        ),
+        ).encode("utf-8"),
     )
 
     with pytest.raises(HTTPException) as exception:
@@ -605,7 +605,7 @@ def test_authenticate_invalid_token_review_request() -> None:
                 "reason": "BadRequest",
                 "code": 400,
             }
-        ),
+        ).encode("utf-8"),
     )
 
     with pytest.raises(HTTPException) as exception:
