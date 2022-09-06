@@ -56,7 +56,7 @@ class Response(NamedTuple):  # pylint: disable=missing-class-docstring
     content: bytes
 
 
-class Session(
+class MockSession(
     requests.Session
 ):  # pylint: disable=missing-class-docstring,super-init-not-called
     def __init__(self, response: Response = Response(status_code=200, content=b"")):
@@ -359,7 +359,7 @@ async def test_authenticate_get_success(cluster_collector_client) -> None:
         ).encode("utf-8"),
     )
 
-    cluster_collector_client.app.state.tcp_session = Session(response)
+    cluster_collector_client.app.state.tcp_session = MockSession(response)
 
     assert await authenticate_get(
         HTTPAuthorizationCredentials(
@@ -399,7 +399,7 @@ async def test_authenticate_get_denied(cluster_collector_client) -> None:
         ).encode("utf-8"),
     )
 
-    cluster_collector_client.app.state.tcp_session = Session(response)
+    cluster_collector_client.app.state.tcp_session = MockSession(response)
 
     with pytest.raises(HTTPException) as exception:
         await authenticate_get(
@@ -444,7 +444,7 @@ async def test_authenticate_post_success(cluster_collector_client) -> None:
         ).encode("utf-8"),
     )
 
-    cluster_collector_client.app.state.tcp_session = Session(response)
+    cluster_collector_client.app.state.tcp_session = MockSession(response)
 
     assert await authenticate_post(
         HTTPAuthorizationCredentials(
@@ -484,7 +484,7 @@ async def test_authenticate_post_denied(cluster_collector_client) -> None:
         ).encode("utf-8"),
     )
 
-    cluster_collector_client.app.state.tcp_session = Session(response)
+    cluster_collector_client.app.state.tcp_session = MockSession(response)
 
     with pytest.raises(HTTPException) as exception:
         await authenticate_post(
@@ -514,7 +514,7 @@ def test_kubernetes_api_host_missing() -> None:
             ),
             kubernetes_service_host=None,
             kubernetes_service_port_https="6443",
-            session=Session(),
+            session=MockSession(),
             serviceaccount_whitelist=frozenset({}),
         )
 
@@ -536,7 +536,7 @@ def test_kubernetes_api_port_missing() -> None:
             ),
             kubernetes_service_host="127.0.0.1",
             kubernetes_service_port_https=None,
-            session=Session(),
+            session=MockSession(),
             serviceaccount_whitelist=frozenset({}),
         )
 
@@ -574,7 +574,7 @@ def test_authenticate_token_invalid() -> None:
             ),
             kubernetes_service_host="127.0.0.1",
             kubernetes_service_port_https="6443",
-            session=Session(response),
+            session=MockSession(response),
             serviceaccount_whitelist=frozenset({}),
         )
 
@@ -616,7 +616,7 @@ def test_authenticate_invalid_token_review_request() -> None:
             ),
             kubernetes_service_host="127.0.0.1",
             kubernetes_service_port_https="6443",
-            session=Session(response),
+            session=MockSession(response),
             serviceaccount_whitelist=frozenset({}),
         )
 
