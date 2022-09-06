@@ -10,7 +10,7 @@
 import json
 from inspect import signature
 from threading import Thread
-from typing import NamedTuple, Sequence
+from typing import NamedTuple, Sequence, Union
 from unittest.mock import Mock
 
 import pytest
@@ -64,6 +64,16 @@ class MockSession(
 
     def post(self, *args, **kwargs):  # pylint: disable=unused-argument
         return self.response
+
+
+class MockLogger:
+    # pylint: disable=missing-class-docstring, too-few-public-methods
+    def __init__(self):
+        self.error_called_with: list[Union[str, bytes]] = []
+
+    def error(self, msg: Union[str, bytes]) -> None:
+        """Persists error message instead of causing side effects."""
+        self.error_called_with.append(msg)
 
 
 @pytest.fixture
@@ -608,6 +618,7 @@ def test_authenticate_invalid_token_review_request() -> None:
         ).encode("utf-8"),
     )
 
+    logger = MockLogger()
     with pytest.raises(HTTPException) as exception:
         authenticate(
             HTTPAuthorizationCredentials(
@@ -618,11 +629,13 @@ def test_authenticate_invalid_token_review_request() -> None:
             kubernetes_service_port_https="6443",
             session=MockSession(response),
             serviceaccount_whitelist=frozenset({}),
+            #  We don't real logging here.
+            logger=logger,  # type: ignore
         )
 
     assert exception.type is HTTPException
     assert exception.value.status_code == status.HTTP_400_BAD_REQUEST
-    assert exception.value.detail == json.loads(response.content)
+    assert logger.error_called_with == [response.content]
 
 
 def test_machine_sections(
