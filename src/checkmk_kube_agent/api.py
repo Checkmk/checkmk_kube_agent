@@ -78,7 +78,7 @@ def _raise_from_token_error(
     token_review_response: bytes,
     token: str,
     token_error: TokenError,
-    logger: logging.Logger = LOGGER,
+    logger: logging.Logger,
 ) -> NoReturn:
     redacted_token_review_response = token_review_response.replace(
         token.encode("utf-8"), b"***token***"
@@ -153,7 +153,12 @@ def authenticate(
     kubernetes_service_port_https: Optional[str],
     session: Session,
     serviceaccount_whitelist: FrozenSet[str],
-    raise_from_token_error: RaiseFromError = _raise_from_token_error,
+    raise_from_token_error: RaiseFromError = lambda response, token, error: _raise_from_token_error(
+        response,
+        token,
+        error,
+        LOGGER,
+    ),
 ) -> HTTPAuthorizationCredentials:
     """Verify whether the Service Account has access to GET/POST from/to the
     cluster collector API.
