@@ -11,7 +11,7 @@ import json
 import logging
 from inspect import signature
 from threading import Thread
-from typing import NamedTuple, NoReturn, Optional, Sequence, Union
+from typing import NoReturn, Optional, Sequence, Union
 from unittest.mock import Mock
 
 import pytest
@@ -48,15 +48,11 @@ from checkmk_kube_agent.type_defs import (
     OsName,
     PlatformMetadata,
     PythonCompiler,
+    Response,
     Version,
 )
 
 # pylint: disable=redefined-outer-name
-
-
-class Response(NamedTuple):  # pylint: disable=missing-class-docstring
-    status_code: int
-    content: bytes
 
 
 class MockSession(

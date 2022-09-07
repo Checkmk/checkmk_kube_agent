@@ -37,6 +37,7 @@ from checkmk_kube_agent.type_defs import (
     NodeCollectorMetadata,
     NodeName,
     RaiseFromError,
+    Response,
     TokenError,
     TokenReview,
 )
@@ -90,6 +91,61 @@ def _raise_from_token_error(
     ) from token_error.exception
 
 
+def _check_token_review(
+    response: Response,
+    serviceaccount_whitelist: FrozenSet[str],
+) -> Optional[TokenError]:
+    if response.status_code < 200 or response.status_code > 299:
+        return TokenError(
+            status_code=response.status_code,
+            message="HTTP status code indicates error.",
+        )
+    return _check_token_review_content(response.content, serviceaccount_whitelist)
+
+
+def _check_token_review_content(
+    content: bytes,
+    serviceaccount_whitelist: FrozenSet[str],
+) -> Optional[TokenError]:
+    try:
+        token_review_status = TokenReview.parse_obj(json.loads(content)).status
+    except (json.JSONDecodeError, pydantic.ValidationError) as exception:
+        return TokenError(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            message="Error while parsing TokenReview!",
+            exception=exception,
+        )
+
+    if not token_review_status.authenticated:
+        return TokenError(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            message="Invalid authentication credentials!",
+        )
+
+    if token_review_status.user is None:
+        return TokenError(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            message="No user in token_review_response!",
+        )
+
+    try:
+        namespace, serviceaccount = token_review_status.user.username.split(":")[-2:]
+    except ValueError as exception:
+        return TokenError(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            message="Username has unexpected format!",
+            exception=exception,
+        )
+
+    if f"{namespace}:{serviceaccount}" not in serviceaccount_whitelist:
+        return TokenError(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            message=f"Access denied for Service Account {serviceaccount} "
+            f"in Namespace {namespace}!",
+        )
+    return None
+
+
 def authenticate(
     token: HTTPAuthorizationCredentials,
     *,
@@ -135,79 +191,15 @@ def authenticate(
         ),
         verify="/run/secrets/kubernetes.io/serviceaccount/ca.crt",
     )
-
-    if (
-        token_review_response.status_code < 200
-        or token_review_response.status_code > 299
-    ):
+    token_error = _check_token_review(
+        Response(token_review_response.status_code, token_review_response.content),
+        serviceaccount_whitelist,
+    )
+    if token_error is not None:
         raise_from_token_error(
             token_review_response.content,
             token.credentials,
-            TokenError(
-                status_code=token_review_response.status_code,
-                message="HTTP status code indicates error.",
-            ),
-        )
-
-    try:
-        token_review_response_status = TokenReview.parse_obj(
-            json.loads(token_review_response.content)
-        ).status
-    except (json.JSONDecodeError, pydantic.ValidationError) as exception:
-        raise_from_token_error(
-            token_review_response.content,
-            token.credentials,
-            TokenError(
-                status_code=status.HTTP_501_NOT_IMPLEMENTED,
-                message="Error while parsing TokenReview!",
-                exception=exception,
-            ),
-        )
-
-    if not token_review_response_status.authenticated:
-        raise_from_token_error(
-            token_review_response.content,
-            token.credentials,
-            TokenError(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                message="Invalid authentication credentials!",
-            ),
-        )
-
-    if token_review_response_status.user is None:
-        raise_from_token_error(
-            token_review_response.content,
-            token.credentials,
-            TokenError(
-                status_code=status.HTTP_501_NOT_IMPLEMENTED,
-                message="No user in token_review_response!",
-            ),
-        )
-
-    try:
-        namespace, serviceaccount = token_review_response_status.user.username.split(
-            ":"
-        )[-2:]
-    except ValueError as exception:
-        raise_from_token_error(
-            token_review_response.content,
-            token.credentials,
-            TokenError(
-                status_code=status.HTTP_501_NOT_IMPLEMENTED,
-                message="Username has unexpected format!",
-                exception=exception,
-            ),
-        )
-
-    if f"{namespace}:{serviceaccount}" not in serviceaccount_whitelist:
-        raise_from_token_error(
-            token_review_response.content,
-            token.credentials,
-            TokenError(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                message=f"Access denied for Service Account {serviceaccount} "
-                f"in Namespace {namespace}!",
-            ),
+            token_error,
         )
 
     return token
