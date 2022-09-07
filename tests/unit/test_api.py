@@ -8,7 +8,6 @@
 """Tests for cluster collector API endpoints."""
 
 import json
-import logging
 from inspect import signature
 from threading import Thread
 from typing import NoReturn, Optional, Sequence, Union
@@ -81,18 +80,15 @@ class MockException(Exception):
 
 class MockRaiseFromError:
     # pylint: disable=missing-class-docstring, too-few-public-methods
-    called_with: Optional[
-        tuple[bytes, str, TokenError, Optional[logging.Logger]]
-    ] = None
+    called_with: Optional[tuple[bytes, str, TokenError]] = None
 
     def __call__(
         self,
         token_review_response: bytes,
         token: str,
         token_error: TokenError,
-        logger: logging.Logger = None,
     ) -> NoReturn:
-        self.called_with = (token_review_response, token, token_error, logger)
+        self.called_with = (token_review_response, token, token_error)
         raise MockException()
 
 
@@ -703,10 +699,9 @@ def test_authenticate_check_token_review(
         )
 
     assert raise_from_token_error.called_with is not None
-    used_content, used_token, token_error, logger = raise_from_token_error.called_with
+    used_content, used_token, token_error = raise_from_token_error.called_with
     assert used_content == response.content
     assert used_token == token
-    assert logger is None
     assert token_error.message == expected_message
     assert token_error.status_code == expected_status_code
     assert isinstance(token_error.exception, expected_exception_type)
