@@ -51,8 +51,6 @@ from checkmk_kube_agent.type_defs import (
     Version,
 )
 
-# pylint: disable=redefined-outer-name
-
 
 class MockSession(
     requests.Session
@@ -92,8 +90,8 @@ class MockRaiseFromError:
         raise MockException()
 
 
-@pytest.fixture
-def cluster_collector_metadata() -> ClusterCollectorMetadata:
+@pytest.fixture(name="cluster_collector_metadata")
+def fixture_cluster_collector_metadata() -> ClusterCollectorMetadata:
     """Example cluster collector metadata"""
     return ClusterCollectorMetadata(
         node=NodeName("nebukadnezar"),
@@ -110,8 +108,8 @@ def cluster_collector_metadata() -> ClusterCollectorMetadata:
     )
 
 
-@pytest.fixture()
-def cluster_collector_client(
+@pytest.fixture(name="cluster_collector_client")
+def fixture_cluster_collector_client(
     cluster_collector_metadata: ClusterCollectorMetadata,
 ) -> TestClient:
     """Cluster collector API test client"""
@@ -125,11 +123,11 @@ def cluster_collector_client(
         metadata=cluster_collector_metadata,
     )
 
-    def authenticate() -> str:
+    def authenticate_with_empty_token() -> str:
         return ""
 
-    app.dependency_overrides[authenticate_post] = authenticate
-    app.dependency_overrides[authenticate_get] = authenticate
+    app.dependency_overrides[authenticate_post] = authenticate_with_empty_token
+    app.dependency_overrides[authenticate_get] = authenticate_with_empty_token
 
     return TestClient(app)
 
@@ -144,8 +142,8 @@ def mock_read_api_token(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(checkmk_kube_agent.api, "read_api_token", mock_read_token)
 
 
-@pytest.fixture
-def metric_collection(
+@pytest.fixture(name="metric_collection")
+def fixture_metric_collection(
     cluster_collector_metadata: ClusterCollectorMetadata,
 ) -> MetricCollection:
     """Metrics data sample"""
@@ -197,8 +195,8 @@ def metric_collection(
     )
 
 
-@pytest.fixture
-def machine_sections_collection(
+@pytest.fixture(name="machine_sections_collection")
+def fixture_machine_sections_collection(
     cluster_collector_metadata: ClusterCollectorMetadata,
 ) -> MachineSectionsCollection:
     """Machine sections example"""
@@ -215,8 +213,8 @@ def machine_sections_collection(
     )
 
 
-@pytest.fixture
-def argv() -> Sequence[str]:
+@pytest.fixture(name="argv")
+def fixture_argv() -> Sequence[str]:
     """Cluster collector main function arguments"""
     return [
         "--host",
