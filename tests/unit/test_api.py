@@ -584,143 +584,113 @@ def test_kubernetes_api_port_missing() -> None:
     )
 
 
-def test_authenticate_token_invalid() -> None:
-    """Invalid Kubernetes `token` is denied access."""
-
-    token = "superdupertoken"  # nosec
-    response = Response(
-        status_code=201,
-        content=json.dumps(
-            {
-                "kind": "TokenReview",
-                "apiVersion": "authentication.k8s.io/v1",
-                "metadata": {},
-                "status": {
-                    "user": {},
-                    "error": ["invalid bearer token, Token has expired."],
-                },
-            }
-        ).encode("utf-8"),
-    )
-
-    raise_from_token_error = MockRaiseFromError()
-    with pytest.raises(MockException):
-        authenticate(
-            HTTPAuthorizationCredentials(
-                scheme="Bearer",
-                credentials=token,
+@pytest.mark.parametrize(
+    "response, expected_message, expected_status_code, expected_exception_type",
+    [
+        pytest.param(
+            Response(
+                status_code=201,
+                content=json.dumps(
+                    {
+                        "kind": "TokenReview",
+                        "apiVersion": "authentication.k8s.io/v1",
+                        "metadata": {},
+                        "status": {
+                            "user": {},
+                            "error": ["invalid bearer token, Token has expired."],
+                        },
+                    }
+                ).encode("utf-8"),
             ),
-            kubernetes_service_host="127.0.0.1",
-            kubernetes_service_port_https="6443",
-            session=MockSession(response),
-            serviceaccount_whitelist=frozenset({}),
-            raise_from_token_error=raise_from_token_error,
-        )
-
-    assert raise_from_token_error.called_with is not None
-    used_content, used_token, token_error, logger = raise_from_token_error.called_with
-    assert used_content == response.content
-    assert used_token == token
-    assert logger is None
-    assert token_error.message == "Invalid authentication credentials!"
-    assert token_error.status_code == status.HTTP_401_UNAUTHORIZED
-    assert token_error.exception is None
-
-
-def test_authenticate_token_response_invalid_username() -> None:
-    """A token response, where the username does not match the expected format.
-
-    This occurs in Rancher for example.
-    """
-
-    token = "superdupertoken"  # nosec
-    token_response = json.dumps(
-        {
-            "kind": "TokenReview",
-            "apiVersion": "authentication.k8s.io/v1",
-            "metadata": {},
-            "status": {
-                "authenticated": True,
-                "user": {"username": "unknown"},
-                "error": [],
-            },
-        }
-    ).encode("utf-8")
-
-    response = Response(status_code=201, content=token_response)
-
-    raise_from_token_error = MockRaiseFromError()
-    with pytest.raises(MockException):
-        authenticate(
-            HTTPAuthorizationCredentials(
-                scheme="Bearer",
-                credentials=token,
-            ),
-            kubernetes_service_host="127.0.0.1",
-            kubernetes_service_port_https="6443",
-            session=MockSession(response),
-            serviceaccount_whitelist=frozenset({}),
-            raise_from_token_error=raise_from_token_error,
-        )
-
-    assert raise_from_token_error.called_with is not None
-    used_content, used_token, token_error, logger = raise_from_token_error.called_with
-    assert used_content == response.content
-    assert used_token == token
-    assert logger is None
-    assert token_error.message == "Username has unexpected format!"
-    assert token_error.status_code == status.HTTP_501_NOT_IMPLEMENTED
-    assert token_error.exception is not None
-
-
-def test_authenticate_token_response_invalid_user() -> None:
-    """A token response, where the user is missing.
-
-    It's unclear whether such responses exist in reality.
-    """
-
-    token = "superdupertoken"  # nosec
-    token_response = json.dumps(
-        {
-            "status": {
-                "authenticated": True,
-            }
-        }
-    ).encode("utf-8")
-
-    response = Response(status_code=201, content=token_response)
-
-    raise_from_token_error = MockRaiseFromError()
-    with pytest.raises(MockException):
-        authenticate(
-            HTTPAuthorizationCredentials(
-                scheme="Bearer",
-                credentials=token,
-            ),
-            kubernetes_service_host="127.0.0.1",
-            kubernetes_service_port_https="6443",
-            session=MockSession(response),
-            serviceaccount_whitelist=frozenset({}),
-            raise_from_token_error=raise_from_token_error,
-        )
-
-    assert raise_from_token_error.called_with == (
-        response.content,
-        token,
-        TokenError(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            message="No user in token_review_response!",
-            exception=None,
+            "Invalid authentication credentials!",
+            status.HTTP_401_UNAUTHORIZED,
+            type(None),
+            id="Invalid Kubernetes `token` is denied access.",
         ),
-        None,
-    )
-
-
-def test_authenticate_token_response_is_not_json() -> None:
-    """A token response, which can't be parsed as json."""
+        pytest.param(
+            Response(
+                status_code=201,
+                content=json.dumps(
+                    {
+                        "kind": "TokenReview",
+                        "apiVersion": "authentication.k8s.io/v1",
+                        "metadata": {},
+                        "status": {
+                            "authenticated": True,
+                            "user": {"username": "unknown"},
+                            "error": [],
+                        },
+                    }
+                ).encode("utf-8"),
+            ),
+            "Username has unexpected format!",
+            status.HTTP_501_NOT_IMPLEMENTED,
+            ValueError,
+            id="A token response, where the username does not match the expected format. "
+            "This occurs in Rancher for example.",
+        ),
+        pytest.param(
+            Response(
+                status_code=201,
+                content=json.dumps(
+                    {
+                        "status": {
+                            "authenticated": True,
+                        }
+                    }
+                ).encode("utf-8"),
+            ),
+            "No user in token_review_response!",
+            status.HTTP_501_NOT_IMPLEMENTED,
+            type(None),
+            id="A token response, where the user is missing. "
+            "It's unclear whether such responses exist in reality.",
+        ),
+        pytest.param(
+            Response(status_code=201, content="ERROR superdupertoken".encode("utf-8")),
+            "Error while parsing TokenReview!",
+            status.HTTP_501_NOT_IMPLEMENTED,
+            json.JSONDecodeError,
+            id="A token response, which can't be parsed as json.",
+        ),
+        pytest.param(
+            Response(
+                status_code=400,
+                content=json.dumps(
+                    {
+                        "kind": "Status",
+                        "apiVersion": "v1",
+                        "metadata": {},
+                        "status": "Failure",
+                        "message": (
+                            'TokenReview in version "v1" cannot be handled as a '
+                            "TokenReview: v1.TokenReview.Spec: "
+                            "v1.TokenReviewSpec.Audiences: []string: decode slice: "
+                            'expect [ or n, but found ", error found in #10 byte of '
+                            '...|iences": "checkmk-mo|..., bigger context ...|xxx", '
+                            '"audiences": "checkmk-monitoring"}}|...'
+                        ),
+                        "reason": "BadRequest",
+                        "code": 400,
+                    }
+                ).encode("utf-8"),
+            ),
+            "HTTP status code indicates error.",
+            status.HTTP_400_BAD_REQUEST,
+            type(None),
+            id="Bad requests to the Kubernetes Review API are propagated.",
+        ),
+    ],
+)
+def test_authenticate_check_token_review(
+    response: Response,
+    expected_message: str,
+    expected_status_code: int,
+    expected_exception_type: type,
+) -> None:
+    """Different, which occur while inspecting the TokenReview returned by Kubernetes."""
 
     token = "superdupertoken"  # nosec
-    response = Response(status_code=201, content=f"ERROR {token}".encode("utf-8"))
 
     raise_from_token_error = MockRaiseFromError()
     with pytest.raises(MockException):
@@ -741,60 +711,9 @@ def test_authenticate_token_response_is_not_json() -> None:
     assert used_content == response.content
     assert used_token == token
     assert logger is None
-    assert token_error.message == "Error while parsing TokenReview!"
-    assert token_error.status_code == status.HTTP_501_NOT_IMPLEMENTED
-
-
-def test_authenticate_invalid_token_review_request() -> None:
-    """Bad requests to the Kubernetes Review API are propagated."""
-
-    token = "superdupertoken"  # nosec
-    response = Response(
-        status_code=400,
-        content=json.dumps(
-            {
-                "kind": "Status",
-                "apiVersion": "v1",
-                "metadata": {},
-                "status": "Failure",
-                "message": (
-                    'TokenReview in version "v1" cannot be handled as a '
-                    "TokenReview: v1.TokenReview.Spec: "
-                    "v1.TokenReviewSpec.Audiences: []string: decode slice: "
-                    'expect [ or n, but found ", error found in #10 byte of '
-                    '...|iences": "checkmk-mo|..., bigger context ...|xxx", '
-                    '"audiences": "checkmk-monitoring"}}|...'
-                ),
-                "reason": "BadRequest",
-                "code": 400,
-            }
-        ).encode("utf-8"),
-    )
-
-    raise_from_token_error = MockRaiseFromError()
-    with pytest.raises(MockException):
-        authenticate(
-            HTTPAuthorizationCredentials(
-                scheme="Bearer",
-                credentials=token,
-            ),
-            kubernetes_service_host="127.0.0.1",
-            kubernetes_service_port_https="6443",
-            session=MockSession(response),
-            serviceaccount_whitelist=frozenset({}),
-            raise_from_token_error=raise_from_token_error,
-        )
-
-    assert raise_from_token_error.called_with == (
-        response.content,
-        token,
-        TokenError(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            message="HTTP status code indicates error.",
-            exception=None,
-        ),
-        None,
-    )
+    assert token_error.message == expected_message
+    assert token_error.status_code == expected_status_code
+    assert isinstance(token_error.exception, expected_exception_type)
 
 
 def test__raise_token_error() -> None:
