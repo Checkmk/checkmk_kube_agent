@@ -164,3 +164,8 @@ class RaiseFromError(Protocol):
         logger: logging.Logger = logging.getLogger("UnusedLogger"),
     ) -> NoReturn:  # pragma: no cover
         ...
+
+
+class Response(NamedTuple):
+    status_code: int
+    content: bytes
