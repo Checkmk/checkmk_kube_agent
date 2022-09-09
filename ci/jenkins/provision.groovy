@@ -56,7 +56,7 @@ def do_it() {
     }
     withEnv(["NEXUS_URL=${NEXUS_URL}/v2"]) {
         withCredentials([usernamePassword(credentialsId: "k8s-read-only-nexus-docker", passwordVariable: "NEXUS_PASSWORD", usernameVariable: "NEXUS_USER")]) {
-            stage("provide private registry credentials") {
+            stage("Provide credentials & ServiceAccount for Kubernetes") {
                 run_ansible(IMAGE, "post");
             }
         }
