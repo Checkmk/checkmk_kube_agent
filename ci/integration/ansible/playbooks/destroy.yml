@@ -13,3 +13,4 @@
         vmid: "{{ pve_id }}"
         force: 'yes'
       delegate_to: localhost
+      retries: 2
