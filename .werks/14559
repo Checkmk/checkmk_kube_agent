@@ -1,0 +1,14 @@
+Title: Sanitize container logs
+Class: security
+Compatible: compat
+Component: node-collector
+Date: 1663140673
+Edition: cre
+Knowledge: doc
+Level: 1
+State: unknown
+Version: 2.0.0-alpha.1
+
+Previously, the collectors could write the serviceaccount token to the container logs. Specifically,
+this occurred if they contacted an endpoint, which returned an HTTP status indicating an error. With
+this werk, the token is replaced by `***token***` before it is written to the logs.
