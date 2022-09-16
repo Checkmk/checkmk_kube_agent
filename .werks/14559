@@ -12,3 +12,14 @@ Version: 2.0.0-alpha.1
 Previously, the collectors could write the serviceaccount token to the container logs. Specifically,
 this occurred if they contacted an endpoint, which returned an HTTP status indicating an error. With
 this werk, the token is replaced by `***token***` before it is written to the logs.
+The issue can be detected by searching the container logs of the Checkmk
+collector Pods for the phrase <tt>"TokenReview"</tt>.
+
+We found this vulnerability internally.
+
+<b>Affected Versions</b>:
+1.0
+
+<b>Vulnerability Management</b>:
+We have rated the issue with a CVSS Score of 2.2 (Low) with the following CVSS vector:
+<tt>CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:L/I:N/A:N</tt>.
