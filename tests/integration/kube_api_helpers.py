@@ -107,10 +107,10 @@ def _parse_nodes(raw_nodes: Sequence[dict]) -> Sequence[Node]:
     return nodes
 
 
-def wait_for_daemonset_pods(api_client: APIServer, namespace: str, name: str):
+def wait_for_daemonset_pods(api_client: APIServer, namespace: str, name: str) -> None:
     """Waiting for daemonset daemon pods to enter ready state"""
 
-    def daemonset_is_ready():
+    def daemonset_is_ready() -> bool:
         api_resp = api_client.get(
             f"/apis/apps/v1/namespaces/{namespace}/daemonsets/{name}"
         )
@@ -132,10 +132,10 @@ def wait_for_daemonset_pods(api_client: APIServer, namespace: str, name: str):
         time.sleep(1)
 
 
-def wait_for_deployment(api_client: APIServer, namespace: str, name: str):
+def wait_for_deployment(api_client: APIServer, namespace: str, name: str) -> None:
     """Wait for at least one deployment replica to be ready"""
 
-    def deployment_minimum_one_replica_ready():
+    def deployment_minimum_one_replica_ready() -> bool:
         api_resp = api_client.get(
             f"/apis/apps/v1/namespaces/{namespace}/deployments/{name}"
         )

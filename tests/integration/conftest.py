@@ -8,12 +8,16 @@
 """Conftest file for integration tests"""
 
 import pytest
+from _pytest.config.argparsing import Parser
 
 from tests.integration.common_helpers import tcp_session
 from tests.integration.kube_api_helpers import APIServer
 
 
-def pytest_addoption(parser):  # pylint: disable=missing-function-docstring
+def pytest_addoption(
+    parser: Parser,
+) -> None:
+    # pylint: disable=missing-function-docstring
     parser.addoption(
         "--cluster-endpoint",
         action="store",
@@ -36,25 +40,25 @@ def pytest_addoption(parser):  # pylint: disable=missing-function-docstring
 
 
 @pytest.fixture(scope="session", name="worker_nodes_count")
-def fixture_worker_nodes_count(request) -> int:
+def fixture_worker_nodes_count(request: pytest.FixtureRequest) -> int:
     """Fixture for the count of worker nodes"""
     return int(request.config.getoption("cluster_workers"))
 
 
 @pytest.fixture(scope="session", name="cluster_endpoint")
-def fixture_cluster_endpoint(request) -> str:
+def fixture_cluster_endpoint(request: pytest.FixtureRequest) -> str:
     """Fixture for cluster endpoint"""
     return request.config.getoption("cluster_endpoint")
 
 
 @pytest.fixture(scope="session", name="cluster_token")
-def fixture_cluster_token(request) -> str:
+def fixture_cluster_token(request: pytest.FixtureRequest) -> str:
     """Fixture for cluster token"""
     return request.config.getoption("cluster_token")
 
 
 @pytest.fixture(scope="session", name="helm_chart_path")
-def fixture_helm_chart_path(request) -> str:
+def fixture_helm_chart_path(request: pytest.FixtureRequest) -> str:
     """Fixture for helm chart path"""
     return request.config.getoption("helm_chart_path")
 

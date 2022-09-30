@@ -11,7 +11,7 @@
 import re
 import subprocess  # nosec
 import time
-from typing import NamedTuple
+from typing import Iterable, NamedTuple
 
 import pytest
 import requests
@@ -36,7 +36,7 @@ class CollectorDetails(NamedTuple):
 
 
 @pytest.fixture(scope="session", name="helm_chart_name")
-def fixture_release_chart(request) -> str:
+def fixture_release_chart(request: pytest.FixtureRequest) -> str:
     """Fixture for release chart name"""
     return request.config.getoption("helm_chart_name")
 
@@ -46,7 +46,7 @@ def fixture_collector(
     helm_chart_path: str,
     api_server: kube_api_helpers.APIServer,
     worker_nodes_count: int,
-):
+) -> Iterable[CollectorDetails]:
     """Fixture to deploy and clean up collectors"""
     # TODO: parametrize collector namespace
     collector_namespace = "default"
@@ -102,7 +102,7 @@ class TestCollectors:
         self,
         api_server: kube_api_helpers.APIServer,
         collector: CollectorDetails,
-    ):
+    ) -> None:
         session = tcp_session(headers={"Authorization": f"Bearer {collector.token}"})
 
         machine_sections = session.get(f"{collector.endpoint}/machine_sections").json()
@@ -143,7 +143,7 @@ def _apply_collector_helm_chart(
 
 def _wait_for_cluster_collector_available(
     cluster_endpoint: str, session: requests.Session
-):
+) -> None:
     """Wait for cluster collector to be available"""
 
     def cluster_collector_available():
@@ -158,7 +158,7 @@ def _wait_for_cluster_collector_available(
 
 def _wait_for_node_collectors_to_send_metrics(
     session: requests.Session, cluster_endpoint: str, worker_nodes_count: int
-):
+) -> None:
     """Wait for all node collectors to send first metrics"""
 
     def all_node_collectors_sent_metrics():
