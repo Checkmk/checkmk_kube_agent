@@ -8,10 +8,12 @@
 # pylint: disable=missing-function-docstring, missing-class-docstring, no-self-use, too-few-public-methods
 
 """Integration tests for collectors"""
+import itertools
 import re
 import subprocess  # nosec
 import time
-from typing import Iterable, NamedTuple
+from pathlib import Path
+from typing import Any, Iterable, NamedTuple, Sequence
 
 import pytest
 import requests
@@ -35,44 +37,99 @@ class CollectorDetails(NamedTuple):
     token: str
 
 
-@pytest.fixture(scope="session", name="helm_chart_name")
-def fixture_release_chart(request: pytest.FixtureRequest) -> str:
-    """Fixture for release chart name"""
-    return request.config.getoption("helm_chart_name")
+class NodePort(NamedTuple):
+    name: str
+    chart_settings: Sequence[str]
+
+
+class Ingress(NamedTuple):
+    name: str
+    chart_settings: Sequence[str]
+
+
+class CollectorConfiguration(NamedTuple):
+    """Collector configuration options as provided by the helm chart."""
+
+    # TODO: implement more of these settings: CMK-10834
+    external_access_method: NodePort
+
+
+class HelmChartDeploymentSettings(NamedTuple):
+    """Helm chart settings available for deployment of the objects to the
+    Kubernetes cluster."""
+
+    path: Path
+    release_name: str
+    release_namespace: str
+    collector_configuration: CollectorConfiguration
 
 
 class TestCollectors:
+    @pytest.fixture(scope="class", params=["NodePort"])
+    # TODO: change typing to pytest.FixtureRequest once it's been added:
+    # https://github.com/pytest-dev/pytest/issues/8073
+    def external_access_method(self, request: Any) -> NodePort:
+        """Method with which the cluster collector is accessible from outside the
+        Kubernetes cluster.
+
+        Note:
+            Not all options provided by Kubernetes are supported. The supported
+            options are dictated by the options exposed in the helm chart.
+
+        See also:
+            https://kubernetes.io/docs/concepts/services-networking/
+        """
+
+        if request.param == "NodePort":
+            return NodePort(
+                name="NodePort",
+                chart_settings=[
+                    "clusterCollector.service.type=NodePort",
+                    "clusterCollector.service.nodePort=30035",
+                ],
+            )
+        # TODO: implement ingress
+        raise SystemExit(f"Unknown external access method: {request.param}")
+
+    @pytest.fixture(scope="class")
+    def deployment_settings(
+        self,
+        external_access_method: NodePort,
+    ) -> HelmChartDeploymentSettings:
+        return HelmChartDeploymentSettings(
+            path=Path("deploy/charts/checkmk"),
+            release_name="checkmk",
+            # TODO: use a custom namespace
+            release_namespace="default",
+            collector_configuration=CollectorConfiguration(
+                external_access_method=external_access_method
+            ),
+        )
+
     @pytest.fixture(scope="class")
     def collector(
         self,
-        helm_chart_path: str,
         api_server: kube_api_helpers.APIServer,
         worker_nodes_count: int,
+        deployment_settings: HelmChartDeploymentSettings,
     ) -> Iterable[CollectorDetails]:
         """Fixture to deploy and clean up collectors"""
-        # TODO: parametrize collector namespace
-        collector_namespace = "default"
-        release_name = "checkmk"
-        deploy_output = _apply_collector_helm_chart(
-            release_namespace=collector_namespace,
-            chart_path=helm_chart_path,
-            release_name=release_name,
-        )
+        deploy_output = _apply_collector_helm_chart(deployment_settings)
         collector_details = _parse_collector_connection_details(
             command_resp=deploy_output,
-            collector_namespace=collector_namespace,
-            release_name=release_name,
+            collector_namespace=deployment_settings.release_namespace,
+            release_name=deployment_settings.release_name,
         )
 
         token = collector_details.token
         kube_api_helpers.wait_for_daemonset_pods(
             api_client=api_server,
-            namespace=collector_namespace,
+            namespace=deployment_settings.release_namespace,
             name="checkmk-node-collector-machine-sections",
         )
         kube_api_helpers.wait_for_deployment(
             api_client=api_server,
-            namespace=collector_namespace,
+            namespace=deployment_settings.release_namespace,
             name="checkmk-cluster-collector",
         )
         session = tcp_session(
@@ -88,11 +145,14 @@ class TestCollectors:
             worker_nodes_count=worker_nodes_count,
         )
         yield collector_details
-        helm_delete_command = (
-            f"helm uninstall -n {collector_namespace} {release_name}".split(" ")
-        )
         subprocess.run(  # nosec
-            helm_delete_command,
+            [
+                "helm",
+                "uninstall",
+                "-n",
+                deployment_settings.release_namespace,
+                deployment_settings.release_name,
+            ],
             shell=False,
             check=True,
         )
@@ -116,24 +176,30 @@ class TestCollectors:
 
 
 def _apply_collector_helm_chart(
-    release_name: str,
-    chart_path: str,
-    release_namespace: str = "checkmk",
-    port: int = 30035,
+    deployment_settings: HelmChartDeploymentSettings,
 ) -> str:
     """Perform helm install command to deploy monitoring collectors
 
     the helm chart must be install using the NodePort option
     """
-    # TODO: read the kubectl get secret from config file (yaml file)
-    helm_install_command = (
-        f"helm upgrade --install --create-namespace -n {release_namespace} "
-        f"{release_name} {chart_path} --set clusterCollector.service.type=NodePort "
-        f"--set clusterCollector.service.nodePort={port}".split(" ")
+    additional_settings = (
+        deployment_settings.collector_configuration.external_access_method.chart_settings
     )
 
     process = subprocess.run(  # nosec
-        helm_install_command,
+        [
+            "helm",
+            "upgrade",
+            "--install",
+            "--create-namespace",
+            "-n",
+            deployment_settings.release_namespace,
+            deployment_settings.release_name,
+            str(deployment_settings.path),
+        ]
+        + list(
+            itertools.chain.from_iterable(("--set", s) for s in additional_settings)
+        ),
         shell=False,
         check=True,
         capture_output=True,
