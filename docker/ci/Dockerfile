@@ -35,8 +35,10 @@ ARG KUBECTL_VERSION="v1.24.3"
 COPY ci/integration/ansible/requirements.* /tmp/
 COPY ci/integration/ansible/ansible.cfg /etc/ansible/ansible.cfg
 # build-deps: build dependencies of ansible
+# coreutils: base64 decoder to decode tokens/CA certs from the K8s cluster
 # hadolint ignore=DL3018
-RUN apk add --no-cache gcc libffi-dev musl-dev -t build-deps && \
+RUN apk add --no-cache coreutils && \
+    apk add --no-cache gcc libffi-dev musl-dev -t build-deps && \
     wget -q "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" && \
     chmod +x kubectl && mv kubectl /usr/local/bin && \
     pip3 install --no-cache-dir -r /tmp/requirements.txt pytest && \
