@@ -41,62 +41,62 @@ def fixture_release_chart(request: pytest.FixtureRequest) -> str:
     return request.config.getoption("helm_chart_name")
 
 
-@pytest.fixture(scope="class", name="collector")
-def fixture_collector(
-    helm_chart_path: str,
-    api_server: kube_api_helpers.APIServer,
-    worker_nodes_count: int,
-) -> Iterable[CollectorDetails]:
-    """Fixture to deploy and clean up collectors"""
-    # TODO: parametrize collector namespace
-    collector_namespace = "default"
-    release_name = "checkmk"
-    deploy_output = _apply_collector_helm_chart(
-        release_namespace=collector_namespace,
-        chart_path=helm_chart_path,
-        release_name=release_name,
-    )
-    collector_details = _parse_collector_connection_details(
-        command_resp=deploy_output,
-        collector_namespace=collector_namespace,
-        release_name=release_name,
-    )
-
-    token = collector_details.token
-    kube_api_helpers.wait_for_daemonset_pods(
-        api_client=api_server,
-        namespace=collector_namespace,
-        name="checkmk-node-collector-machine-sections",
-    )
-    kube_api_helpers.wait_for_deployment(
-        api_client=api_server,
-        namespace=collector_namespace,
-        name="checkmk-cluster-collector",
-    )
-    session = tcp_session(
-        headers={"Authorization": f"Bearer {token}"}, backoff_factor=5.0
-    )
-    _wait_for_cluster_collector_available(
-        cluster_endpoint=collector_details.endpoint,
-        session=session,
-    )
-    _wait_for_node_collectors_to_send_metrics(
-        session=session,
-        cluster_endpoint=collector_details.endpoint,
-        worker_nodes_count=worker_nodes_count,
-    )
-    yield collector_details
-    helm_delete_command = (
-        f"helm uninstall -n {collector_namespace} {release_name}".split(" ")
-    )
-    subprocess.run(  # nosec
-        helm_delete_command,
-        shell=False,
-        check=True,
-    )
-
-
 class TestCollectors:
+    @pytest.fixture(scope="class")
+    def collector(
+        self,
+        helm_chart_path: str,
+        api_server: kube_api_helpers.APIServer,
+        worker_nodes_count: int,
+    ) -> Iterable[CollectorDetails]:
+        """Fixture to deploy and clean up collectors"""
+        # TODO: parametrize collector namespace
+        collector_namespace = "default"
+        release_name = "checkmk"
+        deploy_output = _apply_collector_helm_chart(
+            release_namespace=collector_namespace,
+            chart_path=helm_chart_path,
+            release_name=release_name,
+        )
+        collector_details = _parse_collector_connection_details(
+            command_resp=deploy_output,
+            collector_namespace=collector_namespace,
+            release_name=release_name,
+        )
+
+        token = collector_details.token
+        kube_api_helpers.wait_for_daemonset_pods(
+            api_client=api_server,
+            namespace=collector_namespace,
+            name="checkmk-node-collector-machine-sections",
+        )
+        kube_api_helpers.wait_for_deployment(
+            api_client=api_server,
+            namespace=collector_namespace,
+            name="checkmk-cluster-collector",
+        )
+        session = tcp_session(
+            headers={"Authorization": f"Bearer {token}"}, backoff_factor=5.0
+        )
+        _wait_for_cluster_collector_available(
+            cluster_endpoint=collector_details.endpoint,
+            session=session,
+        )
+        _wait_for_node_collectors_to_send_metrics(
+            session=session,
+            cluster_endpoint=collector_details.endpoint,
+            worker_nodes_count=worker_nodes_count,
+        )
+        yield collector_details
+        helm_delete_command = (
+            f"helm uninstall -n {collector_namespace} {release_name}".split(" ")
+        )
+        subprocess.run(  # nosec
+            helm_delete_command,
+            shell=False,
+            check=True,
+        )
+
     @pytest.mark.timeout(60)
     def test_each_node_generates_machine_sections(
         self,
