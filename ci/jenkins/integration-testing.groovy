@@ -36,7 +36,8 @@ def do_it() {
     def CADVISOR_IMAGE_NAME = "cadvisor-integration";
     def COLLECTOR_IMAGE_NAME = "kubernetes-collector-integration";
     def DOCKER_GROUP_ID = sh(script: "getent group docker | cut -d: -f3", returnStdout: true);
-    def DOCKER_IMAGE_TAG = env.GIT_COMMIT;
+    // TODO: should use commit hash as image tag instead of build id (not unique)
+    def DOCKER_IMAGE_TAG = env.BUILD_ID;
     def DOCKERHUB_PUBLISHER = DOCKER_REGISTRY_K8S.replace("https://", "");  // DOCKER_REGISTRY_K8S is a global variable that magically appears
     def IMAGE;
     def KUBERNETES_VERSION_STR = KUBERNETES_VERSION.replace(".", "");
@@ -100,14 +101,13 @@ def do_it() {
             println(KUBERNETES_ENDPOINT);
         }
         stage("get token from deployed serviceaccount") {
-//             ash("helm upgrade --install -n default deploy/charts/checkmk")
             ash("kubectl get serviceaccounts -A");
             API_TOKEN = sh(script: "#!/bin/ash\nkubectl get secret \$(kubectl get serviceaccount supervisor -o=jsonpath='{.secrets[*].name}' -n checkmk-integration) -n checkmk-integration -o=jsonpath='{.data.token}' | base64 -d", returnStdout: true).toString().trim();
             println(API_TOKEN);
         }
         stage("execute integration tests"){
             ash("ls")
-            ash("#!/bin/ash\npytest tests/integration --cluster-endpoint=${KUBERNETES_ENDPOINT} --cluster-token=${API_TOKEN} --cluster-workers=2")
+            ash("pytest tests/integration --cluster-endpoint=${KUBERNETES_ENDPOINT} --cluster-token=${API_TOKEN} --cluster-workers=2 --image-registry=${DOCKERHUB_PUBLISHER} --image-pull-secret-name=registry-auth, --collector-image-name=${COLLECTOR_IMAGE_NAME}, --cadvisor-image-name=${CADVISOR_IMAGE_NAME}, --image-tag=${DOCKER_IMAGE_TAG}")
         }
     }
     stage("roll VMs back to snapshot") {
