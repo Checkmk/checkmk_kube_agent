@@ -13,7 +13,7 @@ import re
 import subprocess  # nosec
 import time
 from pathlib import Path
-from typing import Any, Iterable, NamedTuple, Sequence
+from typing import Any, Iterable, NamedTuple, Optional, Sequence
 
 import pytest
 import requests
@@ -47,10 +47,42 @@ class Ingress(NamedTuple):
     chart_settings: Sequence[str]
 
 
+class CollectorImages(NamedTuple):
+    tag: Optional[str]
+    pull_secret: Optional[str]
+    cluster_collector: str
+    node_collector_cadvisor: str
+    node_collector_machine_sections: str
+    node_collector_container_metrics: str
+
+    def chart_settings(self) -> Sequence[str]:
+        settings = [
+            f"clusterCollector.image.repository={self.cluster_collector}",
+            f"nodeCollector.cadvisor.image.repository={self.node_collector_cadvisor}",
+            (
+                "nodeCollector.containerMetricsCollector.image.repository="
+                f"{self.node_collector_container_metrics}"
+            ),
+            (
+                "nodeCollector.machineSectionsCollector.image.repository="
+                f"{self.node_collector_machine_sections}"
+            ),
+        ]
+
+        if self.tag:
+            settings.append(f"image.tag={self.tag}")
+
+        if self.pull_secret:
+            settings.append(f"imagePullSecrets[0].name={self.pull_secret}")
+
+        return settings
+
+
 class CollectorConfiguration(NamedTuple):
     """Collector configuration options as provided by the helm chart."""
 
     # TODO: implement more of these settings: CMK-10834
+    images: CollectorImages
     external_access_method: NodePort
 
 
@@ -67,9 +99,13 @@ class HelmChartDeploymentSettings(NamedTuple):
         additional_settings = list(
             itertools.chain.from_iterable(
                 ("--set", s)
-                for s in self.collector_configuration.external_access_method.chart_settings
+                for s in [
+                    *self.collector_configuration.external_access_method.chart_settings,
+                    *self.collector_configuration.images.chart_settings(),
+                ]
             )
         )
+
         return [
             "helm",
             "upgrade",
@@ -121,15 +157,30 @@ class TestCollectors:
     @pytest.fixture(scope="class")
     def deployment_settings(
         self,
+        image_registry: str,
+        image_pull_secret_name: Optional[str],
+        collector_image_name: str,
+        cadvisor_image_name: str,
+        image_tag: str,
         external_access_method: NodePort,
     ) -> HelmChartDeploymentSettings:
+        # pylint: disable=too-many-arguments
+        collector_image = f"{image_registry}/{collector_image_name}"
         return HelmChartDeploymentSettings(
             path=Path("deploy/charts/checkmk"),
             release_name="checkmk",
             # TODO: use a custom namespace
             release_namespace="default",
             collector_configuration=CollectorConfiguration(
-                external_access_method=external_access_method
+                images=CollectorImages(
+                    tag=image_tag,
+                    pull_secret=image_pull_secret_name,
+                    cluster_collector=collector_image,
+                    node_collector_machine_sections=collector_image,
+                    node_collector_container_metrics=collector_image,
+                    node_collector_cadvisor=f"{image_registry}/{cadvisor_image_name}",
+                ),
+                external_access_method=external_access_method,
             ),
         )
 
