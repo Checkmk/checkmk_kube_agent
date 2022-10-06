@@ -63,6 +63,33 @@ class HelmChartDeploymentSettings(NamedTuple):
     release_namespace: str
     collector_configuration: CollectorConfiguration
 
+    def install_command(self) -> Sequence[str]:
+        additional_settings = list(
+            itertools.chain.from_iterable(
+                ("--set", s)
+                for s in self.collector_configuration.external_access_method.chart_settings
+            )
+        )
+        return [
+            "helm",
+            "upgrade",
+            "--install",
+            "--create-namespace",
+            "-n",
+            self.release_namespace,
+            self.release_name,
+            str(self.path),
+        ] + additional_settings
+
+    def uninstall_command(self) -> Sequence[str]:
+        return [
+            "helm",
+            "uninstall",
+            "-n",
+            self.release_namespace,
+            self.release_name,
+        ]
+
 
 class TestCollectors:
     @pytest.fixture(scope="class", params=["NodePort"])
@@ -146,13 +173,7 @@ class TestCollectors:
         )
         yield collector_details
         subprocess.run(  # nosec
-            [
-                "helm",
-                "uninstall",
-                "-n",
-                deployment_settings.release_namespace,
-                deployment_settings.release_name,
-            ],
+            deployment_settings.uninstall_command(),
             shell=False,
             check=True,
         )
@@ -182,24 +203,8 @@ def _apply_collector_helm_chart(
 
     the helm chart must be install using the NodePort option
     """
-    additional_settings = (
-        deployment_settings.collector_configuration.external_access_method.chart_settings
-    )
-
     process = subprocess.run(  # nosec
-        [
-            "helm",
-            "upgrade",
-            "--install",
-            "--create-namespace",
-            "-n",
-            deployment_settings.release_namespace,
-            deployment_settings.release_name,
-            str(deployment_settings.path),
-        ]
-        + list(
-            itertools.chain.from_iterable(("--set", s) for s in additional_settings)
-        ),
+        deployment_settings.install_command(),
         shell=False,
         check=True,
         capture_output=True,
