@@ -195,6 +195,19 @@ class TestCollectors:
             if node.role == NodeType.WORKER
         } == {section["node_name"] for section in machine_sections}
 
+    @pytest.mark.timeout(60)
+    def test_container_metrics(
+        self,
+        collector: CollectorDetails,
+    ) -> None:
+        session = tcp_session(headers={"Authorization": f"Bearer {collector.token}"})
+
+        container_metrics = session.get(
+            f"{collector.endpoint}/container_metrics"
+        ).json()
+
+        assert container_metrics
+
 
 def _apply_collector_helm_chart(
     deployment_settings: HelmChartDeploymentSettings,
