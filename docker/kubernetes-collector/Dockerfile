@@ -44,8 +44,9 @@ ARG HADOLINT_VERSION
 ARG HELM_VERSION
 ARG TRIVY_VERSION
 COPY ./requirements_dev.txt /tmp
+COPY ./requirements_test.txt /tmp
 RUN apk add --no-cache make=4.3-r0 && \
-    pip install --no-cache-dir -r /tmp/requirements_dev.txt && \
+    pip install --no-cache-dir -r /tmp/requirements_dev.txt -r /tmp/requirements_test.txt && \
     wget -q \
     "https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint-Linux-x86_64" && \
     mv hadolint-Linux-x86_64 /usr/local/bin/hadolint &&\
