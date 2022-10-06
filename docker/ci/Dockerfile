@@ -32,6 +32,7 @@ RUN wget -q "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH
 
 FROM common as integration-tester
 ARG KUBECTL_VERSION="v1.24.3"
+COPY requirements_test.txt /tmp/
 COPY ci/integration/ansible/requirements.* /tmp/
 COPY ci/integration/ansible/ansible.cfg /etc/ansible/ansible.cfg
 # build-deps: build dependencies of ansible
@@ -41,7 +42,7 @@ RUN apk add --no-cache coreutils && \
     apk add --no-cache gcc libffi-dev musl-dev -t build-deps && \
     wget -q "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" && \
     chmod +x kubectl && mv kubectl /usr/local/bin && \
-    pip3 install --no-cache-dir -r /tmp/requirements.txt pytest && \
+    pip3 install --no-cache-dir -r /tmp/requirements.txt -r /tmp/requirements_test.txt && \
     apk del build-deps && \
     mkdir -p /etc/ansible/roles && mkdir -p /etc/ansible/collections && \
     ansible-galaxy install --roles-path /etc/ansible/roles -r /tmp/requirements.yml && \
