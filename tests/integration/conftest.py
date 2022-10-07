@@ -6,7 +6,7 @@
 # source code package.
 
 """Conftest file for integration tests"""
-
+from pathlib import Path
 from typing import Optional
 
 import pytest
@@ -87,9 +87,9 @@ def fixture_cluster_token(request: pytest.FixtureRequest) -> str:
 
 
 @pytest.fixture(scope="session", name="helm_chart_path")
-def fixture_helm_chart_path(request: pytest.FixtureRequest) -> str:
+def fixture_helm_chart_path(request: pytest.FixtureRequest) -> Path:
     """Fixture for helm chart path"""
-    return request.config.getoption("helm_chart_path")
+    return Path(request.config.getoption("helm_chart_path"))
 
 
 @pytest.fixture(scope="class", name="api_server")

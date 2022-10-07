@@ -178,6 +178,7 @@ class TestDefaultCollectors:
         self,
         image_registry: str,
         image_pull_secret_name: Optional[str],
+        helm_chart_path: Path,
         collector_image_name: str,
         cadvisor_image_name: str,
         image_tag: str,
@@ -186,7 +187,7 @@ class TestDefaultCollectors:
         # pylint: disable=too-many-arguments
         collector_image = f"{image_registry}/{collector_image_name}"
         return HelmChartDeploymentSettings(
-            path=Path("deploy/charts/checkmk"),
+            path=helm_chart_path,
             release_name="checkmk",
             release_namespace=DeployableNamespace("checkmk-monitoring"),
             collector_configuration=CollectorConfiguration(
