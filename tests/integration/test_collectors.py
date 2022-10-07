@@ -9,6 +9,7 @@
 
 """Integration tests for collectors"""
 import itertools
+import json
 import re
 import subprocess  # nosec
 import time
@@ -169,8 +170,7 @@ class TestCollectors:
         return HelmChartDeploymentSettings(
             path=Path("deploy/charts/checkmk"),
             release_name="checkmk",
-            # TODO: use a custom namespace
-            release_namespace="default",
+            release_namespace="checkmk-monitoring",
             collector_configuration=CollectorConfiguration(
                 images=CollectorImages(
                     tag=image_tag,
@@ -223,11 +223,7 @@ class TestCollectors:
             worker_nodes_count=worker_nodes_count,
         )
         yield collector_details
-        subprocess.run(  # nosec
-            deployment_settings.uninstall_command(),
-            shell=False,
-            check=True,
-        )
+        _uninstall_collector_helm_chart(deployment_settings)
 
     @pytest.mark.timeout(60)
     def test_each_node_generates_machine_sections(
@@ -267,6 +263,20 @@ def _apply_collector_helm_chart(
 
     the helm chart must be install using the NodePort option
     """
+    subprocess.run(  # nosec
+        [
+            "kubectl",
+            "create",
+            "namespace",
+            deployment_settings.release_namespace,
+        ],
+        shell=False,
+        check=True,
+    )
+    _copy_pull_secret_to_namespace(
+        deployment_settings.release_namespace,
+        deployment_settings.collector_configuration.images.pull_secret,
+    )
     process = subprocess.run(  # nosec
         deployment_settings.install_command(),
         shell=False,
@@ -274,6 +284,64 @@ def _apply_collector_helm_chart(
         capture_output=True,
     )
     return process.stdout.decode("utf-8")
+
+
+def _copy_pull_secret_to_namespace(namespace: str, secret: Optional[str]) -> None:
+    """Copy the pull secret which is needed to retrieve images from a private
+    registry to the namespace where the collectors should be deployed.
+
+    Note:
+        A pod cannot access a pull secret that lives in a different namespace.
+
+    See also:
+        https://kubernetes.io/docs/concepts/configuration/secret/#details
+    """
+    if not secret:
+        return
+
+    secret_config = json.loads(
+        subprocess.run(  # nosec
+            [
+                "kubectl",
+                "get",
+                "secret",
+                secret,
+                "--namespace=default",
+                "-o",
+                "json",
+            ],
+            shell=False,
+            check=True,
+            capture_output=True,
+        ).stdout
+    )
+    secret_config["metadata"]["namespace"] = namespace
+    subprocess.run(  # nosec
+        ["kubectl", "create", "-f", "-"],
+        input=json.dumps(secret_config).encode("utf-8"),
+        shell=False,
+        check=True,
+    )
+
+
+def _uninstall_collector_helm_chart(
+    deployment_settings: HelmChartDeploymentSettings,
+) -> None:
+    subprocess.run(  # nosec
+        deployment_settings.uninstall_command(),
+        shell=False,
+        check=True,
+    )
+    subprocess.run(  # nosec
+        [
+            "kubectl",
+            "delete",
+            "namespace",
+            deployment_settings.release_namespace,
+        ],
+        shell=False,
+        check=True,
+    )
 
 
 def _wait_for_cluster_collector_available(
