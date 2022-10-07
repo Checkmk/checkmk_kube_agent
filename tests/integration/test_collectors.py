@@ -8,6 +8,8 @@
 # pylint: disable=missing-function-docstring, missing-class-docstring, no-self-use, too-few-public-methods
 
 """Integration tests for collectors"""
+from __future__ import annotations
+
 import itertools
 import json
 import re
@@ -87,13 +89,29 @@ class CollectorConfiguration(NamedTuple):
     external_access_method: NodePort
 
 
+class DeployableNamespace(str):
+    """System-owned or default namespaces are not deployable."""
+
+    def __new__(cls, namespace: str) -> DeployableNamespace:
+        if namespace in (
+            "",
+            "default",
+            "kube-flannel",
+            "kube-node-lease",
+            "kube-public",
+            "kube-system",
+        ):
+            raise ValueError(f"You may not deploy to namespace '{namespace}'")
+        return super().__new__(cls, namespace)
+
+
 class HelmChartDeploymentSettings(NamedTuple):
     """Helm chart settings available for deployment of the objects to the
     Kubernetes cluster."""
 
     path: Path
     release_name: str
-    release_namespace: str
+    release_namespace: DeployableNamespace
     collector_configuration: CollectorConfiguration
 
     def install_command(self) -> Sequence[str]:
@@ -170,7 +188,7 @@ class TestDefaultCollectors:
         return HelmChartDeploymentSettings(
             path=Path("deploy/charts/checkmk"),
             release_name="checkmk",
-            release_namespace="checkmk-monitoring",
+            release_namespace=DeployableNamespace("checkmk-monitoring"),
             collector_configuration=CollectorConfiguration(
                 images=CollectorImages(
                     tag=image_tag,
