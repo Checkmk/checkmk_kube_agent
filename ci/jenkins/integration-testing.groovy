@@ -107,7 +107,7 @@ def do_it() {
         }
         stage("execute integration tests"){
             ash("ls")
-            ash("pytest tests/integration --cluster-endpoint=${KUBERNETES_ENDPOINT} --cluster-token=${API_TOKEN} --cluster-workers=2 --image-registry=${DOCKERHUB_PUBLISHER} --image-pull-secret-name=registry-auth, --collector-image-name=${COLLECTOR_IMAGE_NAME}, --cadvisor-image-name=${CADVISOR_IMAGE_NAME}, --image-tag=${DOCKER_IMAGE_TAG}")
+            ash("pytest tests/integration --cluster-endpoint=${KUBERNETES_ENDPOINT} --cluster-token=${API_TOKEN} --cluster-workers=2 --image-registry=${DOCKERHUB_PUBLISHER} --image-pull-secret-name=registry-auth --collector-image-name=${COLLECTOR_IMAGE_NAME} --cadvisor-image-name=${CADVISOR_IMAGE_NAME} --image-tag=${DOCKER_IMAGE_TAG}")
         }
     }
     stage("roll VMs back to snapshot") {
