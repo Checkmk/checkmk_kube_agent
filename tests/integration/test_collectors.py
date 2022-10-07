@@ -128,7 +128,7 @@ class HelmChartDeploymentSettings(NamedTuple):
         ]
 
 
-class TestCollectors:
+class TestDefaultCollectors:
     @pytest.fixture(scope="class", params=["NodePort"])
     # TODO: change typing to pytest.FixtureRequest once it's been added:
     # https://github.com/pytest-dev/pytest/issues/8073
@@ -224,6 +224,40 @@ class TestCollectors:
         )
         yield collector_details
         _uninstall_collector_helm_chart(deployment_settings)
+
+    @pytest.mark.timeout(120)
+    def test_authentication_cluster_collector_with_invalid_token(
+        self,
+        collector: CollectorDetails,
+    ) -> None:
+        session = tcp_session(headers={"Authorization": "Bearer invalid_token"})
+
+        response_collector = session.get(f"{collector.endpoint}/metadata")
+        assert response_collector.status_code == 401
+        assert response_collector.json()["detail"].startswith(
+            "Invalid authentication credentials"
+        )
+
+    @pytest.mark.timeout(120)
+    def test_authentication_cluster_collector_with_no_token(
+        self, collector: CollectorDetails
+    ) -> None:
+        session = tcp_session()
+
+        response_collector = session.get(f"{collector.endpoint}/metadata")
+        assert response_collector.status_code == 403
+
+    @pytest.mark.timeout(120)
+    def test_authentication_cluster_collector_with_non_whitelisted_token(
+        self, cluster_token: str, collector: CollectorDetails
+    ) -> None:
+        session = tcp_session(headers={"Authorization": f"Bearer {cluster_token}"})
+
+        response_collector = session.get(f"{collector.endpoint}/metadata")
+        assert response_collector.status_code == 401
+        assert response_collector.json()["detail"].startswith(
+            "Access denied for Service Account"
+        )
 
     @pytest.mark.timeout(60)
     def test_each_node_generates_machine_sections(
