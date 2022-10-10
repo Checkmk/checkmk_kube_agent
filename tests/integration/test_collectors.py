@@ -16,7 +16,7 @@ import re
 import subprocess  # nosec
 import time
 from pathlib import Path
-from typing import Any, Iterable, NamedTuple, Optional, Sequence
+from typing import Any, Iterable, NamedTuple, Optional, Sequence, Tuple
 
 import pytest
 import requests
@@ -276,6 +276,64 @@ class TestDefaultCollectors:
         assert response_collector.status_code == 401
         assert response_collector.json()["detail"].startswith(
             "Access denied for Service Account"
+        )
+
+    @pytest.mark.timeout(120)
+    @pytest.mark.usefixtures("collector")
+    def test_cluster_collector_has_resources(
+        self,
+        api_server: kube_api_helpers.APIServer,
+        deployment_settings: HelmChartDeploymentSettings,
+    ) -> None:
+        deployment_name = "checkmk-cluster-collector"
+        api_response = api_server.get(
+            f"/apis/apps/v1/namespaces/{deployment_settings.release_namespace}"
+            f"/deployments/{deployment_name}"
+        )
+        cluster_collector_deployment = json.loads(api_response.response)
+        containers = cluster_collector_deployment["spec"]["template"]["spec"][
+            "containers"
+        ]
+        resources = containers[0]["resources"]
+
+        assert len(containers) == 1
+        assert "cpu" in resources["requests"]
+        assert "memory" in resources["requests"]
+        assert "cpu" in resources["limits"]
+        assert "memory" in resources["limits"]
+
+    @pytest.mark.timeout(120)
+    @pytest.mark.usefixtures("collector")
+    @pytest.mark.parametrize(
+        "daemonset_component", [("container-metrics", 2), ("machine-sections", 1)]
+    )
+    def test_node_collector_has_resources(
+        self,
+        daemonset_component: Tuple[str, int],
+        api_server: kube_api_helpers.APIServer,
+        deployment_settings: HelmChartDeploymentSettings,
+    ) -> None:
+        daemonset_section_name, containers_count = daemonset_component
+        daemonset_name = f"checkmk-node-collector-{daemonset_section_name}"
+        api_response = api_server.get(
+            f"/apis/apps/v1/namespaces/{deployment_settings.release_namespace}"
+            f"/daemonsets/{daemonset_name}"
+        )
+        node_collector_daemonset = json.loads(api_response.response)
+        containers = node_collector_daemonset["spec"]["template"]["spec"]["containers"]
+
+        assert len(containers) == containers_count
+        assert all(
+            "cpu" in container["resources"]["requests"] for container in containers
+        )
+        assert all(
+            "memory" in container["resources"]["requests"] for container in containers
+        )
+        assert all(
+            "cpu" in container["resources"]["limits"] for container in containers
+        )
+        assert all(
+            "memory" in container["resources"]["limits"] for container in containers
         )
 
     @pytest.mark.timeout(60)
