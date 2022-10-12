@@ -1,95 +1,112 @@
-properties([
-    buildDiscarder(logRotator(
-        artifactDaysToKeepStr: "",
-        artifactNumToKeepStr: "",
-        daysToKeepStr: "7",
-        numToKeepStr: "200")),
-    parameters([
-        choice(choices: ['containerd', 'docker'], name: 'CONTAINER_RUNTIME',
-                description: '<b>Choose the container runtime that will be installed.</b>'),
-        choice(choices: ['1.21', '1.22', '1.23'], name: 'KUBERNETES_VERSION',
-                description: '<b>Choose the Kubernetes version that will be installed.</b>'),
-        booleanParam(name: 'DRY_RUN', defaultValue: false, description: 'Set to true if you want to print the actions to stdout, rather than execute them (e.g. for debugging).'),
-    ])
-])
+#!groovy
 
-DRY_RUN = DRY_RUN.toBoolean();
-def NODE = "";
+/// file: provision.groovy
 
-withFolderProperties {
-    NODE = env.BUILD_NODE;
-}
+def main() {
+    def snapshot_name = "hello_world";  // TODO: make this dynamic
+    def nexus_url = "${DOCKER_REGISTRY_K8S}/v2"; // DOCKER_REGISTRY_K8S is a global variable that magically appears
+    def dry_run = params.DRY_RUN.toBoolean();
 
-timeout(time: 12, unit: "HOURS") {
-    node(NODE) {
-        ansiColor("xterm") {
-            do_it();
+    print(
+        """
+        |===== CONFIGURATION ===============================
+        |KUBERNETES_VERSION:    |${params.KUBERNETES_VERSION}│
+        |CONTAINER_RUNTIME:     |${params.CONTAINER_RUNTIME}│
+        |PROXMOX_NODE:          |${env.PROXMOX_NODE}│
+        |PROXMOX_DOMAIN:        |${env.PROXMOX_DOMAIN}│
+        |DRY_RUN:               |${dry_run}│
+        |NEXUS_URL:             |${nexus_url}│
+        |SNAPSHOT_NAME:         |${snapshot_name}│
+        |===================================================
+        """.stripMargin());
+
+    def image = { name ->
+        stage("Build CI image") {
+            return docker.build(name, "--network=host --target=integration-tester -f docker/ci/Dockerfile .");
         }
-    }
-}
+    }("checkmk-kube-agent-integration");
 
-
-def do_it() {
-    def IMAGE;
-    def SNAPSHOT_NAME = "hello_world";
-    def NEXUS_URL = DOCKER_REGISTRY_K8S; // DOCKER_REGISTRY_K8S is a global variable that magically appears
-
-    stage("check out") {
-        checkout(scm);
-        println "Provisioning Kubernetes v${KUBERNETES_VERSION} running with ${CONTAINER_RUNTIME} to node ${env.PROXMOX_NODE}.${env.PROXMOX_DOMAIN}";
-        println "Dry run: ${DRY_RUN}";
+    stage("Destroy VMs") {
+        run_ansible(image, dry_run, "destroy");
     }
-    stage("build CI image") {
-        IMAGE = docker.build("checkmk-kube-agent-integration", "--network=host --target=integration-tester -f docker/ci/Dockerfile .");
+    stage("Deploy VMs") {
+        run_ansible(image, dry_run, "deploy");
     }
-    stage("destroy VMs") {
-        run_ansible(IMAGE, "destroy");
+    stage("Start VMs") {
+        run_ansible(image, dry_run, "manage", "target_state=started");
     }
-    stage("deploy VMs") {
-        run_ansible(IMAGE, "deploy");
+    stage("Provision container runtime/kubernetes cluster") {
+        run_ansible(image, dry_run, "provision");
     }
-    stage("start VMs") {
-        run_ansible(IMAGE, "manage", "target_state=started");
-    }
-    stage("provision container runtime/kubernetes cluster") {
-        run_ansible(IMAGE, "provision");
-    }
-    withEnv(["NEXUS_URL=${NEXUS_URL}/v2"]) {
-        withCredentials([usernamePassword(credentialsId: "k8s-read-only-nexus-docker", passwordVariable: "NEXUS_PASSWORD", usernameVariable: "NEXUS_USER")]) {
+    withEnv(["NEXUS_URL=${nexus_url}"]) {
+        withCredentials([
+            usernamePassword(
+                credentialsId: "k8s-read-only-nexus-docker",
+                passwordVariable: "NEXUS_PASSWORD",
+                usernameVariable: "NEXUS_USER")]) {
             stage("Provide credentials & ServiceAccount for Kubernetes") {
-                run_ansible(IMAGE, "post");
+                run_ansible(image, dry_run, "post");
             }
         }
     }
-    stage("stop VMs") {
-        run_ansible(IMAGE, "manage", "target_state=stopped");
+    stage("Stop VMs") {
+        run_ansible(image, dry_run, "manage", "target_state=stopped");
     }
-    stage("create snapshot") {
-        run_ansible(IMAGE, "snapshot", "snap_state=present snap_name=${SNAPSHOT_NAME}");
+    stage("Create snapshot") {
+        run_ansible(image, dry_run, "snapshot", "snap_state=present snap_name=${snapshot_name}");
     }
 }
 
-def run_ansible(image, operation, extra_vars="") {
-    def ANSIBLE_DIR = "ci/integration/ansible";
-    def ANSIBLE_HOSTS_FILE = "${ANSIBLE_DIR}/inventory/hosts.ini";
-    def ANSIBLE_PLAYBOOKS_DIR = "${ANSIBLE_DIR}/playbooks";
-    def KUBERNETES_VERSION_STR = KUBERNETES_VERSION.replace(".", "");
-    def PM_URL = "https://${env.PROXMOX_HOST}:8006";
-    def RUN_HOSTS = "k8s_${KUBERNETES_VERSION_STR}_${CONTAINER_RUNTIME}";
-    def COMMAND = "ansible-playbook --inventory ${ANSIBLE_HOSTS_FILE} ${ANSIBLE_PLAYBOOKS_DIR}/${operation}.yml --extra-vars 'run_hosts=${RUN_HOSTS} ${extra_vars}'";
+def run_ansible(image, dry_run, operation, extra_vars="") {
+    def ansible_dir = "ci/integration/ansible";
+    def ansible_hosts_file = "${ansible_dir}/inventory/hosts.ini";
+    def ansible_playbooks_dir = "${ansible_dir}/playbooks";
+    def kubernetes_version_str = params.KUBERNETES_VERSION.replace(".", "");
+    def pm_url = "https://${env.PROXMOX_HOST}:8006";
+    def run_hosts = "k8s_${kubernetes_version_str}_${params.CONTAINER_RUNTIME}";
+    def command = """
+        ansible-playbook \
+            --inventory ${ansible_hosts_file} ${ansible_playbooks_dir}/${operation}.yml \
+            --extra-vars 'run_hosts=${run_hosts} ${extra_vars}'
+    """;
 
-    withCredentials([sshUserPrivateKey(credentialsId: "ssh_kube_ansible", keyFileVariable: "ANSIBLE_SSH_PRIVATE_KEY_FILE", usernameVariable: "ANSIBLE_SSH_REMOTE_USER"),
-                     usernamePassword(credentialsId: "kube_at_proxmox", passwordVariable: "PM_PASS", usernameVariable: "PM_USER")]) {
-        withEnv(["PM_NODE=${env.PROXMOX_NODE}", "PM_HOST=${env.PROXMOX_HOST}", "PM_URL=${PM_URL}"]) {
-            println "Running ${operation}"
-            println "Using credentials: ssh_kube_ansible, kube_at_proxmox";
-            println "Using environment variables: PM_NODE=${env.PROXMOX_NODE}, PM_HOST=${env.PROXMOX_HOST_HOST}, PM_URL=${PM_URL}, PM_SEARCHDOMAIN=${env.PROXMOX_SEARCHDOMAIN}";
-            println COMMAND;
-            if (!DRY_RUN) {
+    withCredentials([
+        sshUserPrivateKey(
+            credentialsId: "ssh_kube_ansible",
+            keyFileVariable: "ANSIBLE_SSH_PRIVATE_KEY_FILE",
+            usernameVariable: "ANSIBLE_SSH_REMOTE_USER"),
+        usernamePassword(
+            credentialsId: "kube_at_proxmox",
+            passwordVariable: "PM_PASS",
+            usernameVariable: "PM_USER")]) {
+        withEnv([   // FIXME: use proxmox_env
+            "PM_NODE=${env.PROXMOX_NODE}",
+            "PM_HOST=${env.PROXMOX_HOST}",
+            "PM_URL=${pm_url}"]) {
+                print("""
+                    Running ${operation}
+                    Using credentials: ssh_kube_ansible, kube_at_proxmox
+                    Using environment variables: \
+                        PM_NODE=${env.PROXMOX_NODE}, \
+                        PM_HOST=${env.PROXMOX_HOST_HOST}, \
+                        PM_URL=${pm_url}, \
+                        PM_SEARCHDOMAIN=${env.PROXMOX_SEARCHDOMAIN}
+                    ${command}
+                """);
                 image.inside() {
-                    sh("#!/bin/ash\n${COMMAND}");
+                   ash("#!/bin/ash\n${command}", dry_run);
                 }
-            }
         }
     }
 }
+
+// FIXME: extract function along with duplicate from integration-testing.groovy to job-entry.groovy
+def ash(command, dry_run) {
+    if (!dry_run) {
+        sh("#!/bin/ash\n${command}");
+    } else {
+        print(command);
+    }
+}
+
+return this;
