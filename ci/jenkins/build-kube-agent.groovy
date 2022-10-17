@@ -56,6 +56,46 @@ def determine_docker_tag(is_release_build, version) {
 }
 
 def main(BRANCH, METHOD, VERSION, IS_RELEASE_BUILD) {
+        /* Problem guide
+
+        All release stages (not built) are independent from each other.
+        Some components may be referenced by other components, but their individual release process
+        does not block another
+
+        The determined version number is used in almost all stages and can, therefore, be considered as main linking
+        reference
+
+        ## Troubleshoot git tags
+        * the version number is also used as git tag which is pushed to our internal branch
+        * the tag is also pushed to Github
+
+        # TODO: this approach is not suggested, so an alternative approach should be drafted
+        * troubleshoot when only this stage succeeds: ->
+            * the tag should be removed for both using git tag -d <tag_name>
+            * depending on which stage fails, two branches must also be cleaned up:
+                * the release branch (e.g. 1.0.0)
+                * the github branch
+            * do not forget to sanitize your local tags
+
+
+        ## Troubleshoot container images
+        * tag is also used for container images of the Cluster & Node Collector which are built and then docker pushed
+        * in case there is stage failure after images were pushed: you can just leave the two images as they are since
+        they will get overwritten with the next trigger
+        * in case team decides to revert/cancel a release: the pushed images should be deleted
+
+        ## Troubleshoot Github Release
+        * a Github token is used to execute this stage;
+            * troubleshoot: should almost never happen but you can verify if the token hasn't expired using `gh api`
+        * github release must be deleted manually before another release with the same version name can be created
+        * the releases can be verified here https://github.com/tribe29/checkmk_kube_agent/releases
+
+        ## Troubleshoot Github Pages
+        * the steps in update-helm-repo can be followed manually
+        * KNOWN PROBLEM: the gh command line tool does not recognize files which are located in the /tmp (potentially
+        also others) directory
+
+        */
         def COMMIT_SHA;
         // TODO: at least consolidate in this repo...
         def DOCKER_GROUP_ID = sh(script: "getent group docker | cut -d: -f3", returnStdout: true);
