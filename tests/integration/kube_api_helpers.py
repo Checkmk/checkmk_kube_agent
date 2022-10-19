@@ -6,11 +6,13 @@
 # source code package.
 
 """Helper functions to help communicate with the API server of a running Kubernetes cluster"""
+from __future__ import annotations
+
 import enum
 import json
 import time
 from dataclasses import dataclass
-from typing import Final, NamedTuple, Sequence
+from typing import Final, Literal, NamedTuple, Sequence
 
 import requests
 
@@ -107,7 +109,12 @@ def _parse_nodes(raw_nodes: Sequence[dict]) -> Sequence[Node]:
     return nodes
 
 
-def wait_for_daemonset_pods(api_client: APIServer, namespace: str, name: str) -> None:
+def wait_for_daemonset_pods(
+    api_client: APIServer,
+    namespace: str,
+    name: str,
+    observing_state: Literal["numberReady", "currentNumberScheduled"],
+) -> None:
     """Waiting for daemonset daemon pods to enter ready state"""
 
     def daemonset_is_ready() -> bool:
@@ -117,16 +124,16 @@ def wait_for_daemonset_pods(api_client: APIServer, namespace: str, name: str) ->
         details = json.loads(api_resp.response)
         try:
             desired_nodes = details["status"]["desiredNumberScheduled"]
-            ready_nodes = details["status"]["numberReady"]
+            observed_nodes = details["status"][observing_state]
         except (KeyError, TypeError):
             # the API response can be sometimes None
             return False
 
-        if ready_nodes > desired_nodes:
+        if observed_nodes > desired_nodes:
             raise KubernetesError(
                 f"Daemonset {name} has more higher numberReady value than desiredNumberScheduled"
             )
-        return ready_nodes == desired_nodes
+        return observed_nodes == desired_nodes
 
     while not daemonset_is_ready():
         time.sleep(1)
@@ -148,3 +155,39 @@ def wait_for_deployment(api_client: APIServer, namespace: str, name: str) -> Non
 
     while not deployment_minimum_one_replica_ready():
         time.sleep(1)
+
+
+def wait_for_collector_pod_containers_to_exit_creation_state(
+    api_client: APIServer, collectors_pod_names: Sequence[str], namespace: str
+) -> None:
+    """Wait for all containers of collector pods to exit ContainerCreating state"""
+
+    def all_collector_pod_containers_exit_creation_stage() -> bool:
+        pods = get_pods_from_namespace(api_client=api_client, namespace=namespace)
+        collector_pods = [
+            pod
+            for pod in pods
+            if any(
+                pod["metadata"]["name"].startswith(collector_pod_name)
+                for collector_pod_name in collectors_pod_names
+            )
+        ]
+        for pod in collector_pods:
+            for container in pod["status"]["containerStatuses"]:
+                if "waiting" not in container["state"]:
+                    continue
+
+                if container["state"]["waiting"]["reason"] == "ContainerCreating":
+                    return False
+
+        return True
+
+    while not all_collector_pod_containers_exit_creation_stage():
+        time.sleep(1)
+
+
+def get_pods_from_namespace(api_client: APIServer, namespace: str):
+    """Retrieve namespace specific pods from Kubernetes API"""
+    api_resp = api_client.get(f"/api/v1/namespaces/{namespace}/pods")
+    details = json.loads(api_resp.response)
+    return details["items"]

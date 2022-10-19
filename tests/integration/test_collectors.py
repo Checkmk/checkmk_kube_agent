@@ -26,7 +26,6 @@ from tests.integration.common_helpers import tcp_session
 
 # pylint: disable=fixme
 from tests.integration.helm_chart_helpers import (
-    CollectorConfiguration,
     CollectorImages,
     DeployableNamespace,
     HelmChartDeploymentSettings,
@@ -91,10 +90,9 @@ class TestDefaultCollectors:
             path=helm_chart_path,
             release_name="checkmk",
             release_namespace=DeployableNamespace("checkmk-monitoring"),
-            collector_configuration=CollectorConfiguration(
-                images=collector_images,
-                external_access_method=external_access_method,
-            ),
+            images=collector_images,
+            external_access_method=external_access_method,
+            additional_chart_settings=[],
         )
 
     @pytest.fixture(scope="class")
@@ -117,6 +115,7 @@ class TestDefaultCollectors:
             api_client=api_server,
             namespace=deployment_settings.release_namespace,
             name="checkmk-node-collector-machine-sections",
+            observing_state="numberReady",
         )
         kube_api_helpers.wait_for_deployment(
             api_client=api_server,

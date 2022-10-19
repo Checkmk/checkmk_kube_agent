@@ -6,7 +6,11 @@
 # source code package.
 
 # pylint: disable=missing-function-docstring, missing-class-docstring, no-self-use, too-few-public-methods
-"""Helper functions to help apply the Checkmk Kubernetes monitoring helm chart"""
+"""Helper functions to help apply the Checkmk Kubernetes monitoring helm chart
+
+    Note that the names of the configuration options correspond to those of the
+    actual deployment helm chart.
+"""
 from __future__ import annotations
 
 import itertools
@@ -15,12 +19,30 @@ import subprocess  # nosec
 from pathlib import Path
 from typing import NamedTuple, Optional, Sequence
 
-# pylint: disable=fixme
+# pylint: disable=fixme, line-too-long
 
 
 class NodePort(NamedTuple):
     name: str
     chart_settings: Sequence[str]
+
+
+def security_context_run_as_user_settings(run_as_user: int) -> Sequence[str]:
+    return [
+        f"clusterCollector.securityContext.runAsUser={run_as_user}",
+        f"nodeCollector.cadvisor.securityContext.runAsUser={run_as_user}",
+        f"nodeCollector.containerMetricsCollector.securityContext.runAsUser={run_as_user}",
+        f"nodeCollector.machineSectionsCollector.securityContext.runAsUser={run_as_user}",
+    ]
+
+
+def security_context_run_as_non_root_settings(run_as_non_root: bool) -> Sequence[str]:
+    return [
+        f"clusterCollector.securityContext.runAsNonRoot={str(run_as_non_root).lower()}",
+        f"nodeCollector.cadvisor.securityContext.runAsNonRoot={str(run_as_non_root).lower()}",
+        f"nodeCollector.containerMetricsCollector.securityContext.runAsNonRoot={str(run_as_non_root).lower()}",
+        f"nodeCollector.machineSectionsCollector.securityContext.runAsNonRoot={str(run_as_non_root).lower()}",
+    ]
 
 
 class CollectorImages(NamedTuple):
@@ -85,17 +107,21 @@ class HelmChartDeploymentSettings(NamedTuple):
     path: Path
     release_name: str
     release_namespace: DeployableNamespace
-    collector_configuration: CollectorConfiguration
+    images: CollectorImages
+    external_access_method: NodePort
+    additional_chart_settings: Sequence[Sequence[str]]
 
     def install_command(self) -> Sequence[str]:
-        additional_settings = list(
-            itertools.chain.from_iterable(
-                ("--set", s)
-                for s in [
-                    *self.collector_configuration.external_access_method.chart_settings,
-                    *self.collector_configuration.images.chart_settings(),
-                ]
-            )
+        setting_groups = [
+            *self.external_access_method.chart_settings,
+            *self.images.chart_settings(),
+        ]
+
+        for settings in self.additional_chart_settings:
+            setting_groups.extend(settings)
+
+        default_overwriting_settings = list(
+            itertools.chain.from_iterable(("--set", s) for s in setting_groups)
         )
 
         return [
@@ -107,7 +133,7 @@ class HelmChartDeploymentSettings(NamedTuple):
             self.release_namespace,
             self.release_name,
             str(self.path),
-        ] + additional_settings
+        ] + default_overwriting_settings
 
     def uninstall_command(self) -> Sequence[str]:
         return [
@@ -117,6 +143,16 @@ class HelmChartDeploymentSettings(NamedTuple):
             self.release_namespace,
             self.release_name,
         ]
+
+
+def node_port_chart_settings() -> NodePort:
+    return NodePort(
+        name="NodePort",
+        chart_settings=[
+            "clusterCollector.service.type=NodePort",
+            "clusterCollector.service.nodePort=30035",
+        ],
+    )
 
 
 def apply_collector_helm_chart(
@@ -138,7 +174,7 @@ def apply_collector_helm_chart(
     )
     _copy_pull_secret_to_namespace(
         deployment_settings.release_namespace,
-        deployment_settings.collector_configuration.images.pull_secret,
+        deployment_settings.images.pull_secret,
     )
     process = subprocess.run(  # nosec
         deployment_settings.install_command(),
