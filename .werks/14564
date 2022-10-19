@@ -1,0 +1,31 @@
+Title: Use allowIngressFromCIDRs correctly
+Class: fix
+Compatible: compat
+Component: helm
+Date: 1667903700
+Knowledge: doc
+Level: 1
+Version: 2.0.0-alpha.1
+
+Previously, setting <tt>allowIngressFromCIDRs</tt> inside values.yaml resulted in an incorrect
+NetworkPolicy. For example, the following:
+C+:
+networkPolicy:
+    enabled: true
+allowIngressFromCIDRs:
+    - 127.0.0.1/32 # e.g. Checkmk Server
+C-:
+resulted in
+C+:
+ingress:
+  - from:
+    - ipBlock:
+        cidr: '$v'
+C-:
+With this werk, this is fixed. The example above results in
+C+:
+ingress:
+  - from:
+    - ipBlock:
+        cidr: 127.0.0.1/32
+C-:
