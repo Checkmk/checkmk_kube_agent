@@ -15,7 +15,7 @@ import re
 import subprocess  # nosec
 import time
 from pathlib import Path
-from typing import Any, Iterable, NamedTuple, Optional, Sequence, Tuple
+from typing import Any, Iterable, NamedTuple, Sequence, Tuple
 
 import pytest
 import requests
@@ -83,29 +83,16 @@ class TestDefaultCollectors:
     @pytest.fixture(scope="class")
     def deployment_settings(
         self,
-        image_registry: str,
-        image_pull_secret_name: Optional[str],
         helm_chart_path: Path,
-        collector_image_name: str,
-        cadvisor_image_name: str,
-        image_tag: str,
+        collector_images: CollectorImages,
         external_access_method: NodePort,
     ) -> HelmChartDeploymentSettings:
-        # pylint: disable=too-many-arguments
-        collector_image = f"{image_registry}/{collector_image_name}"
         return HelmChartDeploymentSettings(
             path=helm_chart_path,
             release_name="checkmk",
             release_namespace=DeployableNamespace("checkmk-monitoring"),
             collector_configuration=CollectorConfiguration(
-                images=CollectorImages(
-                    tag=image_tag,
-                    pull_secret=image_pull_secret_name,
-                    cluster_collector=collector_image,
-                    node_collector_machine_sections=collector_image,
-                    node_collector_container_metrics=collector_image,
-                    node_collector_cadvisor=f"{image_registry}/{cadvisor_image_name}",
-                ),
+                images=collector_images,
                 external_access_method=external_access_method,
             ),
         )

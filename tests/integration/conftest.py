@@ -13,6 +13,7 @@ import pytest
 from _pytest.config.argparsing import Parser
 
 from tests.integration.common_helpers import tcp_session
+from tests.integration.helm_chart_helpers import CollectorImages
 from tests.integration.kube_api_helpers import APIServer
 
 # pylint: disable=missing-function-docstring
@@ -101,28 +102,48 @@ def fixture_api_server(cluster_endpoint: str, cluster_token: str) -> APIServer:
     )
 
 
-@pytest.fixture(scope="session")
-def image_registry(request: pytest.FixtureRequest) -> str:
+@pytest.fixture(scope="session", name="image_registry")
+def fixture_image_registry(request: pytest.FixtureRequest) -> str:
     return request.config.getoption("image_registry")
 
 
-@pytest.fixture(scope="session")
-def image_pull_secret_name(request: pytest.FixtureRequest) -> Optional[str]:
+@pytest.fixture(scope="session", name="image_pull_secret_name")
+def fixture_image_pull_secret_name(request: pytest.FixtureRequest) -> Optional[str]:
     """Image pull secrets are needed when images are retrieved from a private
     registry."""
     return request.config.getoption("image_pull_secret_name")
 
 
-@pytest.fixture(scope="session")
-def collector_image_name(request: pytest.FixtureRequest) -> str:
+@pytest.fixture(scope="session", name="collector_image_name")
+def fixture_collector_image_name(request: pytest.FixtureRequest) -> str:
     return request.config.getoption("collector_image_name")
 
 
-@pytest.fixture(scope="session")
-def cadvisor_image_name(request: pytest.FixtureRequest) -> str:
+@pytest.fixture(scope="session", name="cadvisor_image_name")
+def fixture_cadvisor_image_name(request: pytest.FixtureRequest) -> str:
     return request.config.getoption("cadvisor_image_name")
 
 
-@pytest.fixture(scope="session")
-def image_tag(request: pytest.FixtureRequest) -> Optional[str]:
+@pytest.fixture(scope="session", name="image_tag")
+def fixture_image_tag(request: pytest.FixtureRequest) -> Optional[str]:
     return request.config.getoption("image_tag")
+
+
+@pytest.fixture(scope="session", name="collector_images")
+def fixture_collector_images(
+    image_registry: str,
+    image_pull_secret_name: Optional[str],
+    collector_image_name: str,
+    cadvisor_image_name: str,
+    image_tag: str,
+) -> CollectorImages:
+    # pylint: disable=too-many-arguments
+    collector_image = f"{image_registry}/{collector_image_name}"
+    return CollectorImages(
+        tag=image_tag,
+        pull_secret=image_pull_secret_name,
+        cluster_collector=collector_image,
+        node_collector_machine_sections=collector_image,
+        node_collector_container_metrics=collector_image,
+        node_collector_cadvisor=f"{image_registry}/{cadvisor_image_name}",
+    )
