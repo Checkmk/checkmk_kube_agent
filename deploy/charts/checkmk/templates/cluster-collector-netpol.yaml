@@ -103,9 +103,9 @@ spec:
     - Ingress
   ingress:
     - from:
-      {{- range $v := .Values.networkPolicy.allowIngressFromCIDRs }}
+      {{- range $cidr := .Values.networkPolicy.allowIngressFromCIDRs }}
       - ipBlock:
-          cidr: '$v'
+          cidr: {{ .cidr }}
       {{- end }}
 {{- end }}
 {{- end }}
