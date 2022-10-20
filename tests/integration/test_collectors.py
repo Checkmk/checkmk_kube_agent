@@ -137,7 +137,7 @@ class TestDefaultCollectors:
         yield collector_details
         uninstall_collector_helm_chart(deployment_settings)
 
-    @pytest.mark.timeout(120)
+    @pytest.mark.timeout(400)
     def test_authentication_cluster_collector_with_invalid_token(
         self,
         collector: CollectorDetails,
@@ -150,7 +150,7 @@ class TestDefaultCollectors:
             "Invalid authentication credentials"
         )
 
-    @pytest.mark.timeout(120)
+    @pytest.mark.timeout(400)
     def test_authentication_cluster_collector_with_no_token(
         self, collector: CollectorDetails
     ) -> None:
@@ -159,7 +159,7 @@ class TestDefaultCollectors:
         response_collector = session.get(f"{collector.endpoint}/metadata")
         assert response_collector.status_code == 403
 
-    @pytest.mark.timeout(120)
+    @pytest.mark.timeout(400)
     def test_authentication_cluster_collector_with_non_whitelisted_token(
         self, cluster_token: str, collector: CollectorDetails
     ) -> None:
@@ -171,7 +171,7 @@ class TestDefaultCollectors:
             "Access denied for Service Account"
         )
 
-    @pytest.mark.timeout(120)
+    @pytest.mark.timeout(400)
     @pytest.mark.usefixtures("collector")
     def test_cluster_collector_has_resources(
         self,
@@ -195,7 +195,7 @@ class TestDefaultCollectors:
         assert "cpu" in resources["limits"]
         assert "memory" in resources["limits"]
 
-    @pytest.mark.timeout(120)
+    @pytest.mark.timeout(400)
     @pytest.mark.usefixtures("collector")
     @pytest.mark.parametrize(
         "daemonset_component", [("container-metrics", 2), ("machine-sections", 1)]
@@ -229,7 +229,7 @@ class TestDefaultCollectors:
             "memory" in container["resources"]["limits"] for container in containers
         )
 
-    @pytest.mark.timeout(60)
+    @pytest.mark.timeout(400)
     def test_each_node_generates_machine_sections(
         self,
         api_server: kube_api_helpers.APIServer,
@@ -246,7 +246,7 @@ class TestDefaultCollectors:
             if node.role == NodeType.WORKER
         } == {section["node_name"] for section in machine_sections}
 
-    @pytest.mark.timeout(60)
+    @pytest.mark.timeout(400)
     def test_container_metrics(
         self,
         collector: CollectorDetails,

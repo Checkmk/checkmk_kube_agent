@@ -6,7 +6,7 @@ def main() {
     def kubernetes_string = params.KUBERNETES_VERSION.replace(".", "");
     def snapshot_name = "${params.CONTAINER_RUNTIME}_${kubernetes_string}";
     def nexus_url = "${DOCKER_REGISTRY_K8S}/v2"; // DOCKER_REGISTRY_K8S is a global variable that magically appears
-    def dry_run = params.DRY_RUN.toBoolean();
+    def dry_run = false;
 
     print(
         """
@@ -27,6 +27,9 @@ def main() {
         }
     }("checkmk-kube-agent-integration");
 
+//     stage("Stop VMs") {
+//         run_ansible(image, dry_run, "manage", "target_state=stopped");
+//     }
     stage("Destroy VMs") {
         run_ansible(image, dry_run, "destroy");
     }
@@ -50,6 +53,27 @@ def main() {
             }
         }
     }
+
+//     stage("Show service accounts"){
+//         image.inside() {
+//             withCredentials([
+//                 sshUserPrivateKey(
+//                     credentialsId: "ssh_kube_ansible",
+//                     keyFileVariable: "ANSIBLE_SSH_PRIVATE_KEY_FILE",
+//                     usernameVariable: "ANSIBLE_SSH_REMOTE_USER")]) {
+//                 ash("""
+//                     ansible-playbook \
+//                         --inventory ${ansible_hosts_file} \
+//                         ${ansible_playbooks_dir}/auth.yml \
+//                         --extra-vars 'run_hosts=${run_hosts}'
+//                 """);
+//             }
+//
+//             ash("kubectl get serviceaccounts -A");
+//             ash("kubectl get secret \$(kubectl get serviceaccount supervisor -o=jsonpath='{.secrets[*].name}' -n checkmk-integration) -n checkmk-integration -o=jsonpath='{.data.token}' ");
+//         }
+//     }
+
     stage("Stop VMs") {
         run_ansible(image, dry_run, "manage", "target_state=stopped");
     }

@@ -4,11 +4,23 @@ kind: Namespace
 metadata:
   name: checkmk-integration
 ---
+#apiVersion: v1
+#kind: Secret
+#metadata:
+#  name: supervisor-token
+#  namespace: checkmk-integration
+#  annotations:
+#    kubernetes.io/service-account.name: supervisor
+#type: kubernetes.io/service-account-token
+#data:
+#    extra: YmFyCg==
+#---
 kind: ServiceAccount
 apiVersion: v1
 metadata:
   name: supervisor
   namespace: checkmk-integration
+automountServiceAccountToken: true
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -20,6 +32,7 @@ rules:
       - apps
       - batch
       - autoscaling
+      - authentication.k8s.io
     resources:
       - nodes
       - nodes/proxy
@@ -42,9 +55,11 @@ rules:
       - resourcequotas
       - serviceaccounts
       - secrets
+      - tokenreviews
     verbs:
       - "get"
       - "list"
+      - "create"
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -58,12 +73,4 @@ subjects:
   - kind: ServiceAccount
     name: supervisor
     namespace: checkmk-integration
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: supervisor-token
-  namespace: checkmk-integration
-  annotations:
-    kubernetes.io/service-account.name: supervisor
-type: kubernetes.io/service-account-token
+

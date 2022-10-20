@@ -3,8 +3,10 @@ kubernetes_role: node
 
 kubernetes_allow_pods_on_master: false
 kubernetes_pod_network:
-  cni: 'flannel'
-  cidr: '10.244.0.0/16'
+  cni: 'calico'
+  cidr: '192.168.0.0/16'
+  # cni: 'flannel'
+  # cidr: '10.244.0.0/16'
 
 kubernetes_kubeadm_kubelet_config_file_path: '/etc/kubernetes/kubeadm-kubelet-config.yaml'
 kubernetes_config_kubelet_configuration:

@@ -173,6 +173,10 @@ def wait_for_collector_pod_containers_to_exit_creation_state(
             )
         ]
         for pod in collector_pods:
+            if "containerStatuses" not in pod["status"]:
+                print(pod)
+                return False
+
             for container in pod["status"]["containerStatuses"]:
                 if "waiting" not in container["state"]:
                     continue

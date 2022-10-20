@@ -35,9 +35,9 @@
         nameservers: "{{ kubernetes_vms_dns }}"
         cores: 4
         sockets: 1
-        memory: 4096
+        memory: 8096
         ipconfig:
           ipconfig0: 'ip={{ ansible_host }}/24,gw={{ kubernetes_vms_gateway }}'
       delegate_to: localhost
       retries: 3
-      delay: 3
+      delay: 10

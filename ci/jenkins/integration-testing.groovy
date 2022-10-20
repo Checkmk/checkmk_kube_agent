@@ -147,6 +147,11 @@ def main() {
         def api_token = {
             stage("Get token from deployed serviceaccount") {
                 ash("kubectl get serviceaccounts -A");
+                ash("kubectl describe serviceaccount supervisor -n checkmk-integration");
+                ash("kubectl create token --duration=600s -n checkmk-integration supervisor");
+                ash("kubectl describe serviceaccount supervisor -n checkmk-integration");
+                ash("kubectl get serviceaccount supervisor -o=jsonpath='{.secrets[*].name}' -n checkmk-integration");
+                ash("kubectl describe secret supervisor-token -n checkmk-integration");
                 return ash_output("""
                     kubectl get secret \$(\
                             kubectl get serviceaccount supervisor \
