@@ -3,7 +3,8 @@
 /// file: provision.groovy
 
 def main() {
-    def snapshot_name = "${params.CONTAINER_RUNTIME}_${params.KUBERNETES_VERSION}";
+    def kubernetes_string = params.KUBERNETES_VERSION.replace(".", "");
+    def snapshot_name = "${params.CONTAINER_RUNTIME}_${kubernetes_string}";
     def nexus_url = "${DOCKER_REGISTRY_K8S}/v2"; // DOCKER_REGISTRY_K8S is a global variable that magically appears
     def dry_run = params.DRY_RUN.toBoolean();
 

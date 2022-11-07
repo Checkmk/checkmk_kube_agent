@@ -8,7 +8,8 @@ def main() {
     def docker_image_tag = env.BUILD_ID;
     def cadvisor_image_name = "cadvisor-integration";
     def collector_image_name = "kubernetes-collector-integration";
-    def snapshot_name = "${params.CONTAINER_RUNTIME}_${params.KUBERNETES_VERSION}";
+    def kubernetes_string = params.KUBERNETES_VERSION.replace(".", "");
+    def snapshot_name = "${params.CONTAINER_RUNTIME}_${kubernetes_string}";
 
     print(
         """
@@ -19,6 +20,7 @@ def main() {
         |PROXMOX_HOST:          |${env.PROXMOX_HOST}│
         |dockerhub_publisher:   |${dockerhub_publisher}│
         |docker_image_tag:      |${docker_image_tag}│
+        |snapshot_name:         |${snapshot_name}|
         |===================================================
         """.stripMargin());
 
