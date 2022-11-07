@@ -3,7 +3,7 @@
 /// file: provision.groovy
 
 def main() {
-    def snapshot_name = "hello_world";  // TODO: make this dynamic
+    def snapshot_name = "${params.CONTAINER_RUNTIME}_${params.KUBERNETES_VERSION}";
     def nexus_url = "${DOCKER_REGISTRY_K8S}/v2"; // DOCKER_REGISTRY_K8S is a global variable that magically appears
     def dry_run = params.DRY_RUN.toBoolean();
 

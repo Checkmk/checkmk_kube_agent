@@ -8,7 +8,7 @@ def main() {
     def docker_image_tag = env.BUILD_ID;
     def cadvisor_image_name = "cadvisor-integration";
     def collector_image_name = "kubernetes-collector-integration";
-    def snapshot_name = "hello_world";
+    def snapshot_name = "${params.CONTAINER_RUNTIME}_${params.KUBERNETES_VERSION}";
 
     print(
         """
@@ -75,7 +75,7 @@ def main() {
         stage("Roll VMs back to snapshot"){
             withCredentials([
                 usernamePassword(
-                    credentialsId: "kube_at_proxmox", 
+                    credentialsId: "kube_at_proxmox",
                     passwordVariable: "PM_PASS",
                     usernameVariable: "PM_USER")]) {
                 withEnv(proxmox_env) {
@@ -124,7 +124,7 @@ def main() {
                 """);
             }
         }
-        
+
         stage("Verify kube config") {
             ash("ls /home/jenkins/.kube");
             ash("kubectl get nodes");
