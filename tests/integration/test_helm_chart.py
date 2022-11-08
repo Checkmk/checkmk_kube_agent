@@ -105,7 +105,7 @@ class TestSecurityContexts:
             )
         ]
 
-        assert len(node_collector_pods) == worker_nodes_count
+        assert len(node_collector_pods) == worker_nodes_count * 2
         assert all(
             (
                 "breaks non-root policy"
@@ -120,12 +120,11 @@ class TestSecurityContexts:
         self,
         api_server: kube_api_helpers.APIServer,
         deployment_settings: HelmChartDeploymentSettings,
-        worker_nodes_count: int,
     ):
         pods = kube_api_helpers.get_pods_from_namespace(
             api_client=api_server, namespace=deployment_settings.release_namespace
         )
-        node_collector_container_metrics_pods = [
+        cluster_collector_pods = [
             pod
             for pod in pods
             if pod["metadata"]["name"].startswith(
@@ -133,11 +132,11 @@ class TestSecurityContexts:
             )
         ]
 
-        assert len(node_collector_container_metrics_pods) == worker_nodes_count
+        assert len(cluster_collector_pods) == 1
         assert all(
             (
                 "breaks non-root policy"
                 in pod["status"]["containerStatuses"][0]["state"]["waiting"]["message"]
-                for pod in node_collector_container_metrics_pods
+                for pod in cluster_collector_pods
             )
         )
