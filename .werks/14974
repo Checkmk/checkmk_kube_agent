@@ -1,0 +1,18 @@
+Title: Long-lived API token for "checkmk" ServiceAccount for Kubernetes version >= 1.24
+Class: fix
+Compatible: compat
+Component: helm
+Date: 1668583793
+Knowledge: doc
+Level: 1
+Version: 2.0.0-alpha.1
+
+The "checkmk" ServiceAccount is used to access the Kubernetes collectors and
+the Kubernetes API from the Checkmk monitoring server. This ServiceAccount also
+needs an access token in order to authenticate against these components.
+
+Since Kubernetes version 1.24, ServiceAccounts are no longer automatically
+assigned a token. Upon deploying the "checkmk" helm chart, we suggested
+creating the token via the "kubectl create token" command. However, this method
+does not create long-lived ServiceAccount tokens and was not a suitable method.
+We now create the token using a dedicated manifest.
