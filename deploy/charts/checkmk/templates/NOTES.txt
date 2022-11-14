@@ -26,16 +26,15 @@ ClusterIP:
 {{- end }}
   # Cluster-internal DNS of `cluster-collector`: {{ include "checkmk.fullname" . }}-cluster-collector.{{ .Release.Namespace }}
 With the token of the service account named `{{ template "checkmk.serviceAccountName.checkmk" . }}` in the namespace `{{ .Release.Namespace }}` you can now issue queries against the `cluster-collector`.
-{{- if semverCompare ">= 1.24-0" (include "checkmk.kubeVersion" .) }}
-Run the following to create a token and fetch the ca-certificate of the cluster:
-  export TOKEN=$(kubectl create token --duration=0s -n {{ .Release.Namespace }} {{ template "checkmk.serviceAccountName.checkmk" . }});
-  export CA_CRT="$(kubectl get configmap kube-root-ca.crt -o 'jsonpath={.data.ca\.crt}')";
-{{- else }}
 Run the following to fetch its token and the ca-certificate of the cluster:
+{{- if semverCompare ">= 1.24-0" (include "checkmk.kubeVersion" .) }}
+  export TOKEN=$(kubectl get secret {{ template "checkmk.serviceAccountName.checkmk" . }} -n {{ .Release.Namespace }} -o=jsonpath='{.data.token}' | base64 --decode);
+  export CA_CRT="$(kubectl get secret {{ template "checkmk.serviceAccountName.checkmk" . }} -n {{ .Release.Namespace }} -o=jsonpath='{.data.ca\.crt}' | base64 --decode)";
+{{- else }}
   export TOKEN=$(kubectl get secret $(kubectl get serviceaccount {{ template "checkmk.serviceAccountName.checkmk" . }} -o=jsonpath='{.secrets[*].name}' -n {{ .Release.Namespace }}) -n {{ .Release.Namespace }} -o=jsonpath='{.data.token}' | base64 --decode);
   export CA_CRT="$(kubectl get secret $(kubectl get serviceaccount {{ template "checkmk.serviceAccountName.checkmk" . }} -o=jsonpath='{.secrets[*].name}' -n {{ .Release.Namespace }}) -n {{ .Release.Namespace }} -o=jsonpath='{.data.ca\.crt}' | base64 --decode)";
-  # Note: Quote the variable when echo'ing to preserve proper line breaks: `echo "$CA_CRT"`
 {{- end }}
+  # Note: Quote the variable when echo'ing to preserve proper line breaks: `echo "$CA_CRT"`
 To test access you can run:
 {{- if .Values.clusterCollector.ingress.enabled }}
 {{- if $.Values.tlsCommunication.enabled }}
