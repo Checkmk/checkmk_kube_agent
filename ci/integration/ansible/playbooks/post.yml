@@ -40,3 +40,22 @@
   tasks:
     - name: "Deploy YAML file to Kubernetes cluster"
       command: "kubectl apply -f ../../deploy/integration-sa.yaml"
+    - name: "Verify service account is created"
+      command: "kubectl get serviceaccount supervisor -n checkmk-integration --ignore-not-found"
+      register: serviceaccount
+      until: serviceaccount.stdout | length > 0
+      retries: 3
+      delay: 3
+    - name: "Apply secret to serviceaccount"
+      shell: |
+          kubectl apply -f - <<EOF
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: supervisor-token
+            namespace: checkmk-integration
+            annotations:
+              kubernetes.io/service-account.name: supervisor
+          type: kubernetes.io/service-account-token
+          EOF
+
