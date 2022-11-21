@@ -33,11 +33,11 @@
           {{ ansible_ssh_public_key }}
         searchdomains: "{{ proxmox_api_searchdomain }}"
         nameservers: "{{ kubernetes_vms_dns }}"
-        cores: 4
+        cores: 2    # can temporarily be increased to 4, but not permanently (to preserve the Proxmox node)
         sockets: 1
         memory: 4096
         ipconfig:
           ipconfig0: 'ip={{ ansible_host }}/24,gw={{ kubernetes_vms_gateway }}'
       delegate_to: localhost
       retries: 3
-      delay: 3
+      delay: 10
