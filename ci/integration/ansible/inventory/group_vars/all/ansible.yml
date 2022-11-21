@@ -12,5 +12,7 @@ proxmox_api_searchdomain: "{{ lookup('env', 'PM_SEARCHDOMAIN') }}"
 container_image_registry_url: "{{ lookup('env', 'NEXUS_URL') or 'docker.io' }}"
 nexus_user: "{{ lookup('env', 'NEXUS_USER') }}"
 nexus_password: "{{ lookup('env', 'NEXUS_PASSWORD') }}"
-kubernetes_flannel_manifest_file_rbac: "https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/k8s-old-manifests/kube-flannel-rbac.yml"
-kubernetes_flannel_manifest_file: "https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml"
+# Flannel manifests are unused but keeping them as comments as the links of the role are broken
+#kubernetes_flannel_manifest_file_rbac: "https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/k8s-old-manifests/kube-flannel-rbac.yml"
+#kubernetes_flannel_manifest_file: "https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml"
+kubernetes_calico_manifest_file: https://projectcalico.docs.tigera.io/manifests/calico.yaml
