@@ -7,8 +7,6 @@ kubernetes_pod_network:
   cidr: '192.168.0.0/16'
 
 kubernetes_kubeadm_kubelet_config_file_path: '/etc/kubernetes/kubeadm-kubelet-config.yaml'
-kubernetes_config_kubelet_configuration:
-  cgroupDriver: "systemd"
 
 kubernetes_config_init_configuration:
   localAPIEndpoint:
