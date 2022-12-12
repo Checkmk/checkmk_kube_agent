@@ -1,5 +1,5 @@
 Title: Long-lived API token for "checkmk" ServiceAccount for Kubernetes version >= 1.24
-Class: fix
+Class: feature
 Compatible: compat
 Component: helm
 Date: 1668583793
@@ -7,7 +7,7 @@ Edition: cre
 Knowledge: doc
 Level: 1
 State: unknown
-Version: 1.1.1
+Version: 1.2.0
 
 The "checkmk" ServiceAccount is used to access the Kubernetes collectors and
 the Kubernetes API from the Checkmk monitoring server. This ServiceAccount also
