@@ -65,6 +65,17 @@ def main(BRANCH, METHOD, VERSION, IS_RELEASE_BUILD) {
         The determined version number is used in almost all stages and can, therefore, be considered as main linking
         reference
 
+        ## General Troubleshoot
+        * Important: should never push commits directly to github from local branch (always through Gerrit)
+            Github is like a mirror to the Gerrit repo
+        ** encountered error case (for github pages branch): pushed commit locally which resulted in different
+        git hashes between Gerrit & Github and therefore blocked the release during the subsequent run.
+        ** example was https://github.com/tribe29/checkmk_kube_agent/commits/gh-pages (add helm chart version 1.1.0)
+            different commit hashes between Gerrit gh-pages & github gh-pages
+        ** resolving the error case: must hard reset & force push to Github branch
+            Gerrit commits always represent the truth (not Github)
+
+
         ## Troubleshoot git tags
         * the version number is also used as git tag which is pushed to our internal branch
         * the tag is also pushed to Github
@@ -94,6 +105,7 @@ def main(BRANCH, METHOD, VERSION, IS_RELEASE_BUILD) {
         * the steps in update-helm-repo can be followed manually
         * KNOWN PROBLEM: the gh command line tool does not recognize files which are located in the /tmp (potentially
         also others) directory
+        * see General Troubleshoot (above) if github push attempt fails
 
         */
         def COMMIT_SHA;
