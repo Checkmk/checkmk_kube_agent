@@ -1,5 +1,5 @@
 Title: Long-lived API token for "checkmk" ServiceAccount for Kubernetes version >= 1.24
-Class: fix
+Class: feature
 Compatible: compat
 Component: helm
 Date: 1668583793
