@@ -1,0 +1,15 @@
+Title: Change default logging level for node collectors in values.yaml
+Class: fix
+Compatible: compat
+Component: helm
+Date: 1674133518
+Edition: cre
+Knowledge: doc
+Level: 1
+State: unknown
+Version: 1.2.1
+
+When installing or upgrading the chart, you can pass <tt>-f values.yaml</tt> to overwrite default
+values of the chart specified in your custom values.yaml file. However, this would result in a
+different logging level for the node collectors. With this werk, logging is set to warning when
+using <tt>-f values.yaml</tt>.
