@@ -149,7 +149,7 @@ clusterCollector:
 ## Configuration for node-collector components (cadvisor, container-metrics, machine-sections)
 nodeCollector:
   # logLevel for container-metrics and machine-sections; can be: "debug", "info", "warning" (default), "critical"
-  logLevel: debug
+  logLevel: warning
 
   # Pods of nodeCollectors will typically be ready for a short amount of time before detecting
   # problems. The value below ensures, that they don't become available as well.
