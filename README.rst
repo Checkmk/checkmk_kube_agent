@@ -12,8 +12,8 @@ Checkmk cluster and node collectors to monitor Kubernetes clusters.
 Features
 --------
 
-* Officially supports vanilla Kubernetes installations. Unofficially also works on other flavors (e.g. AWS EKS, AKS, GKE).
-* Supports Kubernetes version 1.21 to 1.23
+* Officially supports vanilla Kubernetes installations, Azure Kubernetes Service, AWS Elastic Kubernetes Service and Google Kubernetes Engine. 
+* Follows the Kubernetes support cycle (latest 3 Kubernetes are officially supported)
 * Works with *Docker* and *containerd*
 * Uses `cAdvisor`_ to collect container metrics
 * Runs the following objects on your cluster:

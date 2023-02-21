@@ -26,7 +26,7 @@ imagePullSecrets: []
 image:
   # Overrides the image tag whose default is the chart appVersion.
   # ref: https://hub.docker.com/r/checkmk/kubernetes-collector/tags
-  tag: "main_2022.03.02" # main_<YYYY.MM.DD>
+  tag: "1.2.0" # main_<YYYY.MM.DD>
 
 rbac:
   pspEnabled: true
@@ -106,7 +106,7 @@ clusterCollector:
 
   service:
     # if required specify "NodePort" here to expose the cluster-collector via the "nodePort" specified below
-    type: ClusterIP
+    type: LoadBalancer
     port: 8080
     # nodePort: 30035
 
@@ -168,9 +168,11 @@ nodeCollector:
   #   beta.kubernetes.io/arch: amd64
   #   beta.kubernetes.io/os: linux
 
-  tolerations: []
-  # - effect: NoSchedule
-  #   operator: Exists
+  tolerations:
+    - key: extra-node
+      operator: "Exists"
+      effect: NoSchedule
+
 
   ## Assign a PriorityClassName to pods if set
   # priorityClassName: ""
@@ -263,4 +265,4 @@ nodeCollector:
     # this means that the '/sys' directory of the node will be mounted into the container.
     # the pod security policy is adjusted accordingly.
     networkInterfaceMonitoring:
-      enabled: false
+      enabled: true
