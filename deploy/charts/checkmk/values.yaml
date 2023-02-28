@@ -29,7 +29,7 @@ image:
   tag: "main_2022.03.02" # main_<YYYY.MM.DD>
 
 rbac:
-  pspEnabled: true
+  pspEnabled: false
   pspAnnotations:
     ## Specify psp annotations
     ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#apparmor

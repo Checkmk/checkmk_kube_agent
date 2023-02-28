@@ -1,0 +1,11 @@
+Title: Disabled Pod Security Policies by default
+Class: fix
+Compatible: compat
+Component: helm
+Date: 1677571633
+Knowledge: doc
+Level: 1
+Version: 2.0.0-alpha.1
+
+PodSecurityPolicy was deprecated in Kubernetes v1.21, and removed from Kubernetes in v1.25. Thus,
+they now have to be explicitely enabled via the values.yaml file.
