@@ -29,7 +29,7 @@ image:
   tag: "1.2.0"
 
 rbac:
-  pspEnabled: true
+  pspEnabled: false
   pspAnnotations:
     ## Specify psp annotations
     ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#apparmor
