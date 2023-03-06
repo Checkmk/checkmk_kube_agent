@@ -7,6 +7,10 @@ metadata:
   labels:
     {{- include "checkmk.labels" . | nindent 4 }}
     app: {{ include "checkmk.fullname" . }}-cluster-collector
+  {{- with .Values.clusterCollector.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   type: {{ .Values.clusterCollector.service.type }}
   ports:
