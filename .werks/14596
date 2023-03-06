@@ -1,0 +1,11 @@
+Title: Allow specifying annotations of clusterCollector.service via values.yaml
+Class: feature
+Compatible: compat
+Component: helm
+Date: 1679329852
+Edition: cre
+Knowledge: undoc
+Level: 1
+State: unknown
+Version: 1.2.1
+
