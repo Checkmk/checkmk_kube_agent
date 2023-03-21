@@ -61,7 +61,7 @@ spec:
                   fieldPath: spec.nodeName
           livenessProbe:
             httpGet:
-              path: /health
+              path: {{ .Values.clusterCollector.livenessProbe.path | default "/health" }}
               port: api
               httpHeaders:
                 - name: status
@@ -78,7 +78,7 @@ spec:
           resources:
             {{- toYaml .Values.clusterCollector.resources | nindent 12 }}
           ports:
-            - containerPort: 10050
+            - containerPort: {{ .Values.clusterCollector.containerPort | default 10050 }}
               name: api
               protocol: TCP
           volumeMounts:

@@ -1,0 +1,17 @@
+---
+{{- if .Values.clusterCollector.service.gkeBackendConfigEnabled -}}
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: {{ include "checkmk.fullname" . }}-cluster-collector
+spec:
+  healthCheck:
+    checkIntervalSec: 30
+    port: {{ .Values.clusterCollector.containerPort | default 10050 }}
+    {{- if .Values.tlsCommunication.enabled }}
+    type: "HTTPS"
+    {{- else }}
+    type: "HTTP"
+    {{- end }}
+    requestPath: {{ .Values.clusterCollector.livenessProbe.path | default "/health" }}
+{{- end }}

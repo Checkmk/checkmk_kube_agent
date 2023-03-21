@@ -87,6 +87,8 @@ clusterCollector:
   # can be: "debug", "info", "warning" (default), "critical"
   logLevel: warning
 
+  containerPort: 10050
+
   podAnnotations:
     seccomp.security.alpha.kubernetes.io/pod: runtime/default
 
@@ -110,6 +112,7 @@ clusterCollector:
     port: 8080
     # nodePort: 30035
     annotations: {}
+    gkeBackendConfigEnabled: false
 
   ingress:
     enabled: false
@@ -131,6 +134,7 @@ clusterCollector:
     periodSeconds: 10
     timeoutSeconds: 2
     failureThreshold: 3
+    path: /health
 
   resources:
     limits:
