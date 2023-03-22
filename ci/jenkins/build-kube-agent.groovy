@@ -177,7 +177,6 @@ def main(BRANCH, METHOD, VERSION) {
             else {
                 stage("Update helm repo index") {
                     sh("git checkout ${GITHUB_PAGES_BRANCH}");
-                    sh("git pull");
                     withCredentials([sshUserPrivateKey(credentialsId: "release", keyFileVariable: 'keyfile')]) {
                         withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile} -l release"]) {
                             docker.image(CI_IMAGE).inside("--entrypoint=") {
