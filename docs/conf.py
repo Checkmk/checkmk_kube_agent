@@ -48,8 +48,8 @@ master_doc = "index"
 
 # General information about the project.
 project = "Checkmk Kubernetes Cluster and Node Collectors"
-copyright = "2021, tribe29 GmbH"
-author = "tribe29 GmbH"
+copyright = "2021, Checkmk GmbH"
+author = "Checkmk GmbH"
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
@@ -129,7 +129,7 @@ latex_documents = [
         master_doc,
         "checkmk_kube_agent.tex",
         "Checkmk Kubernetes Cluster and Node Collectors Documentation",
-        "tribe29 GmbH",
+        "Checkmk GmbH",
         "manual",
     ),
 ]

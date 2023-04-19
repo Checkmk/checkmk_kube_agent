@@ -19,7 +19,7 @@ Watch our tutorials to help you get started with our Kubernetes monitoring!
 helm repo add [REPO] https://tribe29.github.io/checkmk_kube_agent
 helm repo update
 ```
-Use any name for `REPO`, e.g. tribe29.
+Use any name for `REPO`, e.g. checkmk.
 _See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
 ## Install or upgrade chart
