@@ -10,7 +10,7 @@ helm repo add [REPO] https://tribe29.github.io/checkmk_kube_agent
 
 Example:
 ```sh
-helm repo add tribe29 https://tribe29.github.io/checkmk_kube_agent
+helm repo add myrepo https://tribe29.github.io/checkmk_kube_agent
 ```
 
 ## Install the latest stable Checkmk collectors
@@ -21,7 +21,7 @@ helm upgrade --install --create-namespace -n [NAMESPACE] [RELEASE] [REPO]/checkm
 
 Example:
 ```sh
-helm upgrade --install --create-namespace -n checkmk-monitoring checkmk tribe29/checkmk
+helm upgrade --install --create-namespace -n checkmk-monitoring checkmk myrepo/checkmk
 ```
 
 For more details on the installation please see the [chart's README](https://github.com/tribe29/checkmk_kube_agent/blob/main/deploy/charts/checkmk/README.md).
