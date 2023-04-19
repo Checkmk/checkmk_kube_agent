@@ -19,7 +19,7 @@ requirements = [
 ]
 
 setup(
-    author="tribe29 GmbH",
+    author="Checkmk GmbH",
     author_email="feedback@checkmk.com",
     python_requires=">=3.10",
     classifiers=[
