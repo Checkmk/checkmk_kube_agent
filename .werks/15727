@@ -1,0 +1,11 @@
+Title: Add readinessProbe to cluster-collector-deploy
+Class: feature
+Compatible: compat
+Component: helm
+Date: 1683122229
+Edition: cre
+Knowledge: undoc
+Level: 1
+State: unknown
+Version: 1.3.1
+

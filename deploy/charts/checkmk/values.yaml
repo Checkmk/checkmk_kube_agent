@@ -131,7 +131,12 @@ clusterCollector:
     periodSeconds: 10
     timeoutSeconds: 2
     failureThreshold: 3
-
+  readinessProbe:
+    initialDelaySeconds: 3
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 3
+    httpHeaders: [ ]
   resources:
     limits:
       cpu: 300m
