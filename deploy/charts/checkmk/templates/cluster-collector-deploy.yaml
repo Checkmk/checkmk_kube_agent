@@ -75,6 +75,26 @@ spec:
             periodSeconds: {{ .Values.clusterCollector.livenessProbe.periodSeconds }}
             timeoutSeconds: {{ .Values.clusterCollector.livenessProbe.timeoutSeconds }}
             failureThreshold: {{ .Values.clusterCollector.livenessProbe.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: api
+              {{- if .Values.clusterCollector.readinessProbe.httpHeaders }}
+              httpHeaders:
+              {{- range $.Values.clusterCollector.readinessProbe.httpHeaders }}
+                - name: {{ .name }}
+                  value: {{ .value }}
+              {{- end }}
+              {{- end }}
+              {{- if .Values.tlsCommunication.enabled }}
+              scheme: HTTPS
+              {{- else }}
+              scheme: HTTP
+              {{- end }}
+            initialDelaySeconds: {{ .Values.clusterCollector.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.clusterCollector.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.clusterCollector.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.clusterCollector.readinessProbe.failureThreshold }}
           resources:
             {{- toYaml .Values.clusterCollector.resources | nindent 12 }}
           ports:

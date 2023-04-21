@@ -108,3 +108,4 @@ ENV/
 
 # config file specific to Checkmk werks
 .werks/.last
+/test-infrastructure-local.env
