@@ -125,6 +125,12 @@ def main(BRANCH, METHOD, VERSION, IS_RELEASE_BUILD) {
         }
         docker.build(CI_IMAGE, "--network=host -f docker/ci/Dockerfile .");
 
+        stage('Validate Github credentials') {
+            build(
+            job: "./validate-release-credentials",
+            )
+        }
+
         if (IS_RELEASE_BUILD) {
             stage('Calculate Version') {
                 if (METHOD != "rebuild_version") {
