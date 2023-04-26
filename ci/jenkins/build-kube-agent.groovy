@@ -151,7 +151,7 @@ def main(BRANCH, METHOD, VERSION, IS_RELEASE_BUILD) {
             // This can be deleted if the push to github can be triggered some other way (see CMK-9584)
             if (METHOD != "rebuild_version") {
                 stage("Push to github") {
-                    withCredentials([sshUserPrivateKey(credentialsId: "ssh_private_key_lisa_github", keyFileVariable: 'keyfile')]) {
+                    withCredentials([file(credentialsId: "ssh_private_key_github_kubernetes", variable: 'keyfile')]) {
                         withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile}"]) {
                             docker.image(CI_IMAGE).inside("--entrypoint=") {
                                 run_in_ash("git push --tags github ${BRANCH}")
