@@ -11,7 +11,7 @@ withFolderProperties{
 node(NODE)
 {
         stage('Trigger image build') {
-                build(job: "Kubernetes/main/build-k8-agent",
+                build(job: "./build-k8-agent",
                         parameters: [
                                 [$class: 'StringParameterValue', name: 'METHOD', value: 'daily'],
                                 [$class: 'BooleanParameterValue', name: 'PUSH_TO_DOCKERHUB', value: true],
