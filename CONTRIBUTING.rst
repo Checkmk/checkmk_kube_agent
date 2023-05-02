@@ -39,3 +39,7 @@ Here's how to set up `checkmk_kube_agent` for local development.
     $ git add .
     $ git commit -m "Your detailed description of your changes."
     $ git push origin HEAD:<remote>
+
+6. Follow the instructions to sign the CLA_ as asked by the bot.
+
+.. _CLA: https://github.com/tribe29/checkmk/blob/master/doc/cla/cla_readme.md
