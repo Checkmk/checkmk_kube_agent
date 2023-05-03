@@ -74,7 +74,7 @@ def main(BRANCH, METHOD, VERSION) {
         // TODO: at least consolidate in this repo...
         def DOCKER_GROUP_ID = sh(script: "getent group docker | cut -d: -f3", returnStdout: true);
         def GITHUB_PAGES_BRANCH = "gh-pages";
-        def KUBE_AGENT_GITHUB_REPO = "tribe29/checkmk_kube_agent";
+        def KUBE_AGENT_GITHUB_REPO = "checkmk/checkmk_kube_agent";
         def KUBE_AGENT_GITHUB_URL = "https://github.com/${KUBE_AGENT_GITHUB_REPO}";
         def CI_IMAGE = "checkmk-kube-agent-ci";
         def HELM_REPO_INDEX_FILE="index.yaml";

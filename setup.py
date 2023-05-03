@@ -51,7 +51,7 @@ setup(
     name="checkmk_kube_agent",
     packages=find_packages("src"),
     package_dir={"": "src"},
-    url="https://github.com/tribe29/checkmk_kube_agent",
+    url="https://github.com/checkmk/checkmk_kube_agent",
     version=checkmk_kube_agent.__version__,
     zip_safe=False,
 )
