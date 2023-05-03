@@ -70,7 +70,7 @@ def main(BRANCH, METHOD, VERSION, IS_RELEASE_BUILD) {
             Github is like a mirror to the Gerrit repo
         ** encountered error case (for github pages branch): pushed commit locally which resulted in different
         git hashes between Gerrit & Github and therefore blocked the release during the subsequent run.
-        ** example was https://github.com/tribe29/checkmk_kube_agent/commits/gh-pages (add helm chart version 1.1.0)
+        ** example was https://github.com/checkmk/checkmk_kube_agent/commits/gh-pages (add helm chart version 1.1.0)
             different commit hashes between Gerrit gh-pages & github gh-pages
         ** resolving the error case: must hard reset & force push to Github branch
             Gerrit commits always represent the truth (not Github)
@@ -99,7 +99,7 @@ def main(BRANCH, METHOD, VERSION, IS_RELEASE_BUILD) {
         * a Github token is used to execute this stage;
             * troubleshoot: should almost never happen but you can verify if the token hasn't expired using `gh api`
         * github release must be deleted manually before another release with the same version name can be created
-        * the releases can be verified here https://github.com/tribe29/checkmk_kube_agent/releases
+        * the releases can be verified here https://github.com/checkmk/checkmk_kube_agent/releases
 
         ## Troubleshoot Github Pages
         * the steps in update-helm-repo can be followed manually
@@ -112,7 +112,7 @@ def main(BRANCH, METHOD, VERSION, IS_RELEASE_BUILD) {
         // TODO: at least consolidate in this repo...
         def DOCKER_GROUP_ID = sh(script: "getent group docker | cut -d: -f3", returnStdout: true);
         def GITHUB_PAGES_BRANCH = "gh-pages";
-        def KUBE_AGENT_GITHUB_REPO = "tribe29/checkmk_kube_agent";
+        def KUBE_AGENT_GITHUB_REPO = "checkmk/checkmk_kube_agent";
         def KUBE_AGENT_GITHUB_URL = "https://github.com/${KUBE_AGENT_GITHUB_REPO}";
         def CI_IMAGE = "checkmk-kube-agent-ci";
         def HELM_REPO_INDEX_FILE="index.yaml";

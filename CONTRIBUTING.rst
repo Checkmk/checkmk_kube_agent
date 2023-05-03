@@ -42,4 +42,4 @@ Here's how to set up `checkmk_kube_agent` for local development.
 
 6. Follow the instructions to sign the CLA_ as asked by the bot.
 
-.. _CLA: https://github.com/tribe29/checkmk/blob/master/doc/cla/cla_readme.md
+.. _CLA: https://github.com/checkmk/checkmk/blob/master/doc/cla/cla_readme.md

@@ -12,7 +12,7 @@ def run_in_ash(command, get_stdout=false) {
 
 timeout(time: 12, unit: 'HOURS') {
     node(NODE) {
-        def KUBE_AGENT_GITHUB_REPO = "tribe29/checkmk_kube_agent";
+        def KUBE_AGENT_GITHUB_REPO = "checkmk/checkmk_kube_agent";
         def CI_IMAGE = "checkmk-kube-agent-ci";
         def GITHUB_SSH_CREDENTIAL_ID = "ssh_private_key_github_kubernetes";
         def GITHUB_TOKEN_CREDENTIAL_ID = "github-token-CheckmkCI-kubernetes";
