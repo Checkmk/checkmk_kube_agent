@@ -16,7 +16,7 @@ Watch our tutorials to help you get started with our Kubernetes monitoring!
 
 ## Add repository
 ```console
-helm repo add [REPO] https://tribe29.github.io/checkmk_kube_agent
+helm repo add [REPO] https://checkmk.github.io/checkmk_kube_agent
 helm repo update
 ```
 Use any name for `REPO`, e.g. checkmk.
