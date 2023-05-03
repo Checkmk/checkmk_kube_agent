@@ -41,4 +41,4 @@ If you've got any feedback you'd like to share or are experiencing any issues, p
 
 
 .. _cAdvisor: https://github.com/google/cadvisor
-.. _helm repository: https://tribe29.github.io/checkmk_kube_agent/
+.. _helm repository: https://checkmk.github.io/checkmk_kube_agent/
