@@ -5,12 +5,12 @@
 ## Add the helm repository
 
 ```sh
-helm repo add [REPO] https://tribe29.github.io/checkmk_kube_agent
+helm repo add [REPO] https://checkmk.github.io/checkmk_kube_agent
 ```
 
 Example:
 ```sh
-helm repo add myrepo https://tribe29.github.io/checkmk_kube_agent
+helm repo add myrepo https://checkmk.github.io/checkmk_kube_agent
 ```
 
 ## Install the latest stable Checkmk collectors
@@ -24,7 +24,7 @@ Example:
 helm upgrade --install --create-namespace -n checkmk-monitoring checkmk myrepo/checkmk
 ```
 
-For more details on the installation please see the [chart's README](https://github.com/tribe29/checkmk_kube_agent/blob/main/deploy/charts/checkmk/README.md).
+For more details on the installation please see the [chart's README](https://github.com/checkmk/checkmk_kube_agent/blob/main/deploy/charts/checkmk/README.md).
 
 ## License
 
