@@ -233,7 +233,7 @@ def main(BRANCH, METHOD, VERSION, IS_RELEASE_BUILD) {
                         }
                     }
                     // This can be deleted if the push to github can be triggered some other way (see CMK-9584)
-                    withCredentials([sshUserPrivateKey(credentialsId: GITHUB_SSH_CREDENTIAL_ID, keyFileVariable: 'keyfile')]) {
+                    withCredentials([file(credentialsId: GITHUB_SSH_CREDENTIAL_ID, variable: 'keyfile')]) {
                         withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile}"]) {
                             docker.image(CI_IMAGE).inside("--entrypoint=") {
                                 run_in_ash("git checkout ${GITHUB_PAGES_BRANCH}");
