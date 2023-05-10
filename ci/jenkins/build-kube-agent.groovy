@@ -117,6 +117,8 @@ def main(BRANCH, METHOD, VERSION, IS_RELEASE_BUILD) {
         def CI_IMAGE = "checkmk-kube-agent-ci";
         def HELM_REPO_INDEX_FILE="index.yaml";
         def STAGE_PUSH_IMAGES = 'Push Images'
+        def GITHUB_SSH_CREDENTIAL_ID = "ssh_private_key_github_kubernetes";
+        def GITHUB_TOKEN_CREDENTIAL_ID = "github-token-CheckmkCI-kubernetes";
 
         stage('Checkout Sources') {
             checkout(scm);
@@ -199,7 +201,7 @@ def main(BRANCH, METHOD, VERSION, IS_RELEASE_BUILD) {
             }
         }
         if (IS_RELEASE_BUILD) {
-            withCredentials([usernamePassword(credentialsId: "github-token-lisa", passwordVariable: 'GH_TOKEN', usernameVariable: "GH_USER")]) {
+            withCredentials([usernamePassword(credentialsId: GITHUB_TOKEN_CREDENTIAL_ID, passwordVariable: 'GH_TOKEN', usernameVariable: "GH_USER")]) {
                 if (METHOD == "rebuild_version") {
                     stage("Delete github release") {
                         docker.image(CI_IMAGE).inside("--entrypoint=") {
@@ -231,7 +233,7 @@ def main(BRANCH, METHOD, VERSION, IS_RELEASE_BUILD) {
                         }
                     }
                     // This can be deleted if the push to github can be triggered some other way (see CMK-9584)
-                    withCredentials([sshUserPrivateKey(credentialsId: "ssh_private_key_lisa_github", keyFileVariable: 'keyfile')]) {
+                    withCredentials([sshUserPrivateKey(credentialsId: GITHUB_SSH_CREDENTIAL_ID, keyFileVariable: 'keyfile')]) {
                         withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile}"]) {
                             docker.image(CI_IMAGE).inside("--entrypoint=") {
                                 run_in_ash("git checkout ${GITHUB_PAGES_BRANCH}");
