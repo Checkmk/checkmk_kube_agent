@@ -204,7 +204,7 @@ typing-python: typing-python/mypy ## check Python typing
 
 .PHONY: typing-python/mypy
 typing-python/mypy: ## check typing with mypy
-	mypy src tests
+	mypy --warn-unused-ignores src tests
 
 .PHONY: gerrit-tests
 gerrit-tests: release-image dev-image ## run all tests as Jenkins runs them on Gerrit commit

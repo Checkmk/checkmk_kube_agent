@@ -13,7 +13,7 @@ from functools import partial
 from typing import Mapping, Tuple, Union
 
 import requests
-from urllib3.util.retry import Retry  # type: ignore[import]
+from urllib3.util.retry import Retry
 
 import checkmk_kube_agent
 from checkmk_kube_agent.container_metadata import parse_metadata
