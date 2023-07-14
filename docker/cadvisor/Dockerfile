@@ -1,4 +1,4 @@
-FROM gcr.io/cadvisor/cadvisor:v0.43.0 as release
+FROM gcr.io/cadvisor/cadvisor:v0.47.2 as release
 ARG GIT_HASH
 RUN sed -i -e 's/v3\.12/v3\.14/g' /etc/apk/repositories && \
     apk --no-cache upgrade --purge && \

@@ -1,0 +1,17 @@
+Title: Dependency update
+Class: security
+Compatible: compat
+Component: cluster-collector
+Date: 1690269338
+Edition: cre
+Knowledge: doc
+Level: 1
+State: unknown
+Version: 1.4.1
+
+This Werk updates dependencies such as cadvisor, requests and fastapi.
+These updates fix various vulnerabilities.
+
+To our knowledge none of the vulnerabilities could be exploited.
+
+We rate this with a CVSS of 0 (None) (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N). This CVSS is primarily meant to please automatic scanners.
