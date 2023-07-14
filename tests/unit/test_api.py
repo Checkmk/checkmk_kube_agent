@@ -16,6 +16,7 @@ from unittest.mock import Mock
 import pytest
 import requests
 from fastapi import HTTPException, status
+from fastapi.encoders import jsonable_encoder
 from fastapi.security import HTTPAuthorizationCredentials
 from fastapi.testclient import TestClient
 
@@ -812,7 +813,7 @@ def test_send_metadata(
         headers={
             "Authorization": "Bearer superduperwritertoken",
         },
-        data=metric_collection.json(),
+        json=jsonable_encoder(metric_collection),
     )
     assert response.status_code == 200
 
@@ -821,7 +822,7 @@ def test_send_metadata(
         headers={
             "Authorization": "Bearer superduperwritertoken",
         },
-        data=machine_sections_collection.json(),
+        json=jsonable_encoder(machine_sections_collection),
     )
     assert response.status_code == 200
 
