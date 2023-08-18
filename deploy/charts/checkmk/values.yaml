@@ -6,6 +6,9 @@ nameOverride: ""
 fullnameOverride: ""
 kubeVersionOverride: ""
 
+k3s:
+  enabled: false
+
 tlsCommunication:
   enabled: false
   verifySsl: false
