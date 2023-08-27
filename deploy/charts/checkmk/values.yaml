@@ -29,6 +29,8 @@ image:
   tag: "main_2022.03.02" # main_<YYYY.MM.DD>
 
 rbac:
+  # PodSecurityPolicies (PSPs) were deprecated in Kubernetes v1.21, and removed from Kubernetes in v1.25.
+  # This section will be removed as soon as we do not support versions below v1.25 anymore.
   pspEnabled: false
   pspAnnotations:
     ## Specify psp annotations
@@ -87,13 +89,14 @@ clusterCollector:
   # can be: "debug", "info", "warning" (default), "critical"
   logLevel: warning
 
-  podAnnotations:
-    seccomp.security.alpha.kubernetes.io/pod: runtime/default
+  podAnnotations: {}
 
   podSecurityContext: {}
     # fsGroup: 2000
 
   securityContext:
+    seccompProfile:
+      type: RuntimeDefault
     allowPrivilegeEscalation: false
     capabilities:
       drop:
@@ -162,8 +165,7 @@ nodeCollector:
   minReadySeconds: 15
 
   # Annotations to be added to node-collector pods
-  podAnnotations:
-    seccomp.security.alpha.kubernetes.io/pod: runtime/default
+  podAnnotations: {}
 
   podSecurityContext: {}
     # fsGroup: 2000
@@ -201,6 +203,8 @@ nodeCollector:
       - "--storage_duration=1m0s"
 
     securityContext:
+      seccompProfile:
+        type: RuntimeDefault
       allowPrivilegeEscalation: false
       capabilities:
         drop:
@@ -223,6 +227,8 @@ nodeCollector:
       pullPolicy: IfNotPresent
 
     securityContext:
+      seccompProfile:
+        type: RuntimeDefault
       allowPrivilegeEscalation: false
       capabilities:
         drop:
@@ -247,6 +253,8 @@ nodeCollector:
       pullPolicy: IfNotPresent
 
     securityContext:
+      seccompProfile:
+        type: RuntimeDefault
       allowPrivilegeEscalation: false
       capabilities:
         drop:

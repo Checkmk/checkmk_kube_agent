@@ -1,4 +1,7 @@
 {{- if .Values.rbac.pspEnabled }}
+{{- if ge (int .Capabilities.KubeVersion.Minor) 25 }}
+{{- fail "PodSecurityPolicies (PSPs) were deprecated in Kubernetes v1.21, and removed from Kubernetes in v1.25. Please make sure to disable PSPs." }}
+{{- end }}
 ---
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
