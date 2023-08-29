@@ -68,6 +68,12 @@ spec:
           {{- end }}
           {{- end }}
           volumeMounts:
+          {{- range .Values.nodeCollector.machineSectionsCollector.extraHostPathMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              readOnly: true
+              mountPropagation: HostToContainer
+          {{- end}}
           {{- if .Values.nodeCollector.machineSectionsCollector.networkInterfaceMonitoring.enabled }}
             - name: sys
               mountPath: /host/sys
@@ -92,6 +98,11 @@ spec:
             {{- toYaml .Values.nodeCollector.machineSectionsCollector.resources | nindent 12 }}
       terminationGracePeriodSeconds: 30
       volumes:
+      {{- range .Values.nodeCollector.machineSectionsCollector.extraHostPathMounts }}
+        - name: {{ .name }}
+          hostPath:
+            {{- toYaml .hostPath | nindent 12}}
+      {{- end }}
       {{- if .Values.nodeCollector.machineSectionsCollector.networkInterfaceMonitoring.enabled }}
         - name: sys
           hostPath:
