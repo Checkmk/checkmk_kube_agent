@@ -48,10 +48,16 @@ spec:
   volumes:
     - secret
     - emptyDir
-  {{- if .Values.nodeCollector.machineSectionsCollector.networkInterfaceMonitoring.enabled }}
+  {{- if or .Values.nodeCollector.machineSectionsCollector.extraHostPathMounts .Values.nodeCollector.machineSectionsCollector.networkInterfaceMonitoring.enabled }}
     - hostPath
+  {{- end }}
   allowedHostPaths:
+  {{- if .Values.nodeCollector.machineSectionsCollector.networkInterfaceMonitoring.enabled }}
     - pathPrefix: /sys
+      readOnly: true
+  {{- end }}
+  {{- range .Values.nodeCollector.machineSectionsCollector.extraHostPathMounts }}
+    - pathPrefix: {{ .hostPath }}
       readOnly: true
   {{- end }}
 ---

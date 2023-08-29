@@ -1,0 +1,21 @@
+Title: Configure VolumeMounts via values.yaml
+Class: fix
+Compatible: compat
+Component: node-collector
+Date: 1693300240
+Knowledge: doc
+Level: 1
+Version: 2.0.0-alpha.1
+
+The `Filesystem` service reports information about the container of the
+node-collector rather than the host machine. In most cases, this results in the
+desired monitoring. But in some cases, it is desirable to monitor a volume
+mount other than the ones the CRI mounts by default.
+
+Since our monitoring depends on calls to `statfs`, it is necessary to mount at least one file from
+any file system that needs monitoring. One way of achieving this is by installing the
+machine-sections directly on the host machines. However, this means the node-collectors are no
+longer containerized.
+
+With this Werk, the file system of the host machine can be mounted into the container by configuring
+the `values.yaml`.

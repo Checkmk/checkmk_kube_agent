@@ -7,7 +7,7 @@ fullnameOverride: ""
 kubeVersionOverride: ""
 
 ## k3s and Rancher RKE2 host containerd in a different location.
-## If you are using one of them, or containerd is located in an alternate location, please uncomment / adapt the override.   
+## If you are using one of them, or containerd is located in an alternate location, please uncomment / adapt the override.
 #containerdOverride: "/run/k3s/containerd/containerd.sock"
 
 tlsCommunication:
@@ -282,3 +282,16 @@ nodeCollector:
     # the pod security policy is adjusted accordingly.
     networkInterfaceMonitoring:
       enabled: false
+    # in order to collect information about the underlying host machine, it's necessary to mount
+    # the filesystem of the host machine (e.g. '/') into the docker container.
+    # extraHostPathMounts:
+    #   - name: run
+    #     mountPath: "/host/run"
+    #     hostPath:
+    #       path: /run
+    #       type: Directory
+    #   - name: boot
+    #     mountPath: "/host/boot"
+    #     hostPath:
+    #       path: /boot
+    #       type: Directory
