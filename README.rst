@@ -9,6 +9,20 @@ Checkmk cluster and node collectors to monitor Kubernetes clusters.
 * Free software: GNU General Public License v2
 
 
+Installation
+--------
+
+You can use our `helm repository`_ to install the collectors from our latest release.
+Detailed instructions can be found in our `official docs`_.
+
+
+Support policy
+--------
+
+Please read our `official docs`_ for information regarding supported Kubernetes versions 
+and supported Kubernetes distros.
+
+
 Features
 --------
 
@@ -29,16 +43,6 @@ Features
         * can be configured to run the API in *http* or *https* mode
 * Supports PodSecurityPolicy (up to Kubernetes 1.24) and NetworkPolicy
 
-Installation
-------------
-Please use the Helm charts provided in ``deploy/charts/checkmk`` or the manifests in ``deploy/kubernetes``. You will find detailed installation instructions there.
-
-You can also use our `helm repository`_ to install the collectors from our latest release.
-
-Feedback
---------
-If you've got any feedback you'd like to share or are experiencing any issues, please let us know via feedback@checkmk.com or by creating a support ticket.
-
-
 .. _cAdvisor: https://github.com/google/cadvisor
 .. _helm repository: https://checkmk.github.io/checkmk_kube_agent/
+.. _official docs: https://docs.checkmk.com/latest/en/monitoring_kubernetes.html
