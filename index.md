@@ -24,7 +24,7 @@ Example:
 helm upgrade --install --create-namespace -n checkmk-monitoring checkmk myrepo/checkmk
 ```
 
-For more details on the installation please see the [chart's README](https://github.com/checkmk/checkmk_kube_agent/blob/main/deploy/charts/checkmk/README.md).
+For more details on the installation please visit the [official Checkmk documentation](https://docs.checkmk.com/latest/en/monitoring_kubernetes.html).
 
 ## License
 
