@@ -6,8 +6,9 @@ nameOverride: ""
 fullnameOverride: ""
 kubeVersionOverride: ""
 
-k3s:
-  enabled: false
+## k3s and Rancher RKE2 host containerd in a different location.
+## If you are using one of them, or containerd is located in an alternate location, please uncomment / adapt the override.   
+#containerdOverride: "/run/k3s/containerd/containerd.sock"
 
 tlsCommunication:
   enabled: false
