@@ -62,9 +62,9 @@ spec:
           args:
           {{- with .Values.nodeCollector.cadvisor.additionalArgs }}
             {{ toYaml . | nindent 12 }}
-          {{- if $.Values.k3s.enabled }}
-            - "--containerd=/run/k3s/containerd/containerd.sock"
           {{- end }}
+          {{- if .Values.containerdOverride }}
+            - --containerd={{ .Values.containerdOverride }}
           {{- end }}
           resources:
             {{- toYaml .Values.nodeCollector.cadvisor.resources | nindent 12 }}
