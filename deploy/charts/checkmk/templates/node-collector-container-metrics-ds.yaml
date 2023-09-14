@@ -63,6 +63,9 @@ spec:
           {{- with .Values.nodeCollector.cadvisor.additionalArgs }}
             {{ toYaml . | nindent 12 }}
           {{- end }}
+          {{- if .Values.containerdOverride }}
+            - --containerd={{ .Values.containerdOverride }}
+          {{- end }}
           resources:
             {{- toYaml .Values.nodeCollector.cadvisor.resources | nindent 12 }}
           ports:
