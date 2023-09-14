@@ -1,0 +1,28 @@
+Title: Support K3s and Rancher RKE2
+Class: feature
+Compatible: compat
+Component: node-collector
+Date: 1694671730
+Knowledge: undoc
+Level: 2
+Version: 2.0.0-alpha.1
+
+Depending on your infrastructure, the usage metrics may be unavailable to the check
+plugins `kube_cpu` and `kube_memory`.  With this Werk, it may be possible to enable the missing
+metrics by using the field `containerdOverride` in the `values.yaml`. Specifically, this issue is
+known to affect K3s and Rancher RKE2.
+
+How to diagnose this issue? The issue stems from cAdvisor not reporting which pod the collected
+metrics belong to.  You can check the metrics reported by cAdvisor by running the command
+```
+kubectl exec -it {checkmk-node-collector-container-metrics-ID} -c cadvisor -n {checkmk-monitoring-ns} -- sh -c "wget -qO- http://localhost:8080/metrics | grep 'container_memory_working_set_bytes'"
+```
+If command returns metrics, but the label `container_label_io_kubernetes_pod_name` is missing, i.e.
+the following command returns an empty output
+```
+kubectl exec -it sol-checkmk-node-collector-container-metrics-pvl87 -c cadvisor -n sol -- sh -c "wget -qO- http://localhost:8080/metrics | grep 'container_memory_working_set_bytes' | grep 'container_label_io_kubernetes_pod_name'"
+```
+then you are affected by this issue. This means the container runtime is not mounted in the default
+location (`/run/containerd/containerd.sock`). You may adjust runtime by using the
+`containerdOverride` flag.
+
