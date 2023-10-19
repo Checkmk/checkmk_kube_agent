@@ -41,9 +41,7 @@ export VERSION_BUMP_PYSCRIPT
 PYTHON := python3
 BROWSER := $(PYTHON) -c "$$BROWSER_PYSCRIPT"
 PROJECT_NAME := checkmk_kube_agent
-# TODO: adjust this tag once daily images from CMK master are published again
-# on Dockerhub. See CMK-11238
-CHECKMK_AGENT_VERSION := "2022.09.01"
+CHECKMK_AGENT_VERSION := "2.1.0-latest"
 PROJECT_VERSION := $(shell grep __version__ src/${PROJECT_NAME}/__init__.py | sed 's/__version__ = "//g' | sed 's/"//g')
 PROJECT_PYVERSION := $(shell $(PYTHON) -c "from packaging import version;print(str(version.parse('${PROJECT_VERSION}')))")
 DOCKER_IMAGE_TAG := $(PROJECT_VERSION)
