@@ -1,4 +1,3 @@
-# do not upgrade ansible-core until https://github.com/ansible/ansible/issues/77969 is fixed!
-ansible-core == 2.12
+ansible-core == 2.15.5
 requests >= 1.1
 proxmoxer >= 1.2.0
