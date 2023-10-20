@@ -19,7 +19,9 @@ Here's how to set up `checkmk_kube_agent` for local development.
 
     $ cd checkmk_kube_agent/
     $ python3 -m venv /path/to/new/virtual/environment
+    $ source /path/to/new/virtual/environment/bin/activate
     $ pip3 install -e .
+    $ pip3 install -r requirements_dev.txt -r requirements_build.txt -r requirements_test.txt
 
 3. Create a branch for local development::
 
@@ -29,7 +31,7 @@ Here's how to set up `checkmk_kube_agent` for local development.
 
 4. When you're done making changes, check that your changes pass the tests::
 
-    $ pytest
+    $ make test-unit
 
    You can also run individual make targets from the repository root. See all
    available targets and what they do by running `make help`.
