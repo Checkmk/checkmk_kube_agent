@@ -30,6 +30,13 @@ Here's how to set up `checkmk_kube_agent` for local development.
    You can also run individual make targets from the repository root. See all
    available targets and what they do by running `make help`.
 
+4. Verify that your commits is ready to be submitted::
+
+    $ make gerrit-tests
+
+   This command will run all targets, which are required to pass. A pull request cannot be approved
+   until all errors are addressed.
+
 4. Create the pull request!
 
 5. Follow the instructions to sign the CLA_ as asked by the bot.
