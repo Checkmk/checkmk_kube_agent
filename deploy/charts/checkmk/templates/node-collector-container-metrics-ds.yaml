@@ -73,9 +73,12 @@ spec:
               name: http
               protocol: TCP
           volumeMounts:
+            - name: no-api-access
+              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+              readOnly: true
             - name: var-run
               mountPath: /var/run
-              readOnly: true
+              # readOnly: true # needs to be disabled, otherwise we cannot deny api-access
             - name: sys
               mountPath: /sys
               readOnly: true
@@ -117,6 +120,8 @@ spec:
             {{- toYaml .Values.nodeCollector.containerMetricsCollector.resources | nindent 12 }}
       terminationGracePeriodSeconds: 30
       volumes:
+        - name: no-api-access
+          emptyDir: {}
         - name: var-run
           hostPath:
             path: /var/run
