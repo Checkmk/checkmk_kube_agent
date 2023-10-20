@@ -23,25 +23,15 @@ Here's how to set up `checkmk_kube_agent` for local development.
     $ pip3 install -e .
     $ pip3 install -r requirements_dev.txt -r requirements_build.txt -r requirements_test.txt
 
-3. Create a branch for local development::
-
-    $ git checkout -b name-of-your-bugfix-or-feature
-
-   Now you can make your changes locally.
-
-4. When you're done making changes, check that your changes pass the tests::
+3. When you're done making changes, check that your changes pass the tests::
 
     $ make test-unit
 
    You can also run individual make targets from the repository root. See all
    available targets and what they do by running `make help`.
 
-5. Commit and push your changes::
+4. Create the pull request!
 
-    $ git add .
-    $ git commit -m "Your detailed description of your changes."
-    $ git push origin HEAD:<remote>
-
-6. Follow the instructions to sign the CLA_ as asked by the bot.
+5. Follow the instructions to sign the CLA_ as asked by the bot.
 
 .. _CLA: https://github.com/checkmk/checkmk/blob/master/doc/cla/cla_readme.md
