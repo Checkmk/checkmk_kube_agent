@@ -1,0 +1,16 @@
+Title: Deprecation of PSPs and migration to seccompProfiles
+Class: feature
+Compatible: compat
+Component: helm
+Date: 1698152243
+Knowledge: undoc
+Level: 1
+Version: 1.5.0
+
+PodSecurityPolicies (PSPs) were deprecated in Kubernetes v1.21
+and removed from Kubernetes in v1.25. The Helm chart now warns
+if you have PSPs still active and are using Kubernetes 1.25 or
+higher. Along with that comes a change to seccomp profiles,
+which are not in alpha anymore and thus changed from being
+podAnnotations to securityContexts. This is now reflected in
+our Kubernetes collectors as well
