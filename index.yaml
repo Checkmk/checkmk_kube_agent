@@ -2,6 +2,18 @@ apiVersion: v1
 entries:
   checkmk:
   - apiVersion: v2
+    appVersion: 1.5.0
+    created: "2023-10-26T08:47:30.339682775Z"
+    description: Helm chart for Checkmk - Your complete IT monitoring solution
+    digest: a63912e57a270bafe2438e80f52434b3514a7f235394152aaee59e10f9309aad
+    icon: https://checkmk.com/application/files/thumbnails/low_res/9515/9834/3872/checkmk_icon_main.png
+    kubeVersion: '>=1.19.0-0'
+    name: checkmk
+    type: application
+    urls:
+    - https://github.com/checkmk/checkmk_kube_agent/releases/download/v1.5.0/checkmk-kube-agent-helm-1.5.0.tgz
+    version: 1.5.0
+  - apiVersion: v2
     appVersion: 1.4.1
     created: "2023-08-24T06:36:19.461704513Z"
     description: Helm chart for Checkmk - Your complete IT monitoring solution
@@ -97,4 +109,4 @@ entries:
     urls:
     - https://github.com/checkmk/checkmk_kube_agent/releases/download/v1.0.0-beta.2/checkmk-kube-agent-helm-1.0.0-beta.2.tgz
     version: 1.0.0-beta.2
-generated: "2023-08-24T06:36:19.45979049Z"
+generated: "2023-10-26T08:47:30.338351669Z"
