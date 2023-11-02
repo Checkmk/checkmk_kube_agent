@@ -206,6 +206,11 @@ nodeCollector:
       - "--allow_dynamic_housekeeping=true"
       - "--storage_duration=1m0s"
 
+    # For Google Kubernetes Engine (GKE) Autopilot, the readOnly needs to be set to true
+    volumeMountPermissions:
+      var_run:
+        readOnly: false
+
     securityContext:
       seccompProfile:
         type: RuntimeDefault

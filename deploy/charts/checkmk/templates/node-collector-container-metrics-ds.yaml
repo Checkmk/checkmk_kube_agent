@@ -78,7 +78,9 @@ spec:
               readOnly: true
             - name: var-run
               mountPath: /var/run
-              # readOnly: true # needs to be disabled, otherwise we cannot deny api-access
+              {{- if .Values.nodeCollector.cadvisor.volumeMountPermissions.var_run.readOnly }}
+              readOnly: true
+              {{- end }}
             - name: sys
               mountPath: /sys
               readOnly: true
