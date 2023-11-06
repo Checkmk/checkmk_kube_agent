@@ -1,0 +1,14 @@
+Title: Allow to configure cadvisor /var/run to be read-only
+Class: security
+Compatible: compat
+Component: helm
+Date: 1699274046
+Edition: cre
+Knowledge: doc
+Level: 1
+State: unknown
+Version: 1.5.0
+
+You can now configure /var/run, which is mounted in cadvisor to be readOnly.
+This is a prerequisite for running the Kubernetes collectors in Google
+Kubernetes Engine Autopilot.
