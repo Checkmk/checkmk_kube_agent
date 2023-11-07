@@ -2,4 +2,4 @@
 
 __author__ = """Checkmk GmbH"""
 __email__ = "feedback@checkmk.com"
-__version__ = "1.5.0"
+__version__ = "1.5.1"
