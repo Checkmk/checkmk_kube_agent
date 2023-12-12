@@ -11,8 +11,8 @@ Node hosts in a Checkmk site now have the HW/SW inventory entries of a
 Linux system (in addition to the standard Kubernetes entries).
 Specifically, the following sections have been added:
 <ul>
-<li>lnx_cpuinfo<\li>
-<li>lnx_uname<\li>
-<li>lnx_video<\li>
-<li>lnx_block_devices<\li>
-<\ul>
+<li>lnx_cpuinfo</li>
+<li>lnx_uname</li>
+<li>lnx_video</li>
+<li>lnx_block_devices</li>
+</ul>
