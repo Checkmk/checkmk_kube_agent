@@ -39,6 +39,7 @@ def main() {
     stage("Provision container runtime/kubernetes cluster") {
         run_ansible(image, dry_run, "provision");
     }
+
     withEnv(["NEXUS_URL=${nexus_url}"]) {
         withCredentials([
             usernamePassword(
@@ -50,6 +51,7 @@ def main() {
             }
         }
     }
+
     stage("Stop VMs") {
         run_ansible(image, dry_run, "manage", "target_state=stopped");
     }

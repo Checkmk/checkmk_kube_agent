@@ -29,5 +29,5 @@ def main(job_definition_file) {
         load("${checkout_dir}/${job_definition_file}").main();
     }
 }
-return this;
 
+return this;

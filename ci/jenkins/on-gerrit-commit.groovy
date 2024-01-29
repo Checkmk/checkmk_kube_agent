@@ -1,3 +1,7 @@
+#!groovy
+
+/// file: on-gerrit-commit.groovy
+
 properties([
     buildDiscarder(logRotator(
         artifactDaysToKeepStr: '',
@@ -25,6 +29,7 @@ def do_it() {
     def PROJECT_PYVERSION;
     def CHECKMK_AGENT_VERSION;
     def DOCKER_GROUP_ID = sh(script: "getent group docker | cut -d: -f3", returnStdout: true);
+
     stage("check out") {
         checkout(scm);
     }

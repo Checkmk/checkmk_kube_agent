@@ -1,13 +1,17 @@
-currentBuild.description = '\nTest credentials required by the release job\n'
+#!groovy
 
-def NODE = ''
+/// file: test-release-credentials.groovy
+
+currentBuild.description = '\nTest credentials required by the release job\n';
+
+def NODE = '';
 withFolderProperties{
-    NODE = env.BUILD_NODE
+    NODE = env.BUILD_NODE;
 }
 
 def run_in_ash(command, get_stdout=false) {
-    ash_command = "#!/bin/ash\n" + command
-    return sh(script: "${ash_command}", returnStdout: get_stdout)
+    ash_command = "#!/bin/ash\n" + command;
+    return sh(script: "${ash_command}", returnStdout: get_stdout);
 }
 
 timeout(time: 12, unit: 'HOURS') {
@@ -21,6 +25,7 @@ timeout(time: 12, unit: 'HOURS') {
             checkout(scm);
             sh("git clean -fd");
         }
+
         docker.build(CI_IMAGE, "--network=host -f docker/ci/Dockerfile .");
 
         stage("Test ${GITHUB_SSH_CREDENTIAL_ID}") {
@@ -39,7 +44,7 @@ timeout(time: 12, unit: 'HOURS') {
         stage("Test ${GITHUB_TOKEN_CREDENTIAL_ID}") {
             withCredentials([usernamePassword(credentialsId: GITHUB_TOKEN_CREDENTIAL_ID, passwordVariable: 'GH_TOKEN', usernameVariable: "GH_USER")]) {
                docker.image(CI_IMAGE).inside("--entrypoint=") {
-                       run_in_ash("gh release list --repo ${KUBE_AGENT_GITHUB_REPO}");
+                   run_in_ash("gh release list --repo ${KUBE_AGENT_GITHUB_REPO}");
                }
             }
         }
