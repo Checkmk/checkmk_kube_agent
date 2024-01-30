@@ -2,14 +2,6 @@
 
 /// file: on-gerrit-commit.groovy
 
-properties([
-    buildDiscarder(logRotator(
-        artifactDaysToKeepStr: '',
-        artifactNumToKeepStr: '',
-        daysToKeepStr: '7',
-        numToKeepStr: '200')),
-])
-
 def NODE = '';
 
 withFolderProperties {

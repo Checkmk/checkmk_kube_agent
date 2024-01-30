@@ -2,11 +2,6 @@
 
 /// file: nightly-trigger.groovy
 
-properties([
-    buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '7', numToKeepStr: '14')),
-    pipelineTriggers([cron("0 5 * * *")]),
-])
-
 def NODE = '';
 withFolderProperties{
     NODE = env.BUILD_NODE;

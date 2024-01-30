@@ -18,31 +18,6 @@ def get_branch(scm) {
     return scm.branches[0].name;
 }
 
-properties([
-    buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '7', numToKeepStr: '14')),
-    parameters([
-        choice(
-            choices: ['daily', 'beta', 'minor', 'patch', 'rebuild_version', 'finalize_version'],
-            name: 'METHOD',
-            description: '<b>Choose the method the build job should follow.</b><br>' +
-                        'daily -> Create a build on the current git state<br>' +
-                        'minor/patch -> Create a release build with taging and incrementing the version<br>' +
-                        'rebuild_version -> Try to rebuild of an already created release. You need to give a version ' +
-                        'in the format of Major.Minor.Patch for this method.',
-        ),
-        string(
-            name: 'VERSION',
-            defaultValue: '',
-            description: 'Set this in combination with "rebuild_version" in order to rebuild a specific version',
-        ),
-        booleanParam(
-            name: 'PUSH_TO_DOCKERHUB',
-            defaultValue: false,
-            description: 'Set to true if you want to push the images to dockerhub.',
-        ),
-    ])
-])
-
 def run_in_ash(command, get_stdout=false) {
     ash_command = "#!/bin/ash\n" + command;
     return sh(script: "${ash_command}", returnStdout: get_stdout);
