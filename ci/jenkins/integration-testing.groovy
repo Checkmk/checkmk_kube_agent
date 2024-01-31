@@ -1,3 +1,7 @@
+#!groovy
+
+/// file: integration-testing.groovy
+
 properties([
     buildDiscarder(logRotator(
         artifactDaysToKeepStr: "",
@@ -25,7 +29,6 @@ timeout(time: 12, unit: "HOURS") {
         }
     }
 }
-
 
 def do_it() {
     def API_TOKEN;

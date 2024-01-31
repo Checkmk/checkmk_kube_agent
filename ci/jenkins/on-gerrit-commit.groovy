@@ -1,3 +1,7 @@
+#!groovy
+
+/// file: on-gerrit-commit.groovy
+
 properties([
     buildDiscarder(logRotator(
         artifactDaysToKeepStr: '',

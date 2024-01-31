@@ -1,3 +1,7 @@
+#!groovy
+
+/// file: provision.groovy
+
 properties([
     buildDiscarder(logRotator(
         artifactDaysToKeepStr: "",
