@@ -10,7 +10,7 @@ with open("README.rst") as readme_file:
 
 requirements = [
     "cachetools==5.0.0",
-    "fastapi==0.99.1",
+    "fastapi==0.109.0",
     "pydantic==1.9.0",
     "requests==2.31.0",
     "urllib3==2.0.7",
