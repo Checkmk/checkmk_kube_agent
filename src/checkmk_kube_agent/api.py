@@ -13,7 +13,7 @@ import os
 import sys
 from typing import FrozenSet, NewType, NoReturn, Optional, Sequence
 
-import gunicorn.app.base  # type: ignore[import]
+import gunicorn.app.base  # type: ignore[import-untyped]
 import pydantic
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.responses import JSONResponse, RedirectResponse

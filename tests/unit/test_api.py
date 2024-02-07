@@ -65,7 +65,7 @@ class MockSession(
 
 class MockLogger:
     # pylint: disable=missing-class-docstring, too-few-public-methods
-    def __init__(self):
+    def __init__(self) -> None:
         self.error_called_with: list[Union[str, bytes]] = []
 
     def error(self, msg: Union[str, bytes]) -> None:
