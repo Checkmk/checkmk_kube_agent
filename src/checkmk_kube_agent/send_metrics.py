@@ -373,14 +373,14 @@ def machine_sections_worker(
         ["/usr/local/bin/check_mk_agent"],
         stdout=subprocess.PIPE,
     ) as process:
-        returncode = process.wait(5)
+        (out, err) = process.communicate(timeout=5)
         if returncode != 0:
             # we don't capture stderr so it's printed to stderr of this process
             # and hopefully contains a helpful error message...
             raise RuntimeError("Agent execution failed.")
         if process.stdout is None:
             raise RuntimeError("Could not read agent output")
-        sections = process.stdout.read().decode("utf-8")
+        sections = out.decode("utf-8")
 
     logger.info("Parsing and sending machine sections")
     cluster_collector_response = session.post(
