@@ -374,7 +374,7 @@ def machine_sections_worker(
         stdout=subprocess.PIPE,
     ) as process:
         (out, err) = process.communicate(timeout=5)
-        if returncode != 0:
+        if process.returncode != 0:
             # we don't capture stderr so it's printed to stderr of this process
             # and hopefully contains a helpful error message...
             raise RuntimeError("Agent execution failed.")
