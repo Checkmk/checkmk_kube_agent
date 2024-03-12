@@ -300,12 +300,18 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
         default="warning",
         help="Collector log level.",
     )
+    parser.add_argument(
+        "--agent-timeout",
+        type=int,
+        help="Checkmk Agent execution timeout in seconds",
+    )
     parser.set_defaults(
         host=os.environ.get("CLUSTER_COLLECTOR_SERVICE_HOST", "127.0.0.1"),
         port=os.environ.get("CLUSTER_COLLECTOR_SERVICE_PORT_API", "10050"),
         max_retries=10,
         polling_interval=60,
         ca_cert="/etc/ca-certificates/checkmk-ca-cert.pem",
+        agent_timeout=5,
     )
 
     return parser.parse_args(argv)
@@ -316,6 +322,7 @@ def container_metrics_worker(
     cluster_collector_base_url: Url,
     headers: RequestHeaders,
     verify: SslVerify,
+    args: argparse.Namespace,  # pylint: disable=unused-argument
 ) -> None:  # pragma: no cover
     """
     Query cadvisor api, send metrics to cluster collector
@@ -362,6 +369,7 @@ def machine_sections_worker(
     cluster_collector_base_url: Url,
     headers: RequestHeaders,
     verify: SslVerify,
+    args: argparse.Namespace,
 ) -> None:  # pragma: no cover
     """
     Call check_mk_agent, send sections to cluster collector
@@ -371,7 +379,7 @@ def machine_sections_worker(
         ["/usr/local/bin/check_mk_agent"],
         stdout=subprocess.PIPE,
     ) as process:
-        returncode = process.wait(5)
+        returncode = process.wait(args.agent_timeout)
         if returncode != 0:
             # we don't capture stderr so it's printed to stderr of this process
             # and hopefully contains a helpful error message...
@@ -435,7 +443,9 @@ def _setup_logging(verbosity: Literal["info", "debug"]) -> None:  # pragma: no c
 
 
 def _main(
-    worker: Callable[[Session, Url, RequestHeaders, SslVerify], None],
+    worker: Callable[
+        [Session, Url, RequestHeaders, SslVerify, argparse.Namespace], None
+    ],
     argv: Optional[Sequence[str]] = None,
 ) -> None:  # pragma: no cover
     """Run in infinite loop and execute worker function"""
@@ -463,7 +473,7 @@ def _main(
         headers = {
             "Authorization": f"Bearer {read_node_collector_token()}",
         }
-        worker(session, cluster_collector_base_url, headers, verify)
+        worker(session, cluster_collector_base_url, headers, verify, args)
         process_duration = time.time() - start_time
         logger.info("Worker finished in %.2f seconds", process_duration)
 
