@@ -46,7 +46,7 @@ spec:
             - "/usr/local/bin/checkmk-cluster-collector"
           args:
             - "--log-level={{ .Values.clusterCollector.logLevel }}"
-            - "--host=0.0.0.0"
+            - "--host={{ .Values.clusterCollector.host }}"
             - "--reader-whitelist={{ .Release.Namespace }}:{{ template "checkmk.serviceAccountName.checkmk" . }}"
             - "--writer-whitelist={{ .Release.Namespace }}:{{ template "checkmk.serviceAccountName.nodeCollector.containerMetricsCollector" . }},{{ .Release.Namespace }}:{{ template "checkmk.serviceAccountName.nodeCollector.machineSectionsCollector" . }}"
           {{- if .Values.tlsCommunication.enabled }}

@@ -53,6 +53,9 @@ MetadataKey = NewType("MetadataKey", str)
 KUBERNETES_SERVICE_HOST = os.environ.get("KUBERNETES_SERVICE_HOST")
 KUBERNETES_SERVICE_PORT_HTTPS = os.environ.get("KUBERNETES_SERVICE_PORT_HTTPS")
 
+# Format IPv6 address with square brackets
+if ":" in KUBERNETES_SERVICE_HOST:
+    KUBERNETES_SERVICE_HOST = f"[{KUBERNETES_SERVICE_HOST}]"
 
 def container_metric_key(metric: ContainerMetric) -> ContainerMetricKey:
     """Key function to determine unique key for container metrics"""
