@@ -146,6 +146,14 @@ def _check_token_review_content(
     return None
 
 
+def _join_host_port(host: str, port: str) -> str:  # pragma: no cover
+    # reference implementation
+    # https://cs.opensource.google/go/go/+/refs/tags/go1.22.1:src/net/ipsock.go;l=235
+    if ":" in host:
+        return f"[{host}]:{port}"
+    return f"{host}:{port}"
+
+
 def authenticate(
     token: HTTPAuthorizationCredentials,
     *,
@@ -167,6 +175,8 @@ def authenticate(
     Then, it is verified whether the corresponding Service Account is
     whitelisted."""
 
+    # reference implementation:
+    # https://github.com/kubernetes/kubernetes/blob/67bde9a1023d1805e33d698b28aa6fad991dfb39/staging/src/k8s.io/client-go/rest/config.go#L507-L541
     api_token = read_api_token()
 
     if not kubernetes_service_host or not kubernetes_service_port_https:
@@ -179,7 +189,7 @@ def authenticate(
 
     token_review_response = session.post(
         (
-            f"https://{kubernetes_service_host}:{kubernetes_service_port_https}/"
+            f"https://{_join_host_port(kubernetes_service_host, kubernetes_service_port_https)}/"
             "apis/authentication.k8s.io/v1/tokenreviews"
         ),
         headers={
