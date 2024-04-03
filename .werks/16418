@@ -1,0 +1,13 @@
+Title: Fix Don't Deadlock if OS.PIPE Overflows
+Class: fix
+Compatible: compat
+Component: node-collector
+Date: 1712153891
+Knowledge: doc
+Level: 1
+Version: 2.0.0-alpha.1
+
+The machine-sections-collector executes a version of the 'check_mk_agent' to collect information
+about the host. Previously, if the script produced output to the extent that it had to wait for the
+OS pipe buffer to accept more data, it would cause the machine-sections-collector to deadlock and
+eventually the collector would timeout. This issue has now been fixed.
