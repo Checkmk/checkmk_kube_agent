@@ -146,7 +146,7 @@ def _check_token_review_content(
     return None
 
 
-def _join_host_port(host: str, port: str) -> str:  # pragma: no cover
+def _join_host_port(host: str, port: str) -> str:
     # reference implementation
     # https://cs.opensource.google/go/go/+/refs/tags/go1.22.1:src/net/ipsock.go;l=235
     if ":" in host:

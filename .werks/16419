@@ -1,0 +1,24 @@
+Title: Support IPv6/IPv4 Dual Stack
+Class: fix
+Compatible: compat
+Component: cluster-collector
+Date: 1712156163
+Edition: cre
+Knowledge: doc
+Level: 1
+State: unknown
+Version: 1.5.0
+
+For Kubernetes clusters running a IPv6/IPv4 dual stack, the node collectors would display the
+following error:
+
+C+:
+File "/home/solo/git/checkmk_kube_agent/.venv/lib/python3.10/site-packages/requests/sessions.py", line 794, in get_adapter
+    raise InvalidSchema(f"No connection adapters were found for {url!r}")
+requests.exceptions.InvalidSchema: No connection adapters were found for '::'
+C-:
+
+This has been fixed.
+
+Moreover, the cluster collector was hardcoded to bind to a socket with address family AF_INET. This
+is now configurable with the values.yaml file via the option '.clusterCollector.address'.
