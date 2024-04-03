@@ -303,7 +303,7 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
         help="Collector log level.",
     )
     parser.add_argument(
-        "--agent-timeout",
+        "--checkmk-agent-timeout",
         type=int,
         help="Checkmk Agent execution timeout in seconds",
     )
@@ -313,7 +313,7 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
         max_retries=10,
         polling_interval=60,
         ca_cert="/etc/ca-certificates/checkmk-ca-cert.pem",
-        agent_timeout=5,
+        checkmk_agent_timeout=5,
     )
 
     return parser.parse_args(argv)
@@ -324,7 +324,7 @@ def container_metrics_worker(
     cluster_collector_base_url: Url,
     headers: RequestHeaders,
     verify: SslVerify,
-    args: argparse.Namespace,  # pylint: disable=unused-argument
+    _args: argparse.Namespace,
 ) -> None:  # pragma: no cover
     """
     Query cadvisor api, send metrics to cluster collector

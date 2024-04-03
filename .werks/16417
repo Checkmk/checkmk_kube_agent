@@ -1,0 +1,22 @@
+Title: Add Configuration Option 'checkmkAgentTimeout'
+Class: fix
+Compatible: compat
+Component: node-collector
+Date: 1712152033
+Knowledge: doc
+Level: 1
+Version: 2.0.0-alpha.1
+
+The machine-sections-collector executes a version of the 'check_mk_agent' to collect information
+about the host. Sometimes this script takes more than five seconds, which causes the following
+traceback.
+
+C+:
+ File "/usr/local/lib/python3.10/subprocess.py", line 1935, in _wait
+    raise TimeoutExpired(self.args, timeout)
+subprocess.TimeoutExpired: Command '['/usr/local/bin/check_mk_agent']' timed out after 5 seconds
+C-:
+
+If you encounter this error, you can configure a longer timeout via the new option
+'nodeCollector.machineSectionsCollector.checkmkAgentTimeout' in the 'values.yaml' configuration
+file.
