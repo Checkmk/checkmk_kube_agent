@@ -25,6 +25,7 @@ from checkmk_kube_agent.api import (
     StandaloneApplication,
     TokenError,
     _init_app_state,
+    _join_host_port,
     _raise_from_token_error,
     app,
     authenticate,
@@ -841,3 +842,10 @@ def test_send_metadata(
             machine_sections_collection.metadata,
         ],
     )
+
+
+def test_join_host_port() -> None:
+    """Test IpV4 and IpV6."""
+
+    assert _join_host_port("127.0.0.1", "8000") == "127.0.0.1:8000"
+    assert _join_host_port("::", "8000") == "[::]:8000"
