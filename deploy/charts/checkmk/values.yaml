@@ -282,6 +282,8 @@ nodeCollector:
         cpu: 150m
         memory: 200Mi
 
+    checkmkAgentTimeout: 5
+
     # the machine sections collector can collect monitoring information for network interfaces of the underlying node.
     # this means that the '/sys' directory of the node will be mounted into the container.
     # the pod security policy is adjusted accordingly.

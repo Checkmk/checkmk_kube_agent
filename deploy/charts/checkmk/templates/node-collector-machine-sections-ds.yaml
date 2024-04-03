@@ -61,6 +61,9 @@ spec:
             - "/usr/local/bin/checkmk-machine-sections-collector"
           args:
             - "--log-level={{ .Values.nodeCollector.logLevel }}"
+          {{- if .Values.nodeCollector.machineSectionsCollector.checkmkAgentTimeout }}
+            - "--checkmk-agent-timeout={{ .Values.nodeCollector.machineSectionsCollector.checkmkAgentTimeout }}"
+          {{- end }}
           {{- if .Values.tlsCommunication.enabled }}
             - "--secure-protocol"
           {{- if .Values.tlsCommunication.verifySsl }}
