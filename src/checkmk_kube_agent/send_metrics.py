@@ -379,10 +379,9 @@ def machine_sections_worker(
         ["/usr/local/bin/check_mk_agent"],
         stdout=subprocess.PIPE,
     ) as process:
-        (out, _err) = process.communicate(args.checkmk_agent_timeout)
+        (out, err) = process.communicate(args.checkmk_agent_timeout)
         if process.returncode != 0:
-            # we don't capture stderr so it's printed to stderr of this process
-            # and hopefully contains a helpful error message...
+            logger.error(err)
             raise RuntimeError("Agent execution failed.")
         if process.stdout is None:
             raise RuntimeError("Could not read agent output")
