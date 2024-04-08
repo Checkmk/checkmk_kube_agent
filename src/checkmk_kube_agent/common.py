@@ -29,11 +29,6 @@ def collector_argument_parser(**kwargs) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(**kwargs)
 
     parser.add_argument(
-        "--host",
-        "-s",
-        help="Host IP address of the cluster collector API",
-    )
-    parser.add_argument(
         "--port",
         "-p",
         type=int,

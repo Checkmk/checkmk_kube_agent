@@ -367,9 +367,14 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
         choices=["debug", "info", "warning", "error", "critical"],
         help="gunicorn log level.",
     )
+    parser.add_argument(
+        "--address",
+        "-s",
+        help="IP address to which the cluster collector API binds",
+    )
 
     parser.set_defaults(
-        host="127.0.0.1",
+        address="127.0.0.1",
         port=10050,
         reader_whitelist="checkmk-monitoring:checkmk",
         writer_whitelist="checkmk-monitoring:node-collector",
@@ -431,7 +436,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     )
 
     options = {
-        "bind": f"{args.host}:{args.port}",
+        "bind": f"{args.address}:{args.port}",
         "workers": 1,
         "worker_class": "uvicorn.workers.UvicornWorker",
         "loglevel": args.log_level,
