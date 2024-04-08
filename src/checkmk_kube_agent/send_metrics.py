@@ -279,6 +279,11 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
     parser = collector_argument_parser()
 
     parser.add_argument(
+        "--host",
+        "-s",
+        help="Host IP address of the cluster collector API",
+    )
+    parser.add_argument(
         "--polling-interval",
         "-i",
         type=int,

@@ -218,7 +218,7 @@ def fixture_machine_sections_collection(
 def fixture_argv() -> Sequence[str]:
     """Cluster collector main function arguments"""
     return [
-        "--host",
+        "--address",
         "127.0.0.2",
         "--port",
         "5",
@@ -238,7 +238,7 @@ def test_parse_arguments(argv: Sequence[str]) -> None:
     """Cluster collector arguments are parsed correctly"""
     args = parse_arguments(argv)
 
-    assert args.host == "127.0.0.2"
+    assert args.address == "127.0.0.2"
     assert args.port == 5
     assert args.secure_protocol is True
     assert args.ssl_keyfile == "my-ssl-keyfile"

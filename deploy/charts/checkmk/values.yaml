@@ -90,6 +90,10 @@ clusterCollector:
     repository: checkmk/kubernetes-collector
     pullPolicy: IfNotPresent
 
+  # address controls on which interfaces the kubernetes-collector will listen
+  # use "[::]" to listen on all interfaces in an IPv6 cluster
+  address: "0.0.0.0"
+
   # can be: "debug", "info", "warning" (default), "critical"
   logLevel: warning
 
