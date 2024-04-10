@@ -7,7 +7,7 @@ Edition: cre
 Knowledge: doc
 Level: 1
 State: unknown
-Version: 1.5.0
+Version: 1.6.0
 
 For Kubernetes clusters running a IPv6/IPv4 dual stack, the node collectors would display the
 following error:

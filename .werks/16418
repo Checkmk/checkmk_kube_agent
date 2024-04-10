@@ -7,7 +7,7 @@ Edition: cre
 Knowledge: doc
 Level: 1
 State: unknown
-Version: 1.5.0
+Version: 1.6.0
 
 The machine-sections-collector executes a version of the 'check_mk_agent' to collect information
 about the host. Previously, if the script produced output to the extent that it had to wait for the
