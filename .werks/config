@@ -1,5 +1,13 @@
 current_version = "1.5.0"
 
+editions = [
+    ( "cre",          "Raw Edition" ),
+    ( "cee",          "Enterprise Edition" ),
+    ( "cme",          "Managed Services Edition" ),
+    ( "cce",          "Cloud Edition" ),
+    ( "cse",          "Saas Edition" ),
+]
+
 components = [
    ( "cluster-collector",        "Cluster Collector" ),
    ( "node-collector",           "Node Collector" ),
