@@ -15,7 +15,7 @@ requirements = [
     "requests==2.31.0",
     "urllib3==2.0.7",
     "uvicorn==0.17.5",
-    "gunicorn==20.1.0",
+    "gunicorn==22.0.0",
 ]
 
 setup(
