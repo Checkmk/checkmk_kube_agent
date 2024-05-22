@@ -97,6 +97,9 @@ clusterCollector:
   # can be: "debug", "info", "warning" (default), "critical"
   logLevel: warning
 
+  # cacheMaxsize set the maximum number of metric entries the cluster collector can hold at a time
+  cacheMaxsize: "10000"
+
   podAnnotations: {}
 
   podSecurityContext: {}
