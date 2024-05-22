@@ -47,6 +47,7 @@ spec:
           args:
             - "--log-level={{ .Values.clusterCollector.logLevel }}"
             - "--address={{ default "0.0.0.0" .Values.clusterCollector.address }}"
+            - "--cache-maxsize={{ defaulut "10000" .Values.clusterCollector.cacheMaxsize }}"
             - "--reader-whitelist={{ .Release.Namespace }}:{{ template "checkmk.serviceAccountName.checkmk" . }}"
             - "--writer-whitelist={{ .Release.Namespace }}:{{ template "checkmk.serviceAccountName.nodeCollector.containerMetricsCollector" . }},{{ .Release.Namespace }}:{{ template "checkmk.serviceAccountName.nodeCollector.machineSectionsCollector" . }}"
           {{- if .Values.tlsCommunication.enabled }}
