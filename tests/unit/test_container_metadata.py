@@ -112,7 +112,9 @@ def test_parse_machine_sections_collector_metadata(
     assert parse_node_collector_metadata(
         collector_metadata=collector_metadata,
         collector_type=CollectorType.MACHINE_SECTIONS,
-        components=Components(checkmk_agent_version=Version("2.1.0i1")),
+        components=Components(
+            cadvisor_version=None, checkmk_agent_version=Version("2.1.0i1")
+        ),
     ) == NodeCollectorMetadata(
         node=NodeName("nebukadnezar"),
         host_name=HostName("morpheus"),
@@ -125,6 +127,7 @@ def test_parse_machine_sections_collector_metadata(
         checkmk_kube_agent=CheckmkKubeAgentMetadata(project_version=Version("0.1.0")),
         collector_type=CollectorType.MACHINE_SECTIONS,
         components=Components(
+            cadvisor_version=None,
             checkmk_agent_version=Version("2.1.0i1"),
         ),
     )
@@ -139,14 +142,19 @@ def test_parse_machine_sections_missing_checkmk_agent_version(
         parse_node_collector_metadata(
             collector_metadata=collector_metadata,
             collector_type=CollectorType.MACHINE_SECTIONS,
-            components=Components(),
+            components=Components(
+                cadvisor_version=None,
+                checkmk_agent_version=None,
+            ),
         )
 
     with pytest.raises(ValueError):
         parse_node_collector_metadata(
             collector_metadata=collector_metadata,
             collector_type=CollectorType.MACHINE_SECTIONS,
-            components=Components(cadvisor_version=Version("v0.43.0")),
+            components=Components(
+                cadvisor_version=Version("v0.43.0"), checkmk_agent_version=None
+            ),
         )
 
 
@@ -157,7 +165,9 @@ def test_parse_container_metrics_collector_metadata(
     assert parse_node_collector_metadata(
         collector_metadata=collector_metadata,
         collector_type=CollectorType.CONTAINER_METRICS,
-        components=Components(cadvisor_version=Version("v0.43.0")),
+        components=Components(
+            cadvisor_version=Version("v0.43.0"), checkmk_agent_version=None
+        ),
     ) == NodeCollectorMetadata(
         node=NodeName("nebukadnezar"),
         host_name=HostName("morpheus"),
@@ -171,6 +181,7 @@ def test_parse_container_metrics_collector_metadata(
         collector_type=CollectorType.CONTAINER_METRICS,
         components=Components(
             cadvisor_version=Version("v0.43.0"),
+            checkmk_agent_version=None,
         ),
     )
 
@@ -184,14 +195,19 @@ def test_parse_container_metrics_missing_cadvisor_version(
         parse_node_collector_metadata(
             collector_metadata=collector_metadata,
             collector_type=CollectorType.CONTAINER_METRICS,
-            components=Components(),
+            components=Components(
+                cadvisor_version=None,
+                checkmk_agent_version=None,
+            ),
         )
 
     with pytest.raises(ValueError):
         parse_node_collector_metadata(
             collector_metadata=collector_metadata,
             collector_type=CollectorType.CONTAINER_METRICS,
-            components=Components(checkmk_agent_version=Version("2.1.0i1")),
+            components=Components(
+                cadvisor_version=None, checkmk_agent_version=Version("2.1.0i1")
+            ),
         )
 
 
@@ -216,7 +232,9 @@ def test_invalid_collector_type() -> None:
         parse_node_collector_metadata(
             collector_metadata=collector_metadata,
             collector_type=CollectorType.UNKNOWN_TYPE,  # type: ignore
-            components=Components(cadvisor_version=Version("v0.43.0")),
+            components=Components(
+                cadvisor_version=Version("v0.43.0"), checkmk_agent_version=None
+            ),
         )
 
 
@@ -233,7 +251,9 @@ def test_node_collector_metadata_serialisation() -> None:
         ),
         checkmk_kube_agent=CheckmkKubeAgentMetadata(project_version=Version("0.1.0")),
         collector_type=CollectorType.CONTAINER_METRICS,
-        components=Components(cadvisor_version=Version("v0.43.0")),
+        components=Components(
+            cadvisor_version=Version("v0.43.0"), checkmk_agent_version=None
+        ),
     )
 
     assert NodeCollectorMetadata(**json.loads(metadata.json())) == metadata
