@@ -39,17 +39,25 @@ from checkmk_kube_agent.type_defs import (
     CollectorType,
     Components,
     ContainerMetric,
+    ContainerName,
     HostName,
+    LabelValue,
     MachineSections,
     MachineSectionsCollection,
     Metadata,
     MetricCollection,
+    MetricName,
+    MetricValueString,
+    Namespace,
     NodeCollectorMetadata,
     NodeName,
     OsName,
     PlatformMetadata,
+    PodName,
+    PodUid,
     PythonCompiler,
     Response,
+    Timestamp,
     Version,
 )
 
@@ -152,47 +160,55 @@ def fixture_metric_collection(
     return MetricCollection(
         container_metrics=[
             ContainerMetric(
-                container_name=(
-                    "k8s_checkmk-cluster-agent_checkmk-cluster-agent-"
-                    "5c645c445f-tp44q_checkmk-monitoring_cf703718-71a1-"
-                    "41de-8026-b52d3195229b_0"
+                container_name=ContainerName(
+                    LabelValue(
+                        "k8s_checkmk-cluster-agent_checkmk-cluster-agent-"
+                        "5c645c445f-tp44q_checkmk-monitoring_cf703718-71a1-"
+                        "41de-8026-b52d3195229b_0"
+                    )
                 ),
-                namespace="checkmk-monitoring",
-                pod_uid="cf703718-71a1-41de-8026-b52d3195229b",
-                pod_name="checkmk-cluster-agent-5c645c445f-tp44q",
-                metric_name="container_cpu_cfs_periods_total",
-                metric_value_string="4783",
-                timestamp=0.0,
+                namespace=Namespace(LabelValue("checkmk-monitoring")),
+                pod_uid=PodUid(LabelValue("cf703718-71a1-41de-8026-b52d3195229b")),
+                pod_name=PodName(LabelValue("checkmk-cluster-agent-5c645c445f-tp44q")),
+                metric_name=MetricName("container_cpu_cfs_periods_total"),
+                metric_value_string=MetricValueString("4783"),
+                timestamp=Timestamp(0.0),
             ),
             ContainerMetric(
-                container_name=(
-                    "k8s_POD_checkmk-worker-agent-8x8bt_checkmk-monitoring"
-                    "_f560ac4c-2dd6-4d2e-8044-caaf6873ce93_0"
+                container_name=ContainerName(
+                    LabelValue(
+                        "k8s_POD_checkmk-worker-agent-8x8bt_checkmk-monitoring"
+                        "_f560ac4c-2dd6-4d2e-8044-caaf6873ce93_0"
+                    )
                 ),
-                namespace="checkmk-monitoring",
-                pod_uid="f560ac4c-2dd6-4d2e-8044-caaf6873ce93",
-                pod_name="checkmk-worker-agent-8x8bt",
-                metric_name="container_memory_cache",
-                metric_value_string="0",
-                timestamp=0.0,
+                namespace=Namespace(LabelValue("checkmk-monitoring")),
+                pod_uid=PodUid(LabelValue("f560ac4c-2dd6-4d2e-8044-caaf6873ce93")),
+                pod_name=PodName(LabelValue("checkmk-worker-agent-8x8bt")),
+                metric_name=MetricName("container_memory_cache"),
+                metric_value_string=MetricValueString("0"),
+                timestamp=Timestamp(0.0),
             ),
             ContainerMetric(
-                container_name=(
-                    "k8s_kube-scheduler_kube-scheduler-k8_kube-system_"
-                    "b58645c4b948b3629f3b7cc9f5fdde56_0"
+                container_name=ContainerName(
+                    LabelValue(
+                        "k8s_kube-scheduler_kube-scheduler-k8_kube-system_"
+                        "b58645c4b948b3629f3b7cc9f5fdde56_0"
+                    )
                 ),
-                namespace="kube-system",
-                pod_uid="b58645c4b948b3629f3b7cc9f5fdde56",
-                pod_name="kube-scheduler-k8",
-                metric_name="container_cpu_load_average_10s",
-                metric_value_string="0",
-                timestamp=1638960637.145,
+                namespace=Namespace(LabelValue("kube-system")),
+                pod_uid=PodUid(LabelValue("b58645c4b948b3629f3b7cc9f5fdde56")),
+                pod_name=PodName(LabelValue("kube-scheduler-k8")),
+                metric_name=MetricName("container_cpu_load_average_10s"),
+                metric_value_string=MetricValueString("0"),
+                timestamp=Timestamp(1638960637.145),
             ),
         ],
         metadata=NodeCollectorMetadata(
             **dict(cluster_collector_metadata),
             collector_type=CollectorType.CONTAINER_METRICS,
-            components=Components(cadvisor_version=Version("v0.43.0")),
+            components=Components(
+                cadvisor_version=Version("v0.43.0"), checkmk_agent_version=None
+            ),
         ),
     )
 
@@ -210,7 +226,9 @@ def fixture_machine_sections_collection(
         metadata=NodeCollectorMetadata(
             **dict(cluster_collector_metadata),
             collector_type=CollectorType.MACHINE_SECTIONS,
-            components=Components(checkmk_agent_version=Version("2.1.0i1")),
+            components=Components(
+                cadvisor_version=None, checkmk_agent_version=Version("2.1.0i1")
+            ),
         ),
     )
 
@@ -780,7 +798,7 @@ def test_endpoints_request_authentication() -> None:
         parameters = signature(route.endpoint).parameters  # type: ignore
         if "token" not in parameters:
             raise Exception(
-                f"Expected a token parameter for path '{route.path}'. "  # type:ignore
+                f"Expected a token parameter for path '{route.path}'. "  # type: ignore
                 "Please add auth!"
             )
         parameter_token = parameters["token"]

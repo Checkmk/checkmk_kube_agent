@@ -206,9 +206,11 @@ def _parse_metrics_with_labels(
             ),
             metric_name=MetricName(metric_name),
             metric_value_string=MetricValueString(value_string),
-            timestamp=Timestamp(float(optional_timestamp[0]) / 1000.0)
-            if optional_timestamp
-            else now,
+            timestamp=(
+                Timestamp(float(optional_timestamp[0]) / 1000.0)
+                if optional_timestamp
+                else now
+            ),
         )
 
     return None
@@ -361,6 +363,7 @@ def container_metrics_worker(
                     cadvisor_version=Version(
                         json.loads(cadvisor_version.content),
                     ),
+                    checkmk_agent_version=None,
                 ),
             ),
         ).json(),
@@ -407,6 +410,7 @@ def machine_sections_worker(
                 collector_metadata=collector_metadata(),
                 collector_type=CollectorType.MACHINE_SECTIONS,
                 components=Components(
+                    cadvisor_version=None,
                     checkmk_agent_version=Version(os.environ["CHECKMK_AGENT_VERSION"]),
                 ),
             ),

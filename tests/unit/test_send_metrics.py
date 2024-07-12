@@ -12,7 +12,17 @@ from typing import Sequence
 import pytest
 
 from checkmk_kube_agent.send_metrics import parse_arguments, parse_raw_response
-from checkmk_kube_agent.type_defs import ContainerMetric, Timestamp
+from checkmk_kube_agent.type_defs import (
+    ContainerMetric,
+    ContainerName,
+    LabelValue,
+    MetricName,
+    MetricValueString,
+    Namespace,
+    PodName,
+    PodUid,
+    Timestamp,
+)
 
 # pylint: disable=redefined-outer-name
 # pylint: disable=use-implicit-booleaness-not-comparison
@@ -146,28 +156,32 @@ def test_parse_raw_response(container_metrics: str) -> None:
     """Container metrics are parsed properly into the expected schema"""
     assert parse_raw_response(container_metrics, Timestamp(0.0)) == [
         ContainerMetric(
-            container_name=(
-                "k8s_POD_checkmk-worker-agent-8x8bt_checkmk-"
-                "monitoring_f560ac4c-2dd6-4d2e-8044-caaf6873ce93_0"
+            container_name=ContainerName(
+                LabelValue(
+                    "k8s_POD_checkmk-worker-agent-8x8bt_checkmk-"
+                    "monitoring_f560ac4c-2dd6-4d2e-8044-caaf6873ce93_0"
+                )
             ),
-            namespace="checkmk-monitoring",
-            pod_uid="f560ac4c-2dd6-4d2e-8044-caaf6873ce93",
-            pod_name="checkmk-worker-agent-8x8bt",
-            metric_name="container_cpu_cfs_periods_total",
-            metric_value_string="5994",
-            timestamp=0.0,
+            namespace=Namespace(LabelValue("checkmk-monitoring")),
+            pod_uid=PodUid(LabelValue("f560ac4c-2dd6-4d2e-8044-caaf6873ce93")),
+            pod_name=PodName(LabelValue("checkmk-worker-agent-8x8bt")),
+            metric_name=MetricName(LabelValue("container_cpu_cfs_periods_total")),
+            metric_value_string=MetricValueString("5994"),
+            timestamp=Timestamp(0.0),
         ),
         ContainerMetric(
-            container_name=(
-                "k8s_POD_kube-proxy-kvkls_kube-system_e729f03e-"
-                "59ae-444c-a835-021a919d7898_1"
+            container_name=ContainerName(
+                LabelValue(
+                    "k8s_POD_kube-proxy-kvkls_kube-system_e729f03e-"
+                    "59ae-444c-a835-021a919d7898_1"
+                )
             ),
-            namespace="kube-system",
-            pod_uid="e729f03e-59ae-444c-a835-021a919d7898",
-            pod_name="kube-proxy-kvkls",
-            metric_name="container_fs_io_time_seconds_total",
-            metric_value_string="0",
-            timestamp=0.0,
+            namespace=Namespace(LabelValue("kube-system")),
+            pod_uid=PodUid(LabelValue("e729f03e-59ae-444c-a835-021a919d7898")),
+            pod_name=PodName(LabelValue("kube-proxy-kvkls")),
+            metric_name=MetricName("container_fs_io_time_seconds_total"),
+            metric_value_string=MetricValueString("0"),
+            timestamp=Timestamp(0.0),
         ),
     ]
 
@@ -178,15 +192,19 @@ def test_parse_raw_response_system_containers(
     """System container metrics are parsed properly into the expected schema"""
     assert parse_raw_response(system_container_metrics, Timestamp(0.0)) == [
         ContainerMetric(
-            container_name="k8s_etcd_etcd-k8_kube-system_f50a3637ec9e7cb947095117b393e4be_0",
-            namespace="kube-system",
+            container_name=ContainerName(
+                LabelValue(
+                    "k8s_etcd_etcd-k8_kube-system_f50a3637ec9e7cb947095117b393e4be_0"
+                )
+            ),
+            namespace=Namespace(LabelValue("kube-system")),
             # Due to a bug in cAdvisor, the pod UID shown here is not the
             # pod UID, but the kubernetes.io/config.hash in the
             # metadata.annotations field
-            pod_uid="f50a3637ec9e7cb947095117b393e4be",
-            pod_name="etcd-k8",
-            metric_name="container_cpu_load_average_10s",
-            metric_value_string="0",
-            timestamp=1638960636.719,
+            pod_uid=PodUid(LabelValue("f50a3637ec9e7cb947095117b393e4be")),
+            pod_name=PodName(LabelValue("etcd-k8")),
+            metric_name=MetricName("container_cpu_load_average_10s"),
+            metric_value_string=MetricValueString("0"),
+            timestamp=Timestamp(1638960636.719),
         )
     ]
