@@ -5,7 +5,7 @@ ARG TRIVY_VERSION="0.23.0"
 ARG CHECKMK_AGENT_VERSION
 FROM checkmk/check-mk-raw:"$CHECKMK_AGENT_VERSION" as checkmk
 
-FROM python:3.10-alpine3.15 as base
+FROM artifacts.lan.tribe29.com:4000/python:3.10-alpine3.15 as base
 # pciutils is used by mk_inventory.linux
 # coreutils is needed for the Checkmk agent to run properly
 # hadolint ignore=DL3018

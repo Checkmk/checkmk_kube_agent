@@ -1,4 +1,4 @@
-FROM python:3.10-alpine3.15 as base
+FROM artifacts.lan.tribe29.com:4000/python:3.10-alpine3.15 as base
 
 FROM base as common
 ARG HELM_VERSION="3.8.2"
