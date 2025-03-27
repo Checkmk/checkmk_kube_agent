@@ -30,7 +30,10 @@ def do_it() {
         docker.image("checkmk-kube-agent-ci:latest").inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
             PROJECT_PYVERSION = sh(script: "#!/bin/ash\nmake print-project-pyversion", returnStdout: true).toString().trim();
             CHECKMK_AGENT_VERSION = sh(script: "#!/bin/ash\nmake print-checkmk-agent-version", returnStdout: true).toString().trim();
-            sh("#!/bin/ash\nmake release-image");
+
+            docker.withRegistry(DOCKER_REGISTRY, 'nexus') {
+               sh("#!/bin/ash\nmake release-image");
+	    }
         }
     }
     stage("build dev image") {
