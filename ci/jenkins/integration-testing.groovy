@@ -40,14 +40,16 @@ def main() {
 
     stage("Build release image") {
         releaser_image.inside("${mount_docker_sock} ${add_docker_group_id}") {
-            ash("""
-                make \
-                    DOCKERHUB_PUBLISHER=${dockerhub_publisher} \
-                    COLLECTOR_IMAGE_NAME=${collector_image_name} \
-                    CADVISOR_IMAGE_NAME=${cadvisor_image_name} \
-                    DOCKER_IMAGE_TAG=${docker_image_tag} \
-                    release-image
-            """);
+	    docker.withRegistry(DOCKER_REGISTRY, 'nexus') {
+                ash("""
+                    make \
+                        DOCKERHUB_PUBLISHER=${dockerhub_publisher} \
+                        COLLECTOR_IMAGE_NAME=${collector_image_name} \
+                        CADVISOR_IMAGE_NAME=${cadvisor_image_name} \
+                        DOCKER_IMAGE_TAG=${docker_image_tag} \
+                        release-image
+                """);
+            }
         }
     }
 
