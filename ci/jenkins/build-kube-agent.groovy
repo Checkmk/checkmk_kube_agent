@@ -171,8 +171,10 @@ def main(BRANCH, METHOD, VERSION, IS_RELEASE_BUILD) {
 
     stage("Build Images") {
         DOCKER_IMAGE_TAG = determine_docker_tag(IS_RELEASE_BUILD, VERSION);
-        docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
-            run_in_ash("make DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG} release-image");
+        docker.withRegistry(DOCKER_REGISTRY, 'nexus') {
+            docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
+                run_in_ash("make DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG} release-image");
+            }
         }
 
     }
