@@ -130,8 +130,10 @@ def main(BRANCH, METHOD, VERSION) {
     }
 
     stage("Build Images") {
-        docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
-            run_in_ash("DOCKER_TAG_PREFIX=${DOCKER_TAG_PREFIX} DOCKER_TAG_SUFFIX=${DOCKER_TAG_SUFFIX} make release-image");
+        docker.withRegistry(DOCKER_REGISTRY, 'nexus') {
+            docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
+                run_in_ash("DOCKER_TAG_PREFIX=${DOCKER_TAG_PREFIX} DOCKER_TAG_SUFFIX=${DOCKER_TAG_SUFFIX} make release-image");
+            }
         }
 
     }
