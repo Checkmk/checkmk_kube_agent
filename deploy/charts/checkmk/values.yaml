@@ -152,9 +152,10 @@ clusterCollector:
     failureThreshold: 3
     httpHeaders: [ ]
   resources:
+    # in larger clusters the limits might have to be increased in case you observe OOMKilled
     limits:
-      cpu: 300m
-      memory: 200Mi
+      cpu: 500m
+      memory: 500Mi
     requests:
       cpu: 150m
       memory: 200Mi
