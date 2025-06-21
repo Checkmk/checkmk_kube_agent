@@ -87,6 +87,11 @@ spec:
             - name: docker
               mountPath: /var/lib/docker
               readOnly: true
+            {{- if and .Values.nodeCollector.cadvisor.containerdSocket .Values.nodeCollector.cadvisor.containerdSocket.enabled }}
+            - name: containerdsock
+              mountPath: {{ .Values.nodeCollector.cadvisor.containerdSocket.mountPath | quote }}
+              readOnly: true
+            {{- end }}
         - name: container-metrics-collector
           securityContext:
             {{- toYaml .Values.nodeCollector.containerMetricsCollector.securityContext | nindent 12 }}
@@ -133,6 +138,12 @@ spec:
         - name: docker
           hostPath:
             path: /var/lib/docker
+        {{- if and .Values.nodeCollector.cadvisor.containerdSocket .Values.nodeCollector.cadvisor.containerdSocket.enabled }}
+        - name: containerdsock
+          hostPath:
+            path: {{ .Values.nodeCollector.cadvisor.containerdSocket.hostPath | quote }}
+            type: Socket
+        {{- end }}
       {{- if .Values.tlsCommunication.enabled }}
         - name: checkmk-ca-cert
           secret:

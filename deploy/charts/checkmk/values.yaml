@@ -237,6 +237,35 @@ nodeCollector:
         cpu: 150m
         memory: 200Mi
 
+    # Configuration for containerd socket (used by cadvisor in the node collector).
+    # This section is optional and only needed if CPU/Memory metrics are missing the required labels.
+    # Access to the container runtime socket (e.g., for metrics collection).
+    # Known limitation:
+    # - When Kubernetes nodes run with cgroup v2 (common in newer distros),
+    #   cAdvisor cannot properly map container metadata (pod name, namespace, labels)
+    #   from cgroups alone.
+    # - To work around this, the container runtime socket must be mounted inside the cAdvisor pod
+    #   so that cAdvisor can query containerd directly for metadata via its gRPC interface.
+    #
+    # To locate the correct socket path on your host node, run:
+    #   find / -type s -name 'containerd.sock' 2>/dev/null
+    #
+    # The path varies depending on your Kubernetes setup:
+    #   - MicroK8s: /var/snap/microk8s/common/run/containerd.sock
+    #   - Standard containerd: /run/containerd/containerd.sock
+    #   - k3s: /run/k3s/containerd/containerd.sock
+    #
+    # mountPath is where the socket is available inside the container.
+    # hostPath is the full path to the socket file on the Kubernetes node.
+    #
+    # Example to enable:
+    # containerdSocket:
+    #   enabled: true
+    #   name: containerdsock
+    #   mountPath: /var/snap/microk8s/common/run/containerd.sock
+    #   hostPath: /var/snap/microk8s/common/run/containerd.sock
+
+
   containerMetricsCollector:
     image:
       repository: checkmk/kubernetes-collector
