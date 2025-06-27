@@ -1,6 +1,6 @@
-FROM artifacts.lan.tribe29.com:4000/python:3.10-alpine3.15 as base
+FROM artifacts.lan.tribe29.com:4000/python:3.10-alpine3.15 AS base
 
-FROM base as common
+FROM base AS common
 ARG HELM_VERSION="3.8.2"
 # make: run targets that build Python source/wheel packages
 # git: ensure a clean repo state
@@ -16,7 +16,7 @@ RUN apk add --no-cache make git openssh docker=~20.10 && \
     rm -rf /var/cache/apk/*
 RUN addgroup -g 1000 jenkins && adduser -u 1001 -G jenkins -s /bin/ash jenkins -D
 
-FROM common as releaser
+FROM common AS releaser
 ARG GH_VERSION="2.8.0"
 COPY requirements_build.txt /tmp/
 # Notes on "gh" tool in combination with the "gh release create" command:
@@ -30,7 +30,7 @@ RUN wget -q "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH
     rm -rf /tmp/* && \
     rm -rf /var/cache/apk/*
 
-FROM common as integration-tester
+FROM common AS integration-tester
 ARG KUBECTL_VERSION="v1.24.3"
 COPY requirements_test.txt /tmp/
 COPY ci/integration/ansible/requirements.* /tmp/

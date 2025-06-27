@@ -3,15 +3,15 @@ ARG HELM_VERSION="3.8.1"
 ARG TRIVY_VERSION="0.23.0"
 
 ARG CHECKMK_AGENT_VERSION
-FROM checkmk/check-mk-raw:"$CHECKMK_AGENT_VERSION" as checkmk
+FROM checkmk/check-mk-raw:"$CHECKMK_AGENT_VERSION" AS checkmk
 
-FROM artifacts.lan.tribe29.com:4000/python:3.10-alpine3.15 as base
+FROM artifacts.lan.tribe29.com:4000/python:3.10-alpine3.15 AS base
 # pciutils is used by mk_inventory.linux
 # coreutils is needed for the Checkmk agent to run properly
 # hadolint ignore=DL3018
 RUN apk update && apk add --no-cache coreutils pciutils
 
-FROM base as builder
+FROM base AS builder
 ARG CHECKMK_AGENT_VERSION
 ARG PROJECT_PYVERSION
 ARG CHECKMK_AGENT_DIR="/opt/omd/versions/default/share/check_mk/agents"
@@ -30,7 +30,7 @@ RUN pip3 install --no-cache-dir -r /tmp/requirements_build.txt && \
     rm -rf /tmp/* && \
     rm -rf /var/cache/apk/*
 
-FROM base as release
+FROM base AS release
 ARG CHECKMK_AGENT_VERSION
 ARG GIT_HASH
 ENV CHECKMK_AGENT_VERSION="${CHECKMK_AGENT_VERSION}"
@@ -39,7 +39,7 @@ RUN addgroup appgroup -g 10001 && \
     adduser -HD appuser -G appgroup -u 10001
 RUN echo "${GIT_HASH}" > GIT_HASH.txt
 
-FROM release as dev
+FROM release AS dev
 ARG HADOLINT_VERSION
 ARG HELM_VERSION
 ARG TRIVY_VERSION
