@@ -1,4 +1,4 @@
-FROM artifacts.lan.tribe29.com:4000/cadvisor:v0.47.2 as release
+FROM artifacts.lan.tribe29.com:4000/cadvisor:v0.47.2 AS release
 ARG GIT_HASH
 RUN sed -i -e 's/v3\.12/v3\.14/g' /etc/apk/repositories && \
     apk --no-cache upgrade --purge && \
