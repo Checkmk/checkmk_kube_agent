@@ -151,14 +151,17 @@ clusterCollector:
     timeoutSeconds: 2
     failureThreshold: 3
     httpHeaders: [ ]
-  resources:
-    limits:
-      cpu: 300m
-      memory: 200Mi
-    requests:
-      cpu: 150m
-      memory: 200Mi
 
+  ## Configure resource requests and limits
+  ## ref: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+  resources: {}
+    # limits:
+    #   cpu: 500m
+    #   memory: 500Mi
+    # requests:
+    #   cpu: 150m
+    #   memory: 200Mi
+  
   nodeSelector: {}
 
   tolerations: []
@@ -229,13 +232,15 @@ nodeCollector:
       privileged: false
       readOnlyRootFilesystem: true
 
-    resources:
-      limits:
-        cpu: 300m
-        memory: 200Mi
-      requests:
-        cpu: 150m
-        memory: 200Mi
+    ## Configure resource requests and limits
+    ## ref: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+    resources: {}
+      # limits:
+      #   cpu: 300m
+      #   memory: 500Mi
+      # requests:
+      #   cpu: 150m
+      #   memory: 200Mi
 
   containerMetricsCollector:
     image:
@@ -255,13 +260,15 @@ nodeCollector:
       runAsNonRoot: true
       runAsUser: 10001
 
-    resources:
-      limits:
-        cpu: 300m
-        memory: 200Mi
-      requests:
-        cpu: 150m
-        memory: 200Mi
+    ## Configure resource requests and limits
+    ## ref: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+    resources: {}
+      # limits:
+      #   cpu: 300m
+      #   memory: 500Mi
+      # requests:
+      #   cpu: 150m
+      #   memory: 200Mi
 
   machineSectionsCollector:
     image:
@@ -281,13 +288,15 @@ nodeCollector:
       runAsNonRoot: true
       runAsUser: 10001
 
-    resources:
-      limits:
-        cpu: 300m
-        memory: 200Mi
-      requests:
-        cpu: 150m
-        memory: 200Mi
+    ## Configure resource requests and limits
+    ## ref: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+    resources: {}
+      # limits:
+      #   cpu: 300m
+      #   memory: 500Mi
+      # requests:
+      #   cpu: 150m
+      #   memory: 200Mi
 
     checkmkAgentTimeout: 5
 
