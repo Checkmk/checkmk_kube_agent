@@ -13,8 +13,8 @@ requirements = [
     "cachetools==5.0.0",
     "fastapi==0.109.2",
     "pydantic==1.10.13",
-    "requests==2.32.0",
-    "urllib3==2.2.2",
+    "requests==2.32.4",
+    "urllib3==2.5.0",
     "uvicorn==0.17.5",
     "gunicorn==23.0.0",
 ]
