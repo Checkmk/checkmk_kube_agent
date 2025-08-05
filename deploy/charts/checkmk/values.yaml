@@ -15,7 +15,7 @@ kubeVersionOverride: ""
 ## More info: https://cloud.google.com/kubernetes-engine/docs/how-to/run-autopilot-partner-workloads 
 ## To deploy in GKE Autopilot, please set to true.
 gkeAutopilot:
-  enabled: true
+  enabled: false
 
 tlsCommunication:
   enabled: false
