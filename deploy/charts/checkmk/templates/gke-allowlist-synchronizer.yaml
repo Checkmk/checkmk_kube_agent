@@ -1,5 +1,5 @@
 {{- /* Deploy only if .Values.gkeAutopilot.allowlistPaths is non-empty */ -}}
-{{- if .Values.gkeAutopilot.allowlistPaths }}
+{{- if and .Values.gkeAutopilot (hasKey .Values.gkeAutopilot "allowlistPaths") }}
 apiVersion: auto.gke.io/v1
 kind: AllowlistSynchronizer
 metadata:
