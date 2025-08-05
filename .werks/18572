@@ -1,0 +1,16 @@
+[//]: # (werk v2)
+# Introduce GKE allowlist synchonizer
+
+key        | value
+---------- | ---
+date       | 2025-08-19T09:29:55+00:00
+version    | 2.0.0-alpha.1
+class      | feature
+edition    | cre
+component  | helm
+level      | 1
+compatible | yes
+
+This werk adds the necessary helm configurations in order to
+enable support to run the collector in GKE Autopilot.
+
