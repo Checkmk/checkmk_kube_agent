@@ -14,8 +14,9 @@ NodePort:
 {{- else if contains "LoadBalancer" .Values.clusterCollector.service.type }}
 LoadBalancer:
      NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+           It might return both hostname and IP. Please clean up yourself in this case by either one.
            You can watch the status of by running 'kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "checkmk.fullname" . }}-cluster-collector'
-  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "checkmk.fullname" . }}-cluster-collector --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}");
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "checkmk.fullname" . }}-cluster-collector -o jsonpath="{.status.loadBalancer.ingress[0].ip}{.status.loadBalancer.ingress[0].hostname}")
   echo http://$SERVICE_IP:{{ .Values.clusterCollector.service.port }}
 {{- else if contains "ClusterIP" .Values.clusterCollector.service.type }}
 ClusterIP:
