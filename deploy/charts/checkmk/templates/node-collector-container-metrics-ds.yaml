@@ -90,9 +90,10 @@ spec:
             - name: docker
               mountPath: /var/lib/docker
               readOnly: true
-            {{- if and .Values.nodeCollector.cadvisor.containerdSocket .Values.nodeCollector.cadvisor.containerdSocket.enabled }}
+            {{- $socket := .Values.nodeCollector.cadvisor.containerdSocket | default dict }}
+            {{- if $socket.enabled }}
             - name: containerdsock
-              mountPath: {{ .Values.nodeCollector.cadvisor.containerdSocket.mountPath | quote }}
+              mountPath: {{ $socket.mountPath | quote }}
               readOnly: true
             {{- end }}
         - name: container-metrics-collector
@@ -141,10 +142,11 @@ spec:
         - name: docker
           hostPath:
             path: /var/lib/docker
-        {{- if and .Values.nodeCollector.cadvisor.containerdSocket .Values.nodeCollector.cadvisor.containerdSocket.enabled }}
+        {{- $socket := .Values.nodeCollector.cadvisor.containerdSocket | default dict }}
+        {{- if $socket.enabled }}
         - name: containerdsock
           hostPath:
-              path: {{ .Values.nodeCollector.cadvisor.containerdSocket.hostPath | quote }}
+              path: {{ $socket.hostPath | quote }}
               type: Socket
         {{- end }}
       {{- if .Values.tlsCommunication.enabled }}
