@@ -1,0 +1,8 @@
+apiVersion: auto.gke.io/v1
+kind: AllowlistSynchronizer
+metadata:
+  name: checkmk-allowlist-synchronizer
+spec:
+  allowlistPaths:
+    - "Checkmk/checkmk_kube_agent/v1.0.0/*"
+    - "Checkmk/checkmk_kube_agent/v1.0.1/*"
