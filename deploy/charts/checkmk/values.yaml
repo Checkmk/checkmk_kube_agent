@@ -10,6 +10,13 @@ kubeVersionOverride: ""
 ## If you are using one of them, or containerd is located in an alternate location, please uncomment / adapt the override.
 #containerdOverride: "/run/k3s/containerd/containerd.sock"
 
+## GKE Autopilot only allows privilegded workloads, if they are allowlisted.
+## Requirement: Please first deploy the allowlist-synchronizer CRD [https://github.com/checkmk/checkmk_kube_agent/tree/main/deploy/manifests/gke-allowlist/cmk-allowlist-synchronizer.yaml]
+## More info: https://cloud.google.com/kubernetes-engine/docs/how-to/run-autopilot-partner-workloads 
+## To deploy in GKE Autopilot, please set to true.
+gkeAutopilot:
+  enabled: false
+
 tlsCommunication:
   enabled: false
   verifySsl: false
