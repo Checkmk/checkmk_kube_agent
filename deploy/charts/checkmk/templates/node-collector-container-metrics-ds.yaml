@@ -31,6 +31,9 @@ spec:
         {{- include "checkmk.selectorLabels" . | nindent 8 }}
         component: {{ include "checkmk.fullname" . }}-node-collector
         app: {{ include "checkmk.fullname" . }}-node-collector-container-metrics
+        {{- if .Values.gkeAutopilot.enabled }}
+        cloud.google.com/matching-allowlist: checkmk-node-collector-container-metrics
+        {{- end }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
