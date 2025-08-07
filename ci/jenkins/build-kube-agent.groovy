@@ -4,18 +4,52 @@
 
 import java.text.SimpleDateFormat
 import org.jenkinsci.plugins.pipeline.modeldefinition.Utils
-import groovy.transform.Field
 
-currentBuild.description = '\nBuilding the Kubernetes Agent\n';
+def main() {
+    currentBuild.description = '\nBuilding the Kubernetes Agent\n';
 
-def NODE = '';
-withFolderProperties{
-    NODE = env.BUILD_NODE;
+    def is_release_build = false;
+    switch (params.METHOD) {
+        case "daily":
+            is_release_build = false;
+            break;
+        default:
+            is_release_build = true;
+            break;
+    }
+
+    def this_branch = safe_branch_name();
+
+    validate_parameters_and_branch(params.METHOD, params.VERSION, this_branch);
+
+    withEnv([
+        "GIT_AUTHOR_NAME=Checkmk release system",
+        "GIT_AUTHOR_EMAIL='feedback@check-mk.org'",
+        "GIT_SSH_VARIANT=ssh",
+        "GIT_COMMITTER_NAME=Checkmk release system",
+        "GIT_COMMITTER_EMAIL=feedback@check-mk.org",
+    ]) {
+        main_for_real(this_branch, params.METHOD, params.VERSION, is_release_build);
+    }
 }
 
-// TODO: Duplicate code from checkmk repo -> move to common repo
-def get_branch(scm) {
-    return scm.branches[0].name;
+def branch_name() {
+    if (params.CUSTOM_GIT_REF) {
+        if (branch_name_is_branch_version("${checkout_dir}")) {
+            // this is only required as "master" is called "stable branch + 0.1.0"
+            // e.g. 2.3.0 (stable) + 0.1.0 = 2.4.0
+            return env.GERRIT_BRANCH ?: get_branch_version("${checkout_dir}");
+        } else {
+            return env.GERRIT_BRANCH ?: "main";
+        }
+    } else {
+        // defined in global-defaults.yml
+        return env.GERRIT_BRANCH ?: branches_str;
+    }
+}
+
+def safe_branch_name() {
+    return branch_name().replaceAll("/", "-");
 }
 
 def run_in_ash(command, get_stdout=false) {
@@ -30,22 +64,23 @@ def validate_parameters_and_branch(method, version, branch) {
     if (branch == "main" && method != "daily") error "We currently only create daily builds from branch main!"
 }
 
-def determine_docker_tag(is_release_build, version) {
+def determine_docker_tag(is_release_build) {
+    def docker_tag = "";
+
     if (is_release_build) {
-        DOCKER_TAG = VERSION;
+        docker_tag = params.VERSION;
     }
     else {
-        DATE = new Date();
-        DATE_FORMAT = new SimpleDateFormat("yyyy.MM.dd");
-        DATE_STRING = DATE_FORMAT.format(DATE);
-        DOCKER_TAG = "main_${DATE_STRING}";
-
+        def date_now = new Date();
+        def date_format = new SimpleDateFormat("yyyy.MM.dd");
+        def date_str = date_format.format(date_now);
+        def docker_tag = "main_${date_str}";
     }
 
-    return DOCKER_TAG
+    return docker_tag;
 }
 
-def main(BRANCH, METHOD, VERSION, IS_RELEASE_BUILD) {
+def main_for_real(this_branch, method, version, is_release_build) {
     /* Problem guide
 
     All release stages (not built) are independent from each other.
@@ -98,24 +133,25 @@ def main(BRANCH, METHOD, VERSION, IS_RELEASE_BUILD) {
     * see General Troubleshoot (above) if github push attempt fails
 
     */
-    def COMMIT_SHA;
+    def commit_sha;
     // TODO: at least consolidate in this repo...
-    def DOCKER_GROUP_ID = sh(script: "getent group docker | cut -d: -f3", returnStdout: true);
-    def GITHUB_PAGES_BRANCH = "gh-pages";
-    def KUBE_AGENT_GITHUB_REPO = "checkmk/checkmk_kube_agent";
-    def KUBE_AGENT_GITHUB_URL = "https://github.com/${KUBE_AGENT_GITHUB_REPO}";
-    def CI_IMAGE = "checkmk-kube-agent-ci";
-    def HELM_REPO_INDEX_FILE="index.yaml";
-    def STAGE_PUSH_IMAGES = 'Push Images';
-    def GITHUB_SSH_CREDENTIAL_ID = "ssh_private_key_github_kubernetes";
-    def GITHUB_TOKEN_CREDENTIAL_ID = "github-token-CheckmkCI-kubernetes";
+    def docker_group_id = sh(script: "getent group docker | cut -d: -f3", returnStdout: true);
+    def github_pages_branch = "gh-pages";
+    def kube_agent_github_repo = "checkmk/checkmk_kube_agent";
+    def kube_agent_github_url = "https://github.com/${kube_agent_github_repo}";
+    def ci_image = "checkmk-kube-agent-ci";
+    def helm_repo_index_file="index.yaml";
+    def stage_push_images = 'Push Images';
+    def github_ssh_credential_id = "ssh_private_key_github_kubernetes";
+    def github_token_credential_id = "github-token-CheckmkCI-kubernetes";
+    def this_version = version;
 
     stage('Checkout Sources') {
         checkout(scm);
         sh("git clean -fd");
-        sh("git remote add github git@github.com:${KUBE_AGENT_GITHUB_REPO}.git || true");
+        sh("git remote add github git@github.com:${kube_agent_github_repo}.git || true");
     }
-    docker.build(CI_IMAGE, "--network=host -f docker/ci/Dockerfile .");
+    docker.build(ci_image, "--network=host -f docker/ci/Dockerfile .");
 
     stage('Validate Github credentials') {
         build(
@@ -123,36 +159,33 @@ def main(BRANCH, METHOD, VERSION, IS_RELEASE_BUILD) {
         )
     }
 
-    if (IS_RELEASE_BUILD) {
+    if (is_release_build) {
         stage('Calculate Version') {
-            if (METHOD != "rebuild_version") {
-                docker.image(CI_IMAGE).inside("--entrypoint=") {
-                    VERSION = run_in_ash("METHOD=${METHOD} make print-bumped-version", true).toString().trim();
+            if (method != "rebuild_version") {
+                docker.image(ci_image).inside("--entrypoint=") {
+                    this_version = run_in_ash("METHOD=${method} make print-bumped-version", true).toString().trim();
                 }
-            }
-            else {
-                VERSION = VERSION;
             }
         }
 
         stage("Create or switch to tag") {
             withCredentials([sshUserPrivateKey(credentialsId: "release", keyFileVariable: 'keyfile')]) {
                 withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile} -l release"]) {
-                    docker.image(CI_IMAGE).inside("--entrypoint=") {
-                        run_in_ash("./ci/jenkins/scripts/tagging.sh ${VERSION} ${METHOD} ${BRANCH}");
+                    docker.image(ci_image).inside("--entrypoint=") {
+                        run_in_ash("./ci/jenkins/scripts/tagging.sh ${this_version} ${method} ${this_branch}");
                     }
                 }
             }
-            COMMIT_SHA = sh(script: "git rev-list -n 1 v${VERSION}", returnStdout: true).toString().trim();
+            commit_sha = sh(script: "git rev-list -n 1 v${this_version}", returnStdout: true).toString().trim();
         }
         // The tag must exist on github in order to be able to use it to create a github release later
         // This can be deleted if the push to github can be triggered some other way (see CMK-9584)
-        if (METHOD != "rebuild_version") {
+        if (method != "rebuild_version") {
             stage("Push to github") {
                 withCredentials([file(credentialsId: "ssh_private_key_github_kubernetes", variable: 'keyfile')]) {
                     withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile}"]) {
-                        docker.image(CI_IMAGE).inside("--entrypoint=") {
-                            run_in_ash("git push --tags github ${BRANCH}");
+                        docker.image(ci_image).inside("--entrypoint=") {
+                            run_in_ash("git push --tags github ${this_branch}");
                         }
                     }
                 }
@@ -164,42 +197,42 @@ def main(BRANCH, METHOD, VERSION, IS_RELEASE_BUILD) {
     }
 
     stage("Build source and wheel package") {
-        docker.image(CI_IMAGE).inside("--entrypoint=") {
+        docker.image(ci_image).inside("--entrypoint=") {
             run_in_ash("make dist");
         }
     }
 
     stage("Build Images") {
-        DOCKER_IMAGE_TAG = determine_docker_tag(IS_RELEASE_BUILD, VERSION);
+        DOCKER_IMAGE_TAG = determine_docker_tag(is_release_build);
         docker.withRegistry(DOCKER_REGISTRY, 'nexus') {
-            docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
+            docker.image(ci_image).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${docker_group_id} --entrypoint=") {
                 run_in_ash("make DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG} release-image");
             }
         }
 
     }
 
-    stage(STAGE_PUSH_IMAGES) {
+    stage(stage_push_images) {
         if (params.PUSH_TO_DOCKERHUB) {
             withCredentials([
                     usernamePassword(credentialsId: '11fb3d5f-e44e-4f33-a651-274227cc48ab', passwordVariable: 'DOCKER_PASSPHRASE', usernameVariable: 'DOCKER_USERNAME')]) {
-                docker.image(CI_IMAGE).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${DOCKER_GROUP_ID} --entrypoint=") {
+                docker.image(ci_image).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${docker_group_id} --entrypoint=") {
                     run_in_ash('echo \"${DOCKER_PASSPHRASE}\" | docker login -u ${DOCKER_USERNAME} --password-stdin');
                     run_in_ash("make DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG} push-images");
                 }
             }
         }
         else {
-            Utils.markStageSkippedForConditional(STAGE_PUSH_IMAGES);
+            Utils.markStageSkippedForConditional(stage_push_images);
         }
     }
 
-    if (IS_RELEASE_BUILD) {
-        withCredentials([usernamePassword(credentialsId: GITHUB_TOKEN_CREDENTIAL_ID, passwordVariable: 'GH_TOKEN', usernameVariable: "GH_USER")]) {
-            if (METHOD == "rebuild_version") {
+    if (is_release_build) {
+        withCredentials([usernamePassword(credentialsId: github_token_credential_id, passwordVariable: 'GH_TOKEN', usernameVariable: "GH_USER")]) {
+            if (method == "rebuild_version") {
                 stage("Delete github release") {
-                    docker.image(CI_IMAGE).inside("--entrypoint=") {
-                        run_in_ash("gh release delete --repo ${KUBE_AGENT_GITHUB_REPO} -y v${VERSION}");
+                    docker.image(ci_image).inside("--entrypoint=") {
+                        run_in_ash("gh release delete --repo ${kube_agent_github_repo} -y v${this_version}");
                     }
                 }
             }
@@ -207,33 +240,33 @@ def main(BRANCH, METHOD, VERSION, IS_RELEASE_BUILD) {
                 Utils.markStageSkippedForConditional("Delete github release");
             }
             stage("Create github release, upload helm chart artifact") {
-                docker.image(CI_IMAGE).inside("--entrypoint=") {
+                docker.image(ci_image).inside("--entrypoint=") {
                     // Note: see more details on the "gh" tool in the Dockerfile of the CI image.
-                    run_in_ash("gh release create --repo=${KUBE_AGENT_GITHUB_REPO} --target=${COMMIT_SHA} --notes='' --title=v${VERSION} v${VERSION} dist-helm/checkmk-kube-agent-helm-${VERSION}.tgz");
+                    run_in_ash("gh release create --repo=${kube_agent_github_repo} --target=${commit_sha} --notes='' --title=v${this_version} v${this_version} dist-helm/checkmk-kube-agent-helm-${this_version}.tgz");
                 }
             }
         }
 
-        if (METHOD == "rebuild_version") {
+        if (method == "rebuild_version") {
             Utils.markStageSkippedForConditional("Update helm repo index");
         }
         else {
             stage("Update helm repo index") {
-                sh("git checkout ${GITHUB_PAGES_BRANCH}");
+                sh("git checkout ${github_pages_branch}");
                 withCredentials([sshUserPrivateKey(credentialsId: "release", keyFileVariable: 'keyfile')]) {
                     withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile} -l release"]) {
-                        docker.image(CI_IMAGE).inside("--entrypoint=") {
-                            run_in_ash("scripts/update-helm-repo.sh --github-pages ${GITHUB_PAGES_BRANCH} --helm-repo-index ${HELM_REPO_INDEX_FILE} --url ${KUBE_AGENT_GITHUB_URL} --version ${VERSION}");
+                        docker.image(ci_image).inside("--entrypoint=") {
+                            run_in_ash("scripts/update-helm-repo.sh --github-pages ${github_pages_branch} --helm-repo-index ${helm_repo_index_file} --url ${kube_agent_github_url} --version ${this_version}");
                         }
                     }
                 }
                 // This can be deleted if the push to github can be triggered some other way (see CMK-9584)
-                withCredentials([file(credentialsId: GITHUB_SSH_CREDENTIAL_ID, variable: 'keyfile')]) {
+                withCredentials([file(credentialsId: github_ssh_credential_id, variable: 'keyfile')]) {
                     withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile}"]) {
-                        docker.image(CI_IMAGE).inside("--entrypoint=") {
-                            run_in_ash("git checkout ${GITHUB_PAGES_BRANCH}");
-                            run_in_ash("git push github ${GITHUB_PAGES_BRANCH}");
-                            sh("git checkout ${BRANCH}");
+                        docker.image(ci_image).inside("--entrypoint=") {
+                            run_in_ash("git checkout ${github_pages_branch}");
+                            run_in_ash("git push github ${github_pages_branch}");
+                            sh("git checkout ${this_branch}");
                         }
                     }
                 }
@@ -242,27 +275,4 @@ def main(BRANCH, METHOD, VERSION, IS_RELEASE_BUILD) {
     }
 }
 
-switch (METHOD) {
-    case "daily":
-        IS_RELEASE_BUILD = false;
-        break;
-    default:
-        IS_RELEASE_BUILD = true;
-        break;
-}
-
-def BRANCH = get_branch(scm);
-
-validate_parameters_and_branch(METHOD, VERSION, BRANCH);
-
-timeout(time: 12, unit: 'HOURS') {
-    node(NODE) {
-        withEnv(["GIT_AUTHOR_NAME=Checkmk release system",
-                 "GIT_AUTHOR_EMAIL='feedback@check-mk.org'",
-                 "GIT_SSH_VARIANT=ssh",
-                 "GIT_COMMITTER_NAME=Checkmk release system",
-                 "GIT_COMMITTER_EMAIL=feedback@check-mk.org"]) {
-            main(BRANCH, METHOD, VERSION, IS_RELEASE_BUILD);
-        }
-    }
-}
+return this;

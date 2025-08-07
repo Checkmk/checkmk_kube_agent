@@ -2,20 +2,13 @@
 
 /// file: test-release-credentials.groovy
 
-currentBuild.description = '\nTest credentials required by the release job\n';
-
-def NODE = '';
-withFolderProperties{
-    NODE = env.BUILD_NODE;
-}
-
 def run_in_ash(command, get_stdout=false) {
     ash_command = "#!/bin/ash\n" + command;
     return sh(script: "${ash_command}", returnStdout: get_stdout);
 }
 
-timeout(time: 12, unit: 'HOURS') {
-    node(NODE) {
+def main() {
+        currentBuild.description = '\nTest credentials required by the release job\n';
         def KUBE_AGENT_GITHUB_REPO = "checkmk/checkmk_kube_agent";
         def CI_IMAGE = "checkmk-kube-agent-ci";
         def GITHUB_SSH_CREDENTIAL_ID = "ssh_private_key_github_kubernetes";
@@ -48,5 +41,6 @@ timeout(time: 12, unit: 'HOURS') {
                }
             }
         }
-    }
 }
+
+return this;
