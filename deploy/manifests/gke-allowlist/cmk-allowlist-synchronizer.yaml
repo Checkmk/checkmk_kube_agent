@@ -5,4 +5,4 @@ metadata:
 spec:
   allowlistPaths:
     - "Checkmk/checkmk_kube_agent/v1.0.0/*"
-    - "Checkmk/checkmk_kube_agent/v1.0.1/*"
+    - "Checkmk/checkmk_kube_agent/v1.1.0/*"
