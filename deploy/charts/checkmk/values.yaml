@@ -13,7 +13,7 @@ kubeVersionOverride: ""
 ## GKE Autopilot only allows privilegded workloads, if they are allowlisted.
 ## Requirement: Please first deploy the allowlist-synchronizer CRD [https://github.com/checkmk/checkmk_kube_agent/tree/main/deploy/manifests/gke-allowlist/cmk-allowlist-synchronizer.yaml]
 ## More info: https://cloud.google.com/kubernetes-engine/docs/how-to/run-autopilot-partner-workloads 
-## To deploy in GKE Autopilot, please set to true.
+## To deploy in GKE Autopilot, please set to true. This will adapt the workloads to the specific requirements of GKE Autopilot.
 gkeAutopilot:
   enabled: false
 
@@ -222,11 +222,6 @@ nodeCollector:
       - "--enable_metrics=cpu,memory"
       - "--allow_dynamic_housekeeping=true"
       - "--storage_duration=1m0s"
-
-    # For Google Kubernetes Engine (GKE) Autopilot, the readOnly needs to be set to true
-    volumeMountPermissions:
-      var_run:
-        readOnly: false
 
     securityContext:
       seccompProfile:
