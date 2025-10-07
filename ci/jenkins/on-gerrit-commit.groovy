@@ -7,9 +7,6 @@ def main() {
     def PROJECT_PYVERSION;
     def CHECKMK_AGENT_VERSION;
     def DOCKER_GROUP_ID = sh(script: "getent group docker | cut -d: -f3", returnStdout: true);
-    stage("check out") {
-        checkout(scm);
-    }
 
     stage("build source and wheel package") {
         docker.build("checkmk-kube-agent-ci", "--network=host -f docker/ci/Dockerfile .");

@@ -49,11 +49,6 @@ def do_it() {
     def RELEASER_IMAGE;
     def SNAPSHOT_NAME = "hello_world";
 
-    stage("check out") {
-        checkout(scm);
-        // delete any untracked files, such as kube config from any previous integration runs
-        sh("git clean -fd");
-    }
     stage("build CI image") {
         RELEASER_IMAGE = docker.build("checkmk-kube-agent-ci", "--network=host -f docker/ci/Dockerfile .");
         IMAGE = docker.build("checkmk-kube-agent-integration", "--network=host --target=integration-tester -f docker/ci/Dockerfile .");

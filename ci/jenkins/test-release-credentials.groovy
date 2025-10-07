@@ -14,11 +14,9 @@ def main() {
         def GITHUB_SSH_CREDENTIAL_ID = "ssh_private_key_github_kubernetes";
         def GITHUB_TOKEN_CREDENTIAL_ID = "github-token-CheckmkCI-kubernetes";
 
-        stage('Checkout Sources') {
-            checkout(scm);
-            sh("git clean -fd");
+        stage('Build container') {
+            docker.build(CI_IMAGE, "--network=host -f docker/ci/Dockerfile .");
         }
-        docker.build(CI_IMAGE, "--network=host -f docker/ci/Dockerfile .");
 
         stage("Test ${GITHUB_SSH_CREDENTIAL_ID}") {
             withCredentials([file(credentialsId: GITHUB_SSH_CREDENTIAL_ID, variable: "keyfile")]) {
