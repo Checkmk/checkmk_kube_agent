@@ -27,11 +27,6 @@ def main() {
     def mount_docker_sock = "-v /var/run/docker.sock:/var/run/docker.sock";
     def add_docker_group_id = "--group-add=${sh_output('getent group docker | cut -d: -f3')}";
 
-    stage("Cleanup checkout") {
-        // delete any untracked files, such as kube config from any previous integration runs
-        sh("git clean -fd");
-    }
-
     def releaser_image = { name ->
         stage("Build CI Releaser image") {
             return docker.build(name, "--network=host -f docker/ci/Dockerfile .");

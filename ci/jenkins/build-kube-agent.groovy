@@ -147,8 +147,6 @@ def main_for_real(this_branch, method, version, is_release_build) {
     def this_version = version;
 
     stage('Checkout Sources') {
-        checkout(scm);
-        sh("git clean -fd");
         sh("git remote add github git@github.com:${kube_agent_github_repo}.git || true");
     }
     docker.build(ci_image, "--network=host -f docker/ci/Dockerfile .");
