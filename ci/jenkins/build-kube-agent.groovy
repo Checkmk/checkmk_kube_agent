@@ -52,33 +52,6 @@ def safe_branch_name() {
     return branch_name().replaceAll("/", "-");
 }
 
-@Field
-def RELEASE_BUILD=""
-@Field
-def DOCKER_TAG_PREFIX=""
-@Field
-def DOCKER_TAG_SUFFIX=""
-def BRANCH = get_branch(scm)
-@Field
-def STAGE_PUSH_IMAGES = 'Push Images'
-
-switch (METHOD) {
-    case "daily":
-        // A daily job
-        RELEASE_BUILD = false;
-        def DATE_FORMAT = new SimpleDateFormat("yyyy.MM.dd");
-        def DATE = new Date();
-        DOCKER_TAG_SUFFIX = "_" + DATE_FORMAT.format(DATE);
-        DOCKER_TAG_PREFIX = BRANCH;
-        break;
-    default:
-        // A release job
-        RELEASE_BUILD = true;
-        DOCKER_TAG_SUFFIX = "";
-        DOCKER_TAG_PREFIX = "";
-        break;
-}
-
 def run_in_ash(command, get_stdout=false) {
     ash_command = "#!/bin/ash\n" + command;
     return sh(script: "${ash_command}", returnStdout: get_stdout);
@@ -90,7 +63,6 @@ def validate_parameters_and_branch(method, version, branch) {
     if (method == "major") error "We currently only do major releases manually by creating a new branch!"
     if (branch == "main" && method != "daily") error "We currently only create daily builds from branch main!"
 }
-validate_parameters_and_branch(METHOD, VERSION, BRANCH)
 
 def determine_docker_tag(is_release_build) {
     def docker_tag = "";
@@ -243,10 +215,10 @@ def main_for_real(this_branch, method, version, is_release_build) {
                     usernamePassword(credentialsId: '11fb3d5f-e44e-4f33-a651-274227cc48ab', passwordVariable: 'DOCKER_PASSPHRASE', usernameVariable: 'DOCKER_USERNAME')]) {
                 docker.image(ci_image).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${docker_group_id} --entrypoint=") {
                     run_in_ash('echo \"${DOCKER_PASSPHRASE}\" | docker login -u ${DOCKER_USERNAME} --password-stdin');
-                    run_in_ash("DOCKER_TAG_PREFIX=${DOCKER_TAG_PREFIX} DOCKER_TAG_SUFFIX=${DOCKER_TAG_SUFFIX} make push-images");
-                    }
+                    run_in_ash("make DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG} push-images");
                 }
             }
+        }
         else {
             Utils.markStageSkippedForConditional(stage_push_images);
         }
@@ -295,7 +267,6 @@ def main_for_real(this_branch, method, version, is_release_build) {
                         }
                     }
                 }
-                sh("git checkout ${BRANCH}");
             }
         }
     }

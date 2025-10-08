@@ -44,11 +44,7 @@ PROJECT_NAME := checkmk_kube_agent
 CHECKMK_AGENT_VERSION := "2.2.0p12"
 PROJECT_VERSION := $(shell grep __version__ src/${PROJECT_NAME}/__init__.py | sed 's/__version__ = "//g' | sed 's/"//g')
 PROJECT_PYVERSION := $(shell $(PYTHON) -c "from packaging import version;print(str(version.parse('${PROJECT_VERSION}')))")
-ifdef DOCKER_TAG_PREFIX
-DOCKER_IMAGE_TAG := $(DOCKER_TAG_PREFIX)$(DOCKER_TAG_SUFFIX)
-else
-DOCKER_IMAGE_TAG := $(PROJECT_VERSION)$(DOCKER_TAG_SUFFIX)
-endif
+DOCKER_IMAGE_TAG := $(PROJECT_VERSION)
 DOCKERHUB_PUBLISHER := checkmk
 COLLECTOR_IMAGE_NAME := kubernetes-collector
 COLLECTOR_IMAGE := $(DOCKERHUB_PUBLISHER)/${COLLECTOR_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
