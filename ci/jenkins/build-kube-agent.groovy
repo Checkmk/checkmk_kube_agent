@@ -102,7 +102,7 @@ def determine_docker_tag(is_release_build) {
         def date_now = new Date();
         def date_format = new SimpleDateFormat("yyyy.MM.dd");
         def date_str = date_format.format(date_now);
-        docker_tag = "main_${date_str}";
+        docker_tag = "1.0.0_${date_str}";
     }
 
     return docker_tag;
@@ -235,7 +235,6 @@ def main_for_real(this_branch, method, version, is_release_build) {
                 run_in_ash("make DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG} release-image");
             }
         }
-
     }
 
     stage(stage_push_images) {
