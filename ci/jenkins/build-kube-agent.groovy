@@ -102,7 +102,7 @@ def determine_docker_tag(is_release_build) {
         def date_now = new Date();
         def date_format = new SimpleDateFormat("yyyy.MM.dd");
         def date_str = date_format.format(date_now);
-        def docker_tag = "main_${date_str}";
+        docker_tag = "main_${date_str}";
     }
 
     return docker_tag;
