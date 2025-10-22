@@ -32,7 +32,7 @@ spec:
         component: {{ include "checkmk.fullname" . }}-node-collector
         app: {{ include "checkmk.fullname" . }}-node-collector-container-metrics
         {{- if .Values.gkeAutopilot.enabled }}
-        cloud.google.com/matching-allowlist: checkmk-node-collector-container-metrics
+        cloud.google.com/matching-allowlist: checkmk-node-collector-container-metrics-v1.1.0
         {{- end }}
     spec:
       {{- with .Values.imagePullSecrets }}
