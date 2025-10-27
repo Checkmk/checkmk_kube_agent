@@ -81,7 +81,7 @@ spec:
               readOnly: true
             - name: var-run
               mountPath: /var/run
-              {{- if .Values.nodeCollector.cadvisor.volumeMountPermissions.var_run.readOnly }}
+              {{- if .Values.gkeAutopilot.enabled }}
               readOnly: true
               {{- end }}
             - name: sys
