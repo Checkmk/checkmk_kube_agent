@@ -145,6 +145,7 @@ def main_for_real(this_branch, method, version, is_release_build) {
     def github_ssh_credential_id = "ssh_private_key_github_kubernetes";
     def github_token_credential_id = "github-token-CheckmkCI-kubernetes";
     def this_version = version;
+    def make_parameters = "";
 
     stage('Checkout Sources') {
         sh("git remote add github git@github.com:${kube_agent_github_repo}.git || true");
@@ -201,10 +202,18 @@ def main_for_real(this_branch, method, version, is_release_build) {
     }
 
     stage("Build Images") {
-        DOCKER_IMAGE_TAG = determine_docker_tag(is_release_build);
+        def docker_image_tag = determine_docker_tag(is_release_build);
+
+        if (docker_image_tag != "") {
+            // We only want to set a specific image tag if this has been set
+            // to a non-empty value. If this is empty we let the logic in
+            // the Makefile take over reading the version.
+            make_parameters = "DOCKER_IMAGE_TAG=${docker_image_tag}";
+        }
+
         docker.withRegistry(DOCKER_REGISTRY, 'nexus') {
             docker.image(ci_image).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${docker_group_id} --entrypoint=") {
-                run_in_ash("make DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG} release-image");
+                run_in_ash("make ${make_parameters} release-image");
             }
         }
     }
@@ -215,7 +224,7 @@ def main_for_real(this_branch, method, version, is_release_build) {
                     usernamePassword(credentialsId: '11fb3d5f-e44e-4f33-a651-274227cc48ab', passwordVariable: 'DOCKER_PASSPHRASE', usernameVariable: 'DOCKER_USERNAME')]) {
                 docker.image(ci_image).inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add=${docker_group_id} --entrypoint=") {
                     run_in_ash('echo \"${DOCKER_PASSPHRASE}\" | docker login -u ${DOCKER_USERNAME} --password-stdin');
-                    run_in_ash("make DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG} push-images");
+                    run_in_ash("make ${make_parameters} push-images");
                 }
             }
         }
