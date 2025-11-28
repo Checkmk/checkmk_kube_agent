@@ -262,6 +262,10 @@ def main_for_real(this_branch, method, version, is_release_build) {
                 withCredentials([sshUserPrivateKey(credentialsId: "release", keyFileVariable: 'keyfile')]) {
                     withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile} -l release"]) {
                         docker.image(ci_image).inside("--entrypoint=") {
+                            // We initially do a shallow, single-branch clone.
+                            // We have to re-configure our repo and pull all changes before we can switch branches.
+                            run_in_ash("git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'");
+                            run_in_ash("git fetch --unshallow --all");
                             run_in_ash("scripts/update-helm-repo.sh --github-pages ${github_pages_branch} --helm-repo-index ${helm_repo_index_file} --url ${kube_agent_github_url} --version ${this_version}");
                         }
                     }
