@@ -127,7 +127,6 @@ def main_for_real(this_branch, method, version, is_release_build) {
     * the releases can be verified here https://github.com/checkmk/checkmk_kube_agent/releases
 
     ## Troubleshoot Github Pages
-    * the steps in update-helm-repo can be followed manually
     * KNOWN PROBLEM: the gh command line tool does not recognize files which are located in the /tmp (potentially
     also others) directory
     * see General Troubleshoot (above) if github push attempt fails
@@ -146,6 +145,7 @@ def main_for_real(this_branch, method, version, is_release_build) {
     def github_token_credential_id = "github-token-CheckmkCI-kubernetes";
     def this_version = version;
     def make_parameters = "";
+    def workspace_dir = sh(script: 'git rev-parse --show-toplevel', returnStdout: true).trim();
 
     stage('Checkout Sources') {
         sh("git remote add github git@github.com:${kube_agent_github_repo}.git || true");
@@ -259,24 +259,50 @@ def main_for_real(this_branch, method, version, is_release_build) {
         }
         else {
             stage("Update helm repo index") {
-                sh("git checkout ${github_pages_branch}");
+                withCredentials([sshUserPrivateKey(credentialsId: "jenkins-gerrit-fips-compliant-ssh-key", keyFileVariable: 'keyfile')]) {
+                    withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile} -l jenkins"]) {
+                        // We initially do a shallow, single-branch clone.
+                        // We have to re-configure our repo and pull all changes before we can switch branches.
+                        sh("git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'");
+                        sh("git fetch --unshallow origin ${github_pages_branch} || git fetch origin ${github_pages_branch}");
+                        sh("git checkout ${github_pages_branch}");
+                        sh("git pull");
+                    }
+                }
+
                 withCredentials([sshUserPrivateKey(credentialsId: "release", keyFileVariable: 'keyfile')]) {
                     withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile} -l release"]) {
-                        docker.image(ci_image).inside("--entrypoint=") {
-                            run_in_ash("scripts/update-helm-repo.sh --github-pages ${github_pages_branch} --helm-repo-index ${helm_repo_index_file} --url ${kube_agent_github_url} --version ${this_version}");
+                        // The git reference clones have to be mounted to the container in order to make the
+                        // git actions work. Without mounting those parsing HEAD fails.
+                        docker.image(ci_image).inside("-v /home/jenkins/git_reference_clones/checkmk_kube_agent.git/:/home/jenkins/git_reference_clones/checkmk_kube_agent.git/:ro --entrypoint=") {
+                            run_in_ash("mv dist-helm/checkmk-kube-agent-helm-${this_version}.tgz ${workspace_dir}");
+
+                            if (fileExists("${helm_repo_index_file}")) {
+                                merge_index_cmd = "--merge ${helm_repo_index_file}";
+                            }
+                            else {
+                                merge_index_cmd = "";
+                            }
+
+                            run_in_ash("helm repo index ${workspace_dir} ${merge_index_cmd} --url ${kube_agent_github_url}/releases/download/v${this_version}");
+                            run_in_ash("git add ${helm_repo_index_file}");
+                            run_in_ash("git commit ${helm_repo_index_file} -m 'Add helm chart version ${this_version}'");
+                            run_in_ash("git push origin ${github_pages_branch}");
                         }
                     }
                 }
+
                 // This can be deleted if the push to github can be triggered some other way (see CMK-9584)
                 withCredentials([file(credentialsId: github_ssh_credential_id, variable: 'keyfile')]) {
                     withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile}"]) {
                         docker.image(ci_image).inside("--entrypoint=") {
-                            run_in_ash("git checkout ${github_pages_branch}");
                             run_in_ash("git push github ${github_pages_branch}");
-                            sh("git checkout ${this_branch}");
                         }
                     }
                 }
+
+                // Back to the non-github-pages branch
+                sh("git checkout ${this_branch}");
             }
         }
     }
