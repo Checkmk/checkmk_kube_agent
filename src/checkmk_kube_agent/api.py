@@ -297,6 +297,40 @@ def update_container_metrics(
     app.state.node_collector_metadata_queue.put(metrics.metadata)
     for metric in metrics.container_metrics:
         app.state.container_metric_queue.put(metric)
+    
+    # Log cache statistics
+    cache_size = app.state.container_metric_queue.size()
+    cache_utilization = app.state.container_metric_queue.utilization()
+    cache_maxsize = app.state.container_metric_queue.maxsize
+    
+    # Log at appropriate level based on utilization
+    if cache_utilization >= 95.0:
+        LOGGER.critical(
+            "Container metrics cache CRITICAL: received=%d, cache_size=%d/%d (%.1f%% full) - "
+            "Cache is nearly full! Metrics are being evicted. Increase --cache-maxsize urgently.",
+            len(metrics.container_metrics),
+            cache_size,
+            cache_maxsize,
+            cache_utilization,
+        )
+    elif cache_utilization >= 80.0:
+        LOGGER.error(
+            "Container metrics cache WARNING: received=%d, cache_size=%d/%d (%.1f%% full) - "
+            "Cache utilization high. Consider increasing --cache-maxsize.",
+            len(metrics.container_metrics),
+            cache_size,
+            cache_maxsize,
+            cache_utilization,
+        )
+    else:
+        LOGGER.debug(
+            "Container metrics updated: received=%d, cache_size=%d/%d (%.1f%% full)",
+            len(metrics.container_metrics),
+            cache_size,
+            cache_maxsize,
+            cache_utilization,
+        )
+
 
 
 @app.get("/container_metrics")
