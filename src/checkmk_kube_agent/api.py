@@ -305,7 +305,7 @@ def update_container_metrics(
     
     # Log at appropriate level based on utilization
     if cache_utilization >= 95.0:
-        LOGGER.critical(
+        logger.critical(
             "Container metrics cache CRITICAL: received=%d, cache_size=%d/%d (%.1f%% full) - "
             "Cache is nearly full! Metrics are being evicted. Increase --cache-maxsize urgently.",
             len(metrics.container_metrics),
@@ -314,7 +314,7 @@ def update_container_metrics(
             cache_utilization,
         )
     elif cache_utilization >= 80.0:
-        LOGGER.error(
+        logger.error(
             "Container metrics cache WARNING: received=%d, cache_size=%d/%d (%.1f%% full) - "
             "Cache utilization high. Consider increasing --cache-maxsize.",
             len(metrics.container_metrics),
@@ -323,7 +323,7 @@ def update_container_metrics(
             cache_utilization,
         )
     else:
-        LOGGER.debug(
+        logger.debug(
             "Container metrics updated: received=%d, cache_size=%d/%d (%.1f%% full)",
             len(metrics.container_metrics),
             cache_size,
