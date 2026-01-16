@@ -305,7 +305,7 @@ def update_container_metrics(
     
     # Log at appropriate level based on utilization
     if cache_utilization >= 95.0:
-        logger.critical(
+        LOGGER.critical(
             "Container metrics cache CRITICAL: received=%d, cache_size=%d/%d (%.1f%% full) - "
             "Cache is nearly full! Metrics are being evicted. Increase --cache-maxsize urgently.",
             len(metrics.container_metrics),
@@ -314,7 +314,7 @@ def update_container_metrics(
             cache_utilization,
         )
     elif cache_utilization >= 80.0:
-        logger.error(
+        LOGGER.error(
             "Container metrics cache WARNING: received=%d, cache_size=%d/%d (%.1f%% full) - "
             "Cache utilization high. Consider increasing --cache-maxsize.",
             len(metrics.container_metrics),
@@ -323,7 +323,7 @@ def update_container_metrics(
             cache_utilization,
         )
     else:
-        logger.debug(
+        LOGGER.debug(
             "Container metrics updated: received=%d, cache_size=%d/%d (%.1f%% full)",
             len(metrics.container_metrics),
             cache_size,
@@ -458,6 +458,13 @@ def _init_app_state(
 def main(argv: Optional[Sequence[str]] = None) -> None:
     """Cluster collector API main function: start API"""
     args = parse_arguments(argv or sys.argv[1:])
+
+    # Configure application logging
+    logging.basicConfig(
+        level=args.log_level.upper(),
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
 
     _init_app_state(
         app,
