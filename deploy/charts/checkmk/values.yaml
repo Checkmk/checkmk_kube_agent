@@ -105,7 +105,9 @@ clusterCollector:
   logLevel: warning
 
   # cacheMaxsize set the maximum number of metric entries the cluster collector can hold at a time
-  cacheMaxsize: "10000"
+  # For smaller clusters, you can decrease it to e.g. 10000
+  # For larger cluster, increase the value in case there are gaps in the graphs
+  cacheMaxsize: "50000"
 
   podAnnotations: {}
 
