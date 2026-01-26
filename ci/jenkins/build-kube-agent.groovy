@@ -261,10 +261,7 @@ def main_for_real(this_branch, method, version, is_release_build) {
             stage("Update helm repo index") {
                 withCredentials([sshUserPrivateKey(credentialsId: "jenkins-gerrit-fips-compliant-ssh-key", keyFileVariable: 'keyfile')]) {
                     withEnv(["GIT_SSH_COMMAND=ssh -o \"StrictHostKeyChecking no\" -i ${keyfile} -l jenkins"]) {
-                        // We initially do a shallow, single-branch clone.
-                        // We have to re-configure our repo and pull all changes before we can switch branches.
-                        sh("git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'");
-                        sh("git fetch --unshallow origin ${github_pages_branch} || git fetch origin ${github_pages_branch}");
+                        sh("git fetch origin ${github_pages_branch}");
                         sh("git checkout ${github_pages_branch}");
                         sh("git pull");
                     }
