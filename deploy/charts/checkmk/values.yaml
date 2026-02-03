@@ -101,6 +101,7 @@ clusterCollector:
   image:
     repository: checkmk/kubernetes-collector
     pullPolicy: IfNotPresent
+    # tag: ""  # Override global image.tag if needed
 
   # address controls on which interfaces the kubernetes-collector will listen
   # use "[::]" to listen on all interfaces in an IPv6 cluster
@@ -215,6 +216,7 @@ nodeCollector:
     image:
       repository: checkmk/cadvisor-patched
       pullPolicy: IfNotPresent
+      # tag: ""  # Override global image.tag if needed
 
     additionalArgs:
       - "--housekeeping_interval=30s"
@@ -283,6 +285,7 @@ nodeCollector:
     image:
       repository: checkmk/kubernetes-collector
       pullPolicy: IfNotPresent
+      # tag: ""  # Override global image.tag if needed
 
     securityContext:
       seccompProfile:
@@ -311,6 +314,7 @@ nodeCollector:
     image:
       repository: checkmk/kubernetes-collector
       pullPolicy: IfNotPresent
+      # tag: ""  # Override global image.tag if needed
 
     securityContext:
       seccompProfile:

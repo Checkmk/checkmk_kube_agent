@@ -55,7 +55,7 @@ spec:
         - name: machine-sections-collector
           securityContext:
             {{- toYaml .Values.nodeCollector.machineSectionsCollector.securityContext | nindent 12 }}
-          image: "{{ .Values.nodeCollector.machineSectionsCollector.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.nodeCollector.machineSectionsCollector.image.repository }}:{{ .Values.nodeCollector.machineSectionsCollector.image.tag | default .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.nodeCollector.machineSectionsCollector.image.pullPolicy }}
           command:
             - "/usr/local/bin/checkmk-machine-sections-collector"
