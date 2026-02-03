@@ -40,7 +40,7 @@ spec:
         - name: cluster-collector
           securityContext:
             {{- toYaml .Values.clusterCollector.securityContext | nindent 12 }}
-          image: "{{ .Values.clusterCollector.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.clusterCollector.image.repository }}:{{ .Values.clusterCollector.image.tag | default .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.clusterCollector.image.pullPolicy }}
           command:
             - "/usr/local/bin/checkmk-cluster-collector"

@@ -58,7 +58,7 @@ spec:
         - name: cadvisor
           securityContext:
             {{- toYaml .Values.nodeCollector.cadvisor.securityContext | nindent 12 }}
-          image: "{{ .Values.nodeCollector.cadvisor.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.nodeCollector.cadvisor.image.repository }}:{{ .Values.nodeCollector.cadvisor.image.tag | default .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.nodeCollector.cadvisor.image.pullPolicy }}
           command:
             - "/usr/bin/cadvisor"
@@ -100,7 +100,7 @@ spec:
         - name: container-metrics-collector
           securityContext:
             {{- toYaml .Values.nodeCollector.containerMetricsCollector.securityContext | nindent 12 }}
-          image: "{{ .Values.nodeCollector.containerMetricsCollector.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.nodeCollector.containerMetricsCollector.image.repository }}:{{ .Values.nodeCollector.containerMetricsCollector.image.tag | default .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.nodeCollector.containerMetricsCollector.image.pullPolicy }}
           command:
             - "/usr/local/bin/checkmk-container-metrics-collector"
