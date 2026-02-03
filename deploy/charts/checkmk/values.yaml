@@ -10,12 +10,17 @@ kubeVersionOverride: ""
 ## If you are using one of them, or containerd is located in an alternate location, please uncomment / adapt the override.
 #containerdOverride: "/run/k3s/containerd/containerd.sock"
 
-## GKE Autopilot only allows privilegded workloads, if they are allowlisted.
-## Requirement: Please first deploy the allowlist-synchronizer CRD [https://github.com/checkmk/checkmk_kube_agent/tree/main/deploy/manifests/gke-allowlist/cmk-allowlist-synchronizer.yaml]
-## More info: https://cloud.google.com/kubernetes-engine/docs/how-to/run-autopilot-partner-workloads 
-## To deploy in GKE Autopilot, please set to true. This will adapt the workloads to the specific requirements of GKE Autopilot.
+## GKE Autopilot Configuration
+## Enable for GKE Autopilot clusters.
+## Requirements: Deploy allowlist-synchronizer CRD first: [https://github.com/checkmk/checkmk_kube_agent/tree/main/deploy/manifests/gke-allowlist/cmk-allowlist-synchronizer.yaml]
+## See: https://cloud.google.com/kubernetes-engine/docs/how-to/run-autopilot-partner-workloads
 gkeAutopilot:
+  ## Enable GKE Autopilot specific configurations
   enabled: false
+  ## Must match the allowlist entry configured in your GKE Autopilot cluster via allowlist-synchronizer CRD.
+  ## Update this value if your cluster uses a different allowlist version
+  ## For private mirrors, ensure the image digest in the allowlist matches the deployed image tag
+  matchingAllowlist: "checkmk-node-collector-container-metrics-v1.1.0"
 
 tlsCommunication:
   enabled: false
