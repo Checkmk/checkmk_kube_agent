@@ -42,7 +42,7 @@ imagePullSecrets: []
 image:
   # Overrides the image tag whose default is the chart appVersion.
   # ref: https://hub.docker.com/r/checkmk/kubernetes-collector/tags
-  tag: "1.9.0"
+  tag: "1.10.0"
 
 rbac:
   # PodSecurityPolicies (PSPs) were deprecated in Kubernetes v1.21, and removed from Kubernetes in v1.25.
