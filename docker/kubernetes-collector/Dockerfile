@@ -1,11 +1,11 @@
-ARG HADOLINT_VERSION="2.8.0"
-ARG HELM_VERSION="3.8.1"
-ARG TRIVY_VERSION="0.23.0"
+ARG HADOLINT_VERSION="2.14.0"
+ARG HELM_VERSION="4.1.4"
+ARG TRIVY_VERSION="0.70.0"
 
 ARG CHECKMK_AGENT_VERSION
 FROM checkmk/check-mk-raw:"$CHECKMK_AGENT_VERSION" AS checkmk
 
-FROM artifacts.lan.tribe29.com:4000/python:3.10-alpine3.15 AS base
+FROM artifacts.lan.tribe29.com:4000/python:3.14-alpine AS base
 # pciutils is used by mk_inventory.linux
 # coreutils is needed for the Checkmk agent to run properly
 # hadolint ignore=DL3018
@@ -45,7 +45,8 @@ ARG HELM_VERSION
 ARG TRIVY_VERSION
 COPY ./requirements_dev.txt /tmp
 COPY ./requirements_test.txt /tmp
-RUN apk add --no-cache make=4.3-r0 && \
+# hadolint ignore=DL3018
+RUN apk add --no-cache make && \
     pip install --no-cache-dir -r /tmp/requirements_dev.txt -r /tmp/requirements_test.txt && \
     wget -q \
     "https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint-Linux-x86_64" && \

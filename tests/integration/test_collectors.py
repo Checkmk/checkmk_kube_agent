@@ -5,18 +5,18 @@
 # terms and conditions defined in the file COPYING, which is part of this
 # source code package.
 
-# pylint: disable=missing-function-docstring, missing-class-docstring, no-self-use, too-few-public-methods
+# pylint: disable=missing-function-docstring, missing-class-docstring, too-few-public-methods
 
 """Integration tests for collectors"""
+
 from __future__ import annotations
 
-import itertools
 import json
 import re
 import subprocess  # nosec
 import time
 from pathlib import Path
-from typing import Any, Iterable, NamedTuple, Optional, Sequence
+from typing import Any, Iterable, NamedTuple, Sequence, Tuple
 
 import pytest
 import requests
@@ -26,6 +26,14 @@ from tests.integration import kube_api_helpers
 from tests.integration.common_helpers import tcp_session
 
 # pylint: disable=fixme
+from tests.integration.helm_chart_helpers import (
+    CollectorImages,
+    DeployableNamespace,
+    HelmChartDeploymentSettings,
+    NodePort,
+    apply_collector_helm_chart,
+    uninstall_collector_helm_chart,
+)
 from tests.integration.kube_api_helpers import NodeType
 
 
@@ -40,113 +48,12 @@ class CollectorDetails(NamedTuple):
     token: str
 
 
-class NodePort(NamedTuple):
-    name: str
-    chart_settings: Sequence[str]
-
-
 class Ingress(NamedTuple):
     name: str
     chart_settings: Sequence[str]
 
 
-class CollectorImages(NamedTuple):
-    tag: Optional[str]
-    pull_secret: Optional[str]
-    cluster_collector: str
-    node_collector_cadvisor: str
-    node_collector_machine_sections: str
-    node_collector_container_metrics: str
-
-    def chart_settings(self) -> Sequence[str]:
-        settings = [
-            f"clusterCollector.image.repository={self.cluster_collector}",
-            f"nodeCollector.cadvisor.image.repository={self.node_collector_cadvisor}",
-            (
-                "nodeCollector.containerMetricsCollector.image.repository="
-                f"{self.node_collector_container_metrics}"
-            ),
-            (
-                "nodeCollector.machineSectionsCollector.image.repository="
-                f"{self.node_collector_machine_sections}"
-            ),
-        ]
-
-        if self.tag:
-            settings.append(f"image.tag={self.tag}")
-
-        if self.pull_secret:
-            settings.append(f"imagePullSecrets[0].name={self.pull_secret}")
-
-        return settings
-
-
-class CollectorConfiguration(NamedTuple):
-    """Collector configuration options as provided by the helm chart."""
-
-    # TODO: implement more of these settings: CMK-10834
-    images: CollectorImages
-    external_access_method: NodePort
-
-
-class DeployableNamespace(str):
-    """System-owned or default namespaces are not deployable."""
-
-    def __new__(cls, namespace: str) -> DeployableNamespace:
-        if namespace in (
-            "",
-            "default",
-            "kube-flannel",
-            "kube-node-lease",
-            "kube-public",
-            "kube-system",
-        ):
-            raise ValueError(f"You may not deploy to namespace '{namespace}'")
-        return super().__new__(cls, namespace)
-
-
-class HelmChartDeploymentSettings(NamedTuple):
-    """Helm chart settings available for deployment of the objects to the
-    Kubernetes cluster."""
-
-    path: Path
-    release_name: str
-    release_namespace: DeployableNamespace
-    collector_configuration: CollectorConfiguration
-
-    def install_command(self) -> Sequence[str]:
-        additional_settings = list(
-            itertools.chain.from_iterable(
-                ("--set", s)
-                for s in [
-                    *self.collector_configuration.external_access_method.chart_settings,
-                    *self.collector_configuration.images.chart_settings(),
-                ]
-            )
-        )
-
-        return [
-            "helm",
-            "upgrade",
-            "--install",
-            "--create-namespace",
-            "-n",
-            self.release_namespace,
-            self.release_name,
-            str(self.path),
-        ] + additional_settings
-
-    def uninstall_command(self) -> Sequence[str]:
-        return [
-            "helm",
-            "uninstall",
-            "-n",
-            self.release_namespace,
-            self.release_name,
-        ]
-
-
-class TestCollectors:
+class TestDefaultCollectors:
     @pytest.fixture(scope="class", params=["NodePort"])
     # TODO: change typing to pytest.FixtureRequest once it's been added:
     # https://github.com/pytest-dev/pytest/issues/8073
@@ -176,30 +83,43 @@ class TestCollectors:
     @pytest.fixture(scope="class")
     def deployment_settings(
         self,
-        image_registry: str,
-        image_pull_secret_name: Optional[str],
-        collector_image_name: str,
-        cadvisor_image_name: str,
-        image_tag: str,
+        helm_chart_path: Path,
+        collector_images: CollectorImages,
         external_access_method: NodePort,
     ) -> HelmChartDeploymentSettings:
-        # pylint: disable=too-many-arguments
-        collector_image = f"{image_registry}/{collector_image_name}"
+        # Chart defaults for resources were removed in werk #18237 (commit
+        # cd29609) to let cluster admins size them; the tests below still
+        # assert that requests/limits are set, so we set them here. This also
+        # exercises the chart's resource-value plumbing.
+        resource_settings = [
+            f"{path}.resources.requests.cpu=50m"
+            for path in (
+                "clusterCollector",
+                "nodeCollector.cadvisor",
+                "nodeCollector.containerMetricsCollector",
+                "nodeCollector.machineSectionsCollector",
+            )
+        ] + [
+            f"{path}.resources.{kind}.{key}={val}"
+            for path in (
+                "clusterCollector",
+                "nodeCollector.cadvisor",
+                "nodeCollector.containerMetricsCollector",
+                "nodeCollector.machineSectionsCollector",
+            )
+            for kind, key, val in (
+                ("requests", "memory", "64Mi"),
+                ("limits", "cpu", "200m"),
+                ("limits", "memory", "200Mi"),
+            )
+        ]
         return HelmChartDeploymentSettings(
-            path=Path("deploy/charts/checkmk"),
+            path=helm_chart_path,
             release_name="checkmk",
             release_namespace=DeployableNamespace("checkmk-monitoring"),
-            collector_configuration=CollectorConfiguration(
-                images=CollectorImages(
-                    tag=image_tag,
-                    pull_secret=image_pull_secret_name,
-                    cluster_collector=collector_image,
-                    node_collector_machine_sections=collector_image,
-                    node_collector_container_metrics=collector_image,
-                    node_collector_cadvisor=f"{image_registry}/{cadvisor_image_name}",
-                ),
-                external_access_method=external_access_method,
-            ),
+            images=collector_images,
+            external_access_method=external_access_method,
+            additional_chart_settings=[resource_settings],
         )
 
     @pytest.fixture(scope="class")
@@ -210,7 +130,7 @@ class TestCollectors:
         deployment_settings: HelmChartDeploymentSettings,
     ) -> Iterable[CollectorDetails]:
         """Fixture to deploy and clean up collectors"""
-        deploy_output = _apply_collector_helm_chart(deployment_settings)
+        deploy_output = apply_collector_helm_chart(deployment_settings)
         collector_details = _parse_collector_connection_details(
             command_resp=deploy_output,
             collector_namespace=deployment_settings.release_namespace,
@@ -222,6 +142,7 @@ class TestCollectors:
             api_client=api_server,
             namespace=deployment_settings.release_namespace,
             name="checkmk-node-collector-machine-sections",
+            observing_state="numberReady",
         )
         kube_api_helpers.wait_for_deployment(
             api_client=api_server,
@@ -241,9 +162,103 @@ class TestCollectors:
             worker_nodes_count=worker_nodes_count,
         )
         yield collector_details
-        _uninstall_collector_helm_chart(deployment_settings)
+        uninstall_collector_helm_chart(deployment_settings)
 
-    @pytest.mark.timeout(60)
+    @pytest.mark.timeout(240)
+    def test_authentication_cluster_collector_with_invalid_token(
+        self,
+        collector: CollectorDetails,
+    ) -> None:
+        session = tcp_session(headers={"Authorization": "Bearer invalid_token"})
+
+        response_collector = session.get(f"{collector.endpoint}/metadata")
+        assert response_collector.status_code == 401
+        assert response_collector.json()["detail"].startswith(
+            "Invalid authentication credentials"
+        )
+
+    @pytest.mark.timeout(240)
+    def test_authentication_cluster_collector_with_no_token(
+        self, collector: CollectorDetails
+    ) -> None:
+        session = tcp_session()
+
+        response_collector = session.get(f"{collector.endpoint}/metadata")
+        # FastAPI now returns 401 (not 403) when the Authorization header is
+        # missing, per RFC 7235. See https://github.com/fastapi/fastapi/pull/13786
+        assert response_collector.status_code == 401
+
+    @pytest.mark.timeout(240)
+    def test_authentication_cluster_collector_with_non_whitelisted_token(
+        self, cluster_token: str, collector: CollectorDetails
+    ) -> None:
+        session = tcp_session(headers={"Authorization": f"Bearer {cluster_token}"})
+
+        response_collector = session.get(f"{collector.endpoint}/metadata")
+        assert response_collector.status_code == 401
+        assert response_collector.json()["detail"].startswith(
+            "Access denied for Service Account"
+        )
+
+    @pytest.mark.timeout(240)
+    @pytest.mark.usefixtures("collector")
+    def test_cluster_collector_has_resources(
+        self,
+        api_server: kube_api_helpers.APIServer,
+        deployment_settings: HelmChartDeploymentSettings,
+    ) -> None:
+        deployment_name = "checkmk-cluster-collector"
+        api_response = api_server.get(
+            f"/apis/apps/v1/namespaces/{deployment_settings.release_namespace}"
+            f"/deployments/{deployment_name}"
+        )
+        cluster_collector_deployment = json.loads(api_response.response)
+        containers = cluster_collector_deployment["spec"]["template"]["spec"][
+            "containers"
+        ]
+        resources = containers[0]["resources"]
+
+        assert len(containers) == 1
+        assert "cpu" in resources["requests"]
+        assert "memory" in resources["requests"]
+        assert "cpu" in resources["limits"]
+        assert "memory" in resources["limits"]
+
+    @pytest.mark.timeout(240)
+    @pytest.mark.usefixtures("collector")
+    @pytest.mark.parametrize(
+        "daemonset_component", [("container-metrics", 2), ("machine-sections", 1)]
+    )
+    def test_node_collector_has_resources(
+        self,
+        daemonset_component: Tuple[str, int],
+        api_server: kube_api_helpers.APIServer,
+        deployment_settings: HelmChartDeploymentSettings,
+    ) -> None:
+        daemonset_section_name, containers_count = daemonset_component
+        daemonset_name = f"checkmk-node-collector-{daemonset_section_name}"
+        api_response = api_server.get(
+            f"/apis/apps/v1/namespaces/{deployment_settings.release_namespace}"
+            f"/daemonsets/{daemonset_name}"
+        )
+        node_collector_daemonset = json.loads(api_response.response)
+        containers = node_collector_daemonset["spec"]["template"]["spec"]["containers"]
+
+        assert len(containers) == containers_count
+        assert all(
+            "cpu" in container["resources"]["requests"] for container in containers
+        )
+        assert all(
+            "memory" in container["resources"]["requests"] for container in containers
+        )
+        assert all(
+            "cpu" in container["resources"]["limits"] for container in containers
+        )
+        assert all(
+            "memory" in container["resources"]["limits"] for container in containers
+        )
+
+    @pytest.mark.timeout(240)
     def test_each_node_generates_machine_sections(
         self,
         api_server: kube_api_helpers.APIServer,
@@ -260,7 +275,7 @@ class TestCollectors:
             if node.role == NodeType.WORKER
         } == {section["node_name"] for section in machine_sections}
 
-    @pytest.mark.timeout(60)
+    @pytest.mark.timeout(240)
     def test_container_metrics(
         self,
         collector: CollectorDetails,
@@ -272,94 +287,6 @@ class TestCollectors:
         ).json()
 
         assert container_metrics
-
-
-def _apply_collector_helm_chart(
-    deployment_settings: HelmChartDeploymentSettings,
-) -> str:
-    """Perform helm install command to deploy monitoring collectors
-
-    the helm chart must be install using the NodePort option
-    """
-    subprocess.run(  # nosec
-        [
-            "kubectl",
-            "create",
-            "namespace",
-            deployment_settings.release_namespace,
-        ],
-        shell=False,
-        check=True,
-    )
-    _copy_pull_secret_to_namespace(
-        deployment_settings.release_namespace,
-        deployment_settings.collector_configuration.images.pull_secret,
-    )
-    process = subprocess.run(  # nosec
-        deployment_settings.install_command(),
-        shell=False,
-        check=True,
-        capture_output=True,
-    )
-    return process.stdout.decode("utf-8")
-
-
-def _copy_pull_secret_to_namespace(namespace: str, secret: Optional[str]) -> None:
-    """Copy the pull secret which is needed to retrieve images from a private
-    registry to the namespace where the collectors should be deployed.
-
-    Note:
-        A pod cannot access a pull secret that lives in a different namespace.
-
-    See also:
-        https://kubernetes.io/docs/concepts/configuration/secret/#details
-    """
-    if not secret:
-        return
-
-    secret_config = json.loads(
-        subprocess.run(  # nosec
-            [
-                "kubectl",
-                "get",
-                "secret",
-                secret,
-                "--namespace=default",
-                "-o",
-                "json",
-            ],
-            shell=False,
-            check=True,
-            capture_output=True,
-        ).stdout
-    )
-    secret_config["metadata"]["namespace"] = namespace
-    subprocess.run(  # nosec
-        ["kubectl", "create", "-f", "-"],
-        input=json.dumps(secret_config).encode("utf-8"),
-        shell=False,
-        check=True,
-    )
-
-
-def _uninstall_collector_helm_chart(
-    deployment_settings: HelmChartDeploymentSettings,
-) -> None:
-    subprocess.run(  # nosec
-        deployment_settings.uninstall_command(),
-        shell=False,
-        check=True,
-    )
-    subprocess.run(  # nosec
-        [
-            "kubectl",
-            "delete",
-            "namespace",
-            deployment_settings.release_namespace,
-        ],
-        shell=False,
-        check=True,
-    )
 
 
 def _wait_for_cluster_collector_available(

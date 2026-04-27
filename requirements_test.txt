@@ -1,5 +1,5 @@
-coverage==6.3.1
-pytest==6.2.5
-pytest-timeout==2.1.0
+coverage==7.13.5
+pytest==9.0.3
+pytest-timeout==2.4.0
 # fastapi uses httpx for testing
-httpx==0.24.1
+httpx==0.28.1

@@ -10,7 +10,7 @@
 from enum import Enum
 from typing import NamedTuple, NewType, NoReturn, Optional, Protocol, Sequence
 
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel, model_validator
 
 LabelName = NewType("LabelName", str)
 LabelValue = NewType("LabelValue", str)
@@ -31,7 +31,6 @@ Version = NewType("Version", str)
 # pylint: disable=missing-function-docstring
 # pylint: disable=too-few-public-methods
 # pylint: disable=no-self-argument
-# pylint: disable=no-self-use
 
 
 class ContainerMetric(BaseModel):
@@ -73,50 +72,35 @@ class ClusterCollectorMetadata(CollectorMetadata):
     pass
 
 
-class CollectorType(Enum):
+class CollectorType(str, Enum):
     CONTAINER_METRICS = "Container Metrics"
     MACHINE_SECTIONS = "Machine Sections"
 
-    @classmethod
-    def __get_validators__(cls):
-        cls.lookup = {v: k.value for v, k in cls.__members__.items()}
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value):
-        if isinstance(value, str):
-            value = cls(value)
-        if not (lookup_value := cls.lookup.get(value.name)):
-            raise ValueError(f"invalid collector type: {lookup_value}")
-        return lookup_value
-
 
 class Components(BaseModel):
-    cadvisor_version: Optional[Version]
-    checkmk_agent_version: Optional[Version]
+    cadvisor_version: Optional[Version] = None
+    checkmk_agent_version: Optional[Version] = None
 
 
 class NodeCollectorMetadata(CollectorMetadata):
     collector_type: CollectorType
     components: Components
 
-    @root_validator()
-    def validate_components(cls, values):
-        components = dict(values["components"])
-        collector_type = CollectorType(values.get("collector_type"))
+    @model_validator(mode="after")
+    def validate_components(self) -> "NodeCollectorMetadata":
         # pylint: disable=fixme
         # TODO: could be refactored to match expression as soon as it is
         # supported by mypy
-        if collector_type is CollectorType.CONTAINER_METRICS:
-            if components["cadvisor_version"] is None:
+        if self.collector_type is CollectorType.CONTAINER_METRICS:
+            if self.components.cadvisor_version is None:
                 raise ValueError("cadvisor_version must be set")
-            return values
-        if collector_type is CollectorType.MACHINE_SECTIONS:
-            if components["checkmk_agent_version"] is None:
+            return self
+        if self.collector_type is CollectorType.MACHINE_SECTIONS:
+            if self.components.checkmk_agent_version is None:
                 raise ValueError("checkmk_agent_version must be set")
-            return values
+            return self
         raise ValueError(  # pragma: no cover
-            f"Unknown collector type: {collector_type}"
+            f"Unknown collector type: {self.collector_type}"
         )
 
 
@@ -140,7 +124,7 @@ class UserInfo(BaseModel):
 
 
 class TokenReviewStatus(BaseModel):
-    user: Optional[UserInfo]
+    user: Optional[UserInfo] = None
     authenticated: bool = False
 
 

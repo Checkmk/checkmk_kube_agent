@@ -286,7 +286,7 @@ def test_health(cluster_collector_client) -> None:
     assert response.json() == {"status": "available"}
 
 
-def test_udpate_container_metrics(
+def test_update_container_metrics(
     metric_collection: MetricCollection,
     cluster_collector_client,
 ) -> None:
@@ -298,7 +298,7 @@ def test_udpate_container_metrics(
             "Authorization": "Bearer superduperwritertoken",
             "Content-Type": "application/json",
         },
-        data=metric_collection.json(),
+        data=metric_collection.model_dump_json(),
     )
     assert response.status_code == 200
     assert (
@@ -314,7 +314,9 @@ def test_udpate_container_metrics(
         },
     )
     assert response.status_code == 200
-    assert response.json() == metric_collection.container_metrics
+    assert response.json() == [
+        m.model_dump(mode="json") for m in metric_collection.container_metrics
+    ]
 
 
 def test_concurrent_update_container_metrics(
@@ -332,7 +334,7 @@ def test_concurrent_update_container_metrics(
                 "Authorization": "Bearer superduperwritertoken",
                 "Content-Type": "application/json",
             },
-            data=metric_collection.json(),
+            data=metric_collection.model_dump_json(),
         )
         if response.status_code != 200:
             errored_status_codes.append(response.status_code)
@@ -761,7 +763,7 @@ def test_machine_sections(
             "Authorization": "Bearer superdupertoken",
             "Content-Type": "application/json",
         },
-        data=machine_sections_collection.json(),
+        data=machine_sections_collection.model_dump_json(),
     )
     assert response.status_code == 200
     assert response.json() is None
@@ -797,14 +799,14 @@ def test_endpoints_request_authentication() -> None:
             continue
         parameters = signature(route.endpoint).parameters  # type: ignore
         if "token" not in parameters:
-            raise Exception(
+            raise AssertionError(
                 f"Expected a token parameter for path '{route.path}'. "  # type: ignore
                 "Please add auth!"
             )
         parameter_token = parameters["token"]
-        assert str(parameter_token.default) in {
-            "Depends(authenticate_get)",
-            "Depends(authenticate_post)",
+        assert parameter_token.default.dependency in {
+            authenticate_get,
+            authenticate_post,
         }
 
 
@@ -859,7 +861,7 @@ def test_send_metadata(
             metric_collection.metadata,
             machine_sections_collection.metadata,
         ],
-    )
+    ).model_dump(mode="json")
 
 
 def test_join_host_port() -> None:

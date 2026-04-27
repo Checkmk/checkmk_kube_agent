@@ -13,7 +13,7 @@ import os
 import sys
 from typing import FrozenSet, NewType, NoReturn, Optional, Sequence
 
-import gunicorn.app.base  # type: ignore[import]
+import gunicorn.app.base  # type: ignore[import-untyped]
 import pydantic
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -108,7 +108,7 @@ def _check_token_review_content(
     serviceaccount_whitelist: FrozenSet[str],
 ) -> Optional[TokenError]:
     try:
-        token_review_status = TokenReview.parse_obj(json.loads(content)).status
+        token_review_status = TokenReview.model_validate(json.loads(content)).status
     except (json.JSONDecodeError, pydantic.ValidationError) as exception:
         return TokenError(
             status_code=status.HTTP_501_NOT_IMPLEMENTED,

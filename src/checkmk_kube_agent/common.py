@@ -19,7 +19,7 @@ import checkmk_kube_agent
 from checkmk_kube_agent.container_metadata import parse_metadata
 from checkmk_kube_agent.type_defs import CollectorMetadata
 
-TCPTimeout = Union[None, int, Tuple[int, int]]
+type TCPTimeout = Union[None, int, Tuple[int, int]]  # pylint: disable=invalid-name
 
 
 def collector_argument_parser(**kwargs) -> argparse.ArgumentParser:
