@@ -351,7 +351,7 @@ def container_metrics_worker(
     logger.info("Parsing and sending container metrics")
     cluster_collector_response = session.post(
         f"{cluster_collector_base_url}/update_container_metrics",
-        headers=headers,
+        headers={**headers, "Content-Type": "application/json"},
         data=MetricCollection(
             container_metrics=parse_raw_response(
                 cadvisor_metrics.content.decode("utf-8"), Timestamp(time.time())
@@ -366,7 +366,7 @@ def container_metrics_worker(
                     checkmk_agent_version=None,
                 ),
             ),
-        ).json(),
+        ).model_dump_json(),
         verify=verify,
     )
     _verify_and_log_cluster_collector_response(
@@ -389,7 +389,7 @@ def machine_sections_worker(
         ["/usr/local/bin/check_mk_agent"],
         stdout=subprocess.PIPE,
     ) as process:
-        (out, err) = process.communicate(args.checkmk_agent_timeout)
+        out, err = process.communicate(args.checkmk_agent_timeout)
         if process.returncode != 0:
             logger.error(err)
             raise RuntimeError("Agent execution failed.")
@@ -400,7 +400,7 @@ def machine_sections_worker(
     logger.info("Parsing and sending machine sections")
     cluster_collector_response = session.post(
         f"{cluster_collector_base_url}/update_machine_sections",
-        headers=headers,
+        headers={**headers, "Content-Type": "application/json"},
         data=MachineSectionsCollection(
             sections=MachineSections(
                 sections=sections,
@@ -414,7 +414,7 @@ def machine_sections_worker(
                     checkmk_agent_version=Version(os.environ["CHECKMK_AGENT_VERSION"]),
                 ),
             ),
-        ).json(),
+        ).model_dump_json(),
         verify=verify,
     )
     _verify_and_log_cluster_collector_response(

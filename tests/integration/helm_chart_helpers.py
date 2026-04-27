@@ -5,12 +5,13 @@
 # terms and conditions defined in the file COPYING, which is part of this
 # source code package.
 
-# pylint: disable=missing-function-docstring, missing-class-docstring, no-self-use, too-few-public-methods
+# pylint: disable=missing-function-docstring, missing-class-docstring, too-few-public-methods
 """Helper functions to help apply the Checkmk Kubernetes monitoring helm chart
 
-    Note that the names of the configuration options correspond to those of the
-    actual deployment helm chart.
+Note that the names of the configuration options correspond to those of the
+actual deployment helm chart.
 """
+
 from __future__ import annotations
 
 import itertools

@@ -6,6 +6,7 @@
 # source code package.
 
 """Conftest file for integration tests"""
+
 from pathlib import Path
 from typing import Optional
 

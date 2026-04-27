@@ -256,4 +256,4 @@ def test_node_collector_metadata_serialisation() -> None:
         ),
     )
 
-    assert NodeCollectorMetadata(**json.loads(metadata.json())) == metadata
+    assert NodeCollectorMetadata(**json.loads(metadata.model_dump_json())) == metadata

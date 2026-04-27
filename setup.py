@@ -10,25 +10,25 @@ with open("README.rst") as readme_file:
     readme = readme_file.read()
 
 requirements = [
-    "cachetools==5.0.0",
-    "fastapi==0.109.2",
-    "pydantic==1.10.13",
-    "requests==2.32.4",
-    "urllib3==2.5.0",
-    "uvicorn==0.17.5",
-    "gunicorn==23.0.0",
+    "cachetools==7.0.6",
+    "fastapi==0.136.1",
+    "pydantic==2.13.3",
+    "requests==2.33.1",
+    "urllib3==2.6.3",
+    "uvicorn==0.46.0",
+    "gunicorn==25.3.0",
 ]
 
 setup(
     author="Checkmk GmbH",
     author_email="feedback@checkmk.com",
-    python_requires=">=3.10",
+    python_requires=">=3.14",
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
         "Natural Language :: English",
-        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.14",
     ],
     description="Checkmk node and cluster collectors to monitor Kubernetes clusters.",
     entry_points={

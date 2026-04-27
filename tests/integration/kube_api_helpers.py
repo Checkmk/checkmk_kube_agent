@@ -6,6 +6,7 @@
 # source code package.
 
 """Helper functions to help communicate with the API server of a running Kubernetes cluster"""
+
 from __future__ import annotations
 
 import enum
@@ -88,9 +89,11 @@ def _parse_nodes(raw_nodes: Sequence[dict]) -> Sequence[Node]:
             role
             for label in labels
             if (
-                role := label[len("node-role.kubernetes.io/") :]
-                if label.startswith("node-role.kubernetes.io/")
-                else None
+                role := (
+                    label[len("node-role.kubernetes.io/") :]
+                    if label.startswith("node-role.kubernetes.io/")
+                    else None
+                )
             )
             is not None
         ]
@@ -101,9 +104,11 @@ def _parse_nodes(raw_nodes: Sequence[dict]) -> Sequence[Node]:
         nodes.append(
             Node(
                 name=node["metadata"]["name"],
-                role=NodeType.MASTER
-                if ("master" in roles or "control_plane" in roles)
-                else NodeType.WORKER,
+                role=(
+                    NodeType.MASTER
+                    if ("master" in roles or "control-plane" in roles)
+                    else NodeType.WORKER
+                ),
             )
         )
     return nodes

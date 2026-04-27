@@ -5,9 +5,10 @@
 # terms and conditions defined in the file COPYING, which is part of this
 # source code package.
 
-# pylint: disable=missing-function-docstring, missing-class-docstring, no-self-use, too-few-public-methods
+# pylint: disable=missing-function-docstring, missing-class-docstring, too-few-public-methods
 
 """Integration tests for helm chart"""
+
 from __future__ import annotations
 
 from pathlib import Path

@@ -5,9 +5,10 @@
 # terms and conditions defined in the file COPYING, which is part of this
 # source code package.
 
-# pylint: disable=missing-function-docstring, missing-class-docstring, no-self-use, too-few-public-methods
+# pylint: disable=missing-function-docstring, missing-class-docstring, too-few-public-methods
 
 """Integration tests for collectors"""
+
 from __future__ import annotations
 
 import json
@@ -86,13 +87,39 @@ class TestDefaultCollectors:
         collector_images: CollectorImages,
         external_access_method: NodePort,
     ) -> HelmChartDeploymentSettings:
+        # Chart defaults for resources were removed in werk #18237 (commit
+        # cd29609) to let cluster admins size them; the tests below still
+        # assert that requests/limits are set, so we set them here. This also
+        # exercises the chart's resource-value plumbing.
+        resource_settings = [
+            f"{path}.resources.requests.cpu=50m"
+            for path in (
+                "clusterCollector",
+                "nodeCollector.cadvisor",
+                "nodeCollector.containerMetricsCollector",
+                "nodeCollector.machineSectionsCollector",
+            )
+        ] + [
+            f"{path}.resources.{kind}.{key}={val}"
+            for path in (
+                "clusterCollector",
+                "nodeCollector.cadvisor",
+                "nodeCollector.containerMetricsCollector",
+                "nodeCollector.machineSectionsCollector",
+            )
+            for kind, key, val in (
+                ("requests", "memory", "64Mi"),
+                ("limits", "cpu", "200m"),
+                ("limits", "memory", "200Mi"),
+            )
+        ]
         return HelmChartDeploymentSettings(
             path=helm_chart_path,
             release_name="checkmk",
             release_namespace=DeployableNamespace("checkmk-monitoring"),
             images=collector_images,
             external_access_method=external_access_method,
-            additional_chart_settings=[],
+            additional_chart_settings=[resource_settings],
         )
 
     @pytest.fixture(scope="class")
@@ -157,7 +184,9 @@ class TestDefaultCollectors:
         session = tcp_session()
 
         response_collector = session.get(f"{collector.endpoint}/metadata")
-        assert response_collector.status_code == 403
+        # FastAPI now returns 401 (not 403) when the Authorization header is
+        # missing, per RFC 7235. See https://github.com/fastapi/fastapi/pull/13786
+        assert response_collector.status_code == 401
 
     @pytest.mark.timeout(240)
     def test_authentication_cluster_collector_with_non_whitelisted_token(
