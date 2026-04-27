@@ -51,6 +51,18 @@ COLLECTOR_IMAGE := $(DOCKERHUB_PUBLISHER)/${COLLECTOR_IMAGE_NAME}:${DOCKER_IMAGE
 CADVISOR_IMAGE_NAME := cadvisor-patched
 CADVISOR_IMAGE := $(DOCKERHUB_PUBLISHER)/${CADVISOR_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
 GIT_HASH := $(shell git rev-parse HEAD)
+# `make kind` / `make kind-load` target a kind cluster you already have.
+# Override KIND_CLUSTER_NAME if yours isn't named `kind`. Helm uses your
+# active KUBECONFIG context; we don't touch it.
+KIND_CLUSTER_NAME ?= kind
+HELM_NAMESPACE ?= checkmk-monitoring
+HELM_RELEASE_NAME ?= myrelease
+HELM_NODE_PORT ?= 30035
+
+# `make kind-integration` owns its own ephemeral cluster end to end.
+KIND_INTEGRATION_CLUSTER_NAME ?= checkmk-kube-agent-integration
+KIND_INTEGRATION_CLUSTER_CONFIG ?= ci/kind/cluster-integration.yaml
+KIND_INTEGRATION_KUBECONFIG ?= /tmp/$(KIND_INTEGRATION_CLUSTER_NAME).kubeconfig
 
 .PHONY: help
 help:
@@ -93,6 +105,40 @@ coverage: ## check code coverage quickly with the default Python
 .PHONY: dev-image
 dev-image: dist ## build image to be used to run tests in a Docker container
 	docker build --rm --network=host --target=dev --build-arg PROJECT_PYVERSION="${PROJECT_PYVERSION}" --build-arg CHECKMK_AGENT_VERSION="${CHECKMK_AGENT_VERSION}" -t $(COLLECTOR_IMAGE_NAME)-dev -f docker/kubernetes-collector/Dockerfile .
+
+.PHONY: kind-load
+kind-load: release-image ## build the release images and load them into your existing kind cluster (KIND_CLUSTER_NAME)
+	kind load docker-image $(COLLECTOR_IMAGE) $(CADVISOR_IMAGE) --name $(KIND_CLUSTER_NAME)
+
+.PHONY: kind
+kind: kind-load ## build, load, and helm-install into your existing cluster (uses your active KUBECONFIG)
+	helm upgrade --install $(HELM_RELEASE_NAME) deploy/charts/checkmk \
+		--create-namespace -n $(HELM_NAMESPACE) \
+		--set image.tag=$(DOCKER_IMAGE_TAG) \
+		--set image.pullPolicy=IfNotPresent \
+		--set clusterCollector.service.type=NodePort \
+		--set clusterCollector.service.nodePort=$(HELM_NODE_PORT) \
+		--set-string clusterCollector.podAnnotations.makeKindBuildId="$(shell date +%s)" \
+		--set-string nodeCollector.podAnnotations.makeKindBuildId="$(shell date +%s)"
+
+.PHONY: kind-uninstall
+kind-uninstall: ## uninstall the helm release (uses your active KUBECONFIG)
+	helm uninstall $(HELM_RELEASE_NAME) -n $(HELM_NAMESPACE)
+
+.PHONY: kind-integration
+kind-integration: release-image ## spin up an ephemeral kind cluster, run the integration tests, tear it down on success (project deps must be importable from python3)
+	kind create cluster --name $(KIND_INTEGRATION_CLUSTER_NAME) --config $(KIND_INTEGRATION_CLUSTER_CONFIG) --kubeconfig $(KIND_INTEGRATION_KUBECONFIG) && \
+	  kind load docker-image $(COLLECTOR_IMAGE) $(CADVISOR_IMAGE) --name $(KIND_INTEGRATION_CLUSTER_NAME) && \
+	  KUBECONFIG=$(KIND_INTEGRATION_KUBECONFIG) kubectl apply -f ci/integration/deploy/integration-sa.yaml && \
+	  KUBECONFIG=$(KIND_INTEGRATION_KUBECONFIG) $(PYTHON) -m pytest tests/integration \
+	    --cluster-endpoint=$$(KUBECONFIG=$(KIND_INTEGRATION_KUBECONFIG) kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}') \
+	    --cluster-token=$$(KUBECONFIG=$(KIND_INTEGRATION_KUBECONFIG) kubectl create token supervisor -n checkmk-integration --duration=4h) \
+	    --cluster-workers=1 \
+	    --image-registry=$(DOCKERHUB_PUBLISHER) \
+	    --collector-image-name=$(COLLECTOR_IMAGE_NAME) \
+	    --cadvisor-image-name=$(CADVISOR_IMAGE_NAME) \
+	    --image-tag=$(DOCKER_IMAGE_TAG) && \
+	  kind delete cluster --name $(KIND_INTEGRATION_CLUSTER_NAME)
 
 dist: clean ## builds source and wheel package
 	@echo "Building collector in version: ${PROJECT_VERSION} using checkmk agent in Version: ${CHECKMK_AGENT_VERSION}"

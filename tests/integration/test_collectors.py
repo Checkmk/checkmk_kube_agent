@@ -74,7 +74,7 @@ class TestDefaultCollectors:
                 name="NodePort",
                 chart_settings=[
                     "clusterCollector.service.type=NodePort",
-                    "clusterCollector.service.nodePort=30035",
+                    "clusterCollector.service.nodePort=32035",
                 ],
             )
         # TODO: implement ingress
