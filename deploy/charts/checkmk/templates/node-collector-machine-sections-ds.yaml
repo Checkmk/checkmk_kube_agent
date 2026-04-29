@@ -97,6 +97,20 @@ spec:
               value: "{{ include "checkmk.fullname" . }}-cluster-collector.{{ .Release.Namespace }}"
             - name: CLUSTER_COLLECTOR_SERVICE_PORT_API
               value: "{{ .Values.clusterCollector.service.port }}"
+            # The check_mk_agent script we pull in Spawns Python a few times to try to
+            # determine which interpreter to use for Python plugins (none of which we have
+            # in Kubernetes land). Each time it spawns, it tries to write out .pyc files
+            # for the modules it loads in by default.
+            #
+            # Though we get mounted read-only, the failed open()s still lead to many cached
+            # dentries (each with a randomized name which defeats caching). This causes
+            # reclaimable slab memory to monotonically increase until the kernel GC kicks in
+            # and frees the cache whenever a limit is hit. This cache counts towards the cgroup's
+            # allocation. In practice, this cached memory is "harmless" (it is freed as soon as it
+            # is needed), but it makes the graphs ugly/useless and it's better to avoid the
+            # situation. Thus we disable the attempted .pyc writes here.
+            - name: PYTHONDONTWRITEBYTECODE
+              value: "1"
           resources:
             {{- toYaml .Values.nodeCollector.machineSectionsCollector.resources | nindent 12 }}
       terminationGracePeriodSeconds: 30
