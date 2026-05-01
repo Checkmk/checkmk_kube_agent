@@ -18,7 +18,6 @@ from checkmk_kube_agent.container_metadata import (
 )
 from checkmk_kube_agent.type_defs import (
     CheckmkKubeAgentMetadata,
-    ClusterCollectorMetadata,
     CollectorMetadata,
     CollectorType,
     Components,
@@ -90,9 +89,7 @@ def test_parse_cluster_collector_metadata(
 ) -> None:
     """Cluster collector metadata is parsed correctly based on collector
     metadata."""
-    assert ClusterCollectorMetadata(
-        **dict(collector_metadata)
-    ) == ClusterCollectorMetadata(
+    assert CollectorMetadata(**dict(collector_metadata)) == CollectorMetadata(
         node=NodeName("nebukadnezar"),
         host_name=HostName("morpheus"),
         container_platform=PlatformMetadata(

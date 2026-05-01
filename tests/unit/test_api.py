@@ -34,8 +34,11 @@ from checkmk_kube_agent.api import (
     parse_arguments,
 )
 from checkmk_kube_agent.type_defs import (
+    CacheHealth,
+    CacheSizeInfo,
     CheckmkKubeAgentMetadata,
     ClusterCollectorMetadata,
+    CollectorMetadata,
     CollectorType,
     Components,
     ContainerMetric,
@@ -100,10 +103,10 @@ class MockRaiseFromError:
         raise MockException()
 
 
-@pytest.fixture(name="cluster_collector_metadata")
-def fixture_cluster_collector_metadata() -> ClusterCollectorMetadata:
-    """Example cluster collector metadata"""
-    return ClusterCollectorMetadata(
+@pytest.fixture(name="collector_metadata")
+def fixture_collector_metadata() -> CollectorMetadata:
+    """Example cluster metadata"""
+    return CollectorMetadata(
         node=NodeName("nebukadnezar"),
         host_name=HostName("morpheus"),
         container_platform=PlatformMetadata(
@@ -120,7 +123,7 @@ def fixture_cluster_collector_metadata() -> ClusterCollectorMetadata:
 
 @pytest.fixture(name="cluster_collector_client")
 def fixture_cluster_collector_client(
-    cluster_collector_metadata: ClusterCollectorMetadata,
+    collector_metadata: CollectorMetadata,
 ) -> TestClient:
     """Cluster collector API test client"""
     _init_app_state(
@@ -130,7 +133,7 @@ def fixture_cluster_collector_client(
         reader_whitelist=["checkmk-monitoring:checkmk-server"],
         writer_whitelist=["checkmk-monitoring:node-collector"],
         tcp_timeout=(10, 12),
-        metadata=cluster_collector_metadata,
+        static_metadata=collector_metadata,
     )
 
     def authenticate_with_empty_token() -> str:
@@ -154,7 +157,7 @@ def mock_read_api_token(monkeypatch: pytest.MonkeyPatch):
 
 @pytest.fixture(name="metric_collection")
 def fixture_metric_collection(
-    cluster_collector_metadata: ClusterCollectorMetadata,
+    collector_metadata: CollectorMetadata,
 ) -> MetricCollection:
     """Metrics data sample"""
     return MetricCollection(
@@ -204,7 +207,7 @@ def fixture_metric_collection(
             ),
         ],
         metadata=NodeCollectorMetadata(
-            **dict(cluster_collector_metadata),
+            **dict(collector_metadata),
             collector_type=CollectorType.CONTAINER_METRICS,
             components=Components(
                 cadvisor_version=Version("v0.43.0"), checkmk_agent_version=None
@@ -215,7 +218,7 @@ def fixture_metric_collection(
 
 @pytest.fixture(name="machine_sections_collection")
 def fixture_machine_sections_collection(
-    cluster_collector_metadata: ClusterCollectorMetadata,
+    collector_metadata: CollectorMetadata,
 ) -> MachineSectionsCollection:
     """Machine sections example"""
     return MachineSectionsCollection(
@@ -224,7 +227,7 @@ def fixture_machine_sections_collection(
             sections="<<<section_name>>>\nsection_data 1",
         ),
         metadata=NodeCollectorMetadata(
-            **dict(cluster_collector_metadata),
+            **dict(collector_metadata),
             collector_type=CollectorType.MACHINE_SECTIONS,
             components=Components(
                 cadvisor_version=None, checkmk_agent_version=Version("2.1.0i1")
@@ -822,7 +825,7 @@ def test_standalone_application() -> None:
 
 
 def test_send_metadata(
-    cluster_collector_metadata: ClusterCollectorMetadata,
+    collector_metadata: CollectorMetadata,
     metric_collection: MetricCollection,
     machine_sections_collection: MachineSectionsCollection,
     cluster_collector_client: TestClient,
@@ -854,6 +857,16 @@ def test_send_metadata(
             "Content-Type": "application/json",
         },
     )
+    collector_metadata_dict = collector_metadata.model_dump()
+    collector_metadata_dict["cache_health"] = CacheHealth(
+        container_metrics=CacheSizeInfo(size=3, maxsize=100),
+        machine_sections=CacheSizeInfo(size=1, maxsize=100),
+    )
+
+    cluster_collector_metadata = ClusterCollectorMetadata.model_validate(
+        collector_metadata_dict
+    )
+
     assert response.status_code == 200
     assert response.json() == Metadata(
         cluster_collector_metadata=cluster_collector_metadata,

@@ -28,7 +28,10 @@ from checkmk_kube_agent.common import (
 )
 from checkmk_kube_agent.dedup_ttl_cache import DedupTTLCache
 from checkmk_kube_agent.type_defs import (
+    CacheHealth,
+    CacheSizeInfo,
     ClusterCollectorMetadata,
+    CollectorMetadata,
     ContainerMetric,
     MachineSections,
     MachineSectionsCollection,
@@ -314,8 +317,22 @@ def send_metadata(
     """Get metadata on cluster and node collectors.
 
     May be used to verify compatibility."""
+
+    metadata = ClusterCollectorMetadata(
+        cache_health=CacheHealth(
+            container_metrics=CacheSizeInfo(
+                size=app.state.container_metric_queue.size(),
+                maxsize=app.state.container_metric_queue.maxsize,
+            ),
+            machine_sections=CacheSizeInfo(
+                size=app.state.machine_sections_queue.size(),
+                maxsize=app.state.machine_sections_queue.maxsize,
+            ),
+        ),
+        **dict(app.state.static_metadata),
+    )
     return Metadata(
-        cluster_collector_metadata=app.state.metadata,
+        cluster_collector_metadata=metadata,
         node_collector_metadata=app.state.node_collector_metadata_queue.get_all(),
     )
 
@@ -394,7 +411,7 @@ def _init_app_state(
     reader_whitelist: Sequence[str],
     writer_whitelist: Sequence[str],
     tcp_timeout: TCPTimeout,
-    metadata: ClusterCollectorMetadata,
+    static_metadata: CollectorMetadata,
 ) -> None:
     container_metric_queue = DedupTTLCache[ContainerMetricKey, ContainerMetric](
         key=container_metric_key,
@@ -415,7 +432,7 @@ def _init_app_state(
         # Each node collector daemonset sends their own metadata to this queue
         ttl=cache_ttl,
     )
-    app_.state.metadata = metadata
+    app_.state.static_metadata = static_metadata
     app_.state.reader_whitelist = frozenset(reader_whitelist)
     app_.state.writer_whitelist = frozenset(writer_whitelist)
     app_.state.tcp_session = tcp_session(timeout=tcp_timeout)
@@ -432,7 +449,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         reader_whitelist=args.reader_whitelist.split(","),
         writer_whitelist=args.writer_whitelist.split(","),
         tcp_timeout=(args.connect_timeout, args.read_timeout),
-        metadata=ClusterCollectorMetadata(**dict(collector_metadata())),
+        static_metadata=collector_metadata(),
     )
 
     options = {
