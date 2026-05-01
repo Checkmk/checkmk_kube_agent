@@ -86,3 +86,8 @@ class DedupTTLCache(TTLCache[K, V]):
         """Get all entries from the TTL cache."""
         with self.__lock:
             return list(self.values())
+
+    def size(self) -> int:
+        """Get the current number of entries in the cache."""
+        with self.__lock:
+            return len(self)
