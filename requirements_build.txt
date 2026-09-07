@@ -1,5 +1,5 @@
-packaging==26.2
-pip==26.1
+packaging==26.3
+pip==26.2.1
 semver==3.0.4
-setuptools==82.0.1
-wheel==0.47.0
+setuptools==84.0.0
+wheel==0.48.0
