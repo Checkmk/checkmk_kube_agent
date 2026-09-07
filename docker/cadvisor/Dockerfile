@@ -1,4 +1,4 @@
-FROM artifacts.lan.tribe29.com:4000/cadvisor:0.56.2 AS release
+FROM artifacts.lan.tribe29.com:4000/cadvisor:0.60.5 AS release
 ARG GIT_HASH
 RUN apk --no-cache upgrade --purge && \
     rm -rf /tmp/* && \

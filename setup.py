@@ -10,13 +10,14 @@ with open("README.rst") as readme_file:
     readme = readme_file.read()
 
 requirements = [
-    "cachetools==7.0.6",
-    "fastapi==0.136.1",
-    "pydantic==2.13.3",
-    "requests==2.33.1",
-    "urllib3==2.6.3",
-    "uvicorn==0.46.0",
-    "gunicorn==25.3.0",
+    "cachetools==7.1.8",
+    "fastapi==0.141.1",
+    "pydantic==2.13.5",
+    "requests==2.34.2",
+    "urllib3==2.7.0",
+    "uvicorn==0.52.4",
+    "uvicorn-worker==0.4.0",
+    "gunicorn==26.2.0",
 ]
 
 setup(

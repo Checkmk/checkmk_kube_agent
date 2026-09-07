@@ -455,7 +455,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     options = {
         "bind": f"{args.address}:{args.port}",
         "workers": 1,
-        "worker_class": "uvicorn.workers.UvicornWorker",
+        "worker_class": "uvicorn_worker.UvicornWorker",
         "loglevel": args.log_level,
         "accesslog": "-",
     }
