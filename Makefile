@@ -229,7 +229,7 @@ lint-yaml/yamllint: ## check yaml formatting with yamllint
 
 .PHONY: release-image
 release-image: dist ## create the node and cluster collector Docker images
-	docker build --rm --no-cache --network=host --build-arg PROJECT_PYVERSION="${PROJECT_PYVERSION}" --build-arg CHECKMK_AGENT_VERSION="${CHECKMK_AGENT_VERSION}"  --build-arg GIT_HASH="${GIT_HASH}" -t $(COLLECTOR_IMAGE) -f docker/kubernetes-collector/Dockerfile .
+	docker build --pull --rm --no-cache --network=host --build-arg PROJECT_PYVERSION="${PROJECT_PYVERSION}" --build-arg CHECKMK_AGENT_VERSION="${CHECKMK_AGENT_VERSION}"  --build-arg GIT_HASH="${GIT_HASH}" -t $(COLLECTOR_IMAGE) -f docker/kubernetes-collector/Dockerfile .
 	docker build --rm --no-cache --network=host --build-arg GIT_HASH="${GIT_HASH}" -t $(CADVISOR_IMAGE) -f docker/cadvisor/Dockerfile .
 
 .PHONY: servedocs
